@@ -1,20 +1,22 @@
-use relm4::{
-    actions::{RelmAction, RelmActionGroup},
-    adw, gtk, main_application, Component, ComponentParts, ComponentSender, SimpleComponent,
-};
+use crate::RelmActionGroup;
+use relm4::*;
 
-use gtk::prelude::{
-    ApplicationExt, ApplicationWindowExt, GtkWindowExt, OrientableExt, SettingsExt, WidgetExt,
-};
+use relm4::actions::RelmAction;
+
+use adw::prelude::*;
 use gtk::{gio, glib};
 
 use crate::config::{APP_ID, PROFILE};
-use crate::modals::about::AboutDialog;
+use crate::modals::{about::AboutDialog, counter::CounterModel, toggler::TogglerModel};
+use std::convert::identity;
 
-pub(super) struct App {}
+pub(super) struct App {
+    _counter: Controller<CounterModel>,
+    _toggler: Controller<TogglerModel>,
+}
 
 #[derive(Debug)]
-pub(super) enum AppMsg {
+pub enum AppMsg {
     Quit,
 }
 
@@ -25,7 +27,7 @@ relm4::new_stateless_action!(AboutAction, WindowActionGroup, "about");
 
 #[relm4::component(pub)]
 impl SimpleComponent for App {
-    type Init = ();
+    type Init = (u8, bool);
     type Input = AppMsg;
     type Output = ();
     type Widgets = AppWidgets;
@@ -41,6 +43,7 @@ impl SimpleComponent for App {
     }
 
     view! {
+      #[root]
         main_window = adw::ApplicationWindow::new(&main_application()) {
             set_visible: true,
 
@@ -65,40 +68,84 @@ impl SimpleComponent for App {
                     None
                 },
 
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
+                #[name(split_view)]
+                adw::NavigationSplitView {
+                  #[wrap(Some)]
+                  set_sidebar = &adw::NavigationPage {
+                      set_title: "Sidebar",
 
-                adw::HeaderBar {
-                    pack_end = &gtk::MenuButton {
-                        set_icon_name: "open-menu-symbolic",
-                        set_menu_model: Some(&primary_menu),
-                    }
+                      #[wrap(Some)]
+                      set_child = &adw::ToolbarView {
+                          add_top_bar = &adw::HeaderBar {},
+
+                          #[wrap(Some)]
+                          set_content = &gtk::StackSidebar {
+                              set_stack: &stack,
+                          },
+                      },
+                  },
+
+                  #[wrap(Some)]
+                  set_content = &adw::NavigationPage {
+                      set_title: "Content",
+
+                      #[wrap(Some)]
+                      set_child = &adw::ToolbarView {
+                          add_top_bar = &adw::HeaderBar {},
+                          set_content: Some(&stack),
+                      }
+                  },
                 },
 
-                gtk::Label {
-                    set_label: "Hello world!",
-                    add_css_class: "title-header",
-                    set_vexpand: true,
-                },
-                
-                gtk::Label {
-                    set_label: "Hello world!",
-                    add_css_class: "title-header",
-                    set_vexpand: true,
-                }
-            }
-
+                add_breakpoint = bp_with_setters(
+                    adw::Breakpoint::new(
+                        adw::BreakpointCondition::new_length(
+                            adw::BreakpointConditionLengthType::MaxWidth,
+                            400.0,
+                            adw::LengthUnit::Sp,
+                        )
+                    ),
+                    &[(&split_view, "collapsed", true)]
+                ),
+        },
+        stack = &gtk::Stack {
+            add_titled: (counter.widget(), None, "Counter"),
+            add_titled: (toggler.widget(), None, "Toggle"),
+            add_titled: (toggler.widget(), None, "aa"),
+            add_titled: (toggler.widget(), None, "aaaa"),
+            add_titled: (toggler.widget(), None, "Togglwwwe"),
+            set_vhomogeneous: false,
         }
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self {};
+        let counter = CounterModel::builder()
+            .launch(init.0)
+            .forward(sender.input_sender(), identity);
+        let toggler = TogglerModel::builder()
+            .launch(init.1)
+            .forward(sender.input_sender(), identity);
 
         let widgets = view_output!();
+        
+        let model = App {
+            _counter: counter,
+            _toggler: toggler,
+        };
+
+        
+        widgets.stack.connect_visible_child_notify({
+            let split_view = widgets.split_view.clone();
+            move |_| {
+                split_view.set_show_content(true);
+            }
+        });
+        
+        
 
         let mut actions = RelmActionGroup::<WindowActionGroup>::new();
 
@@ -133,6 +180,14 @@ impl SimpleComponent for App {
     fn shutdown(&mut self, widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
         widgets.save_window_size().unwrap();
     }
+}
+
+fn bp_with_setters(
+    bp: adw::Breakpoint,
+    additions: &[(&impl IsA<glib::Object>, &str, impl ToValue)],
+) -> adw::Breakpoint {
+    bp.add_setters(additions);
+    bp
 }
 
 impl AppWidgets {
