@@ -7,11 +7,12 @@ use adw::prelude::*;
 use gtk::{gio, glib};
 
 use crate::config::{APP_ID, PROFILE};
-use crate::modals::{about::AboutDialog, wifi::WifiModel};
+use crate::modals::{about::AboutDialog, wifi::WifiModel, network::NetworkModel};
 use std::convert::identity;
 
 pub(super) struct App {
     _wifi: Controller<WifiModel>,
+    _network: Controller<NetworkModel>,
 }
 
 #[derive(Debug)]
@@ -109,6 +110,7 @@ impl SimpleComponent for App {
         },
         stack = &gtk::Stack {
             add_titled: (wifi.widget(), Some("wifi"), "Wi-Fi"),
+            add_titled: (network.widget(), Some("network"), "Network"),
             set_vhomogeneous: false,
         }
     }
@@ -121,10 +123,14 @@ impl SimpleComponent for App {
         let wifi = WifiModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
+        
+        let network = NetworkModel::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
 
         let widgets = view_output!();
 
-        let model = App { _wifi: wifi };
+        let model = App { _wifi: wifi, _network: network };
 
         widgets.stack.connect_visible_child_notify({
             let split_view = widgets.split_view.clone();
