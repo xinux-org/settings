@@ -13,8 +13,9 @@ impl SimpleComponent for NetworkModel {
     type Output = AppMsg;
 
     view! {
+      adw::PreferencesGroup{
+        adw::HeaderBar {},
         adw::PreferencesPage {
-
             adw::PreferencesGroup {
               set_title: "Wired",
 
@@ -74,6 +75,7 @@ impl SimpleComponent for NetworkModel {
                 }
             },
         }
+      }
     }
 
     fn init(

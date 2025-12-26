@@ -7,12 +7,15 @@ use adw::prelude::*;
 use gtk::{gio, glib};
 
 use crate::config::{APP_ID, PROFILE};
-use crate::modals::{about::AboutDialog, wifi::WifiModel, network::NetworkModel};
+use crate::modals::{
+    about::AboutDialog, bluetooth::BluetoothModel, network::NetworkModel, wifi::WifiModel,
+};
 use std::convert::identity;
 
 pub(super) struct App {
     _wifi: Controller<WifiModel>,
     _network: Controller<NetworkModel>,
+    _bluetooth: Controller<BluetoothModel>,
 }
 
 #[derive(Debug)]
@@ -72,11 +75,16 @@ impl SimpleComponent for App {
             adw::NavigationSplitView {
                 #[wrap(Some)]
                 set_sidebar = &adw::NavigationPage {
-                    set_title: "Sidebar",
+                    set_title: "Settings",
 
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
-                        add_top_bar = &adw::HeaderBar {},
+                        add_top_bar = &adw::HeaderBar {
+                            pack_end = &gtk::MenuButton {
+                                set_icon_name: "open-menu-symbolic",
+                                set_menu_model: Some(&primary_menu),
+                            }
+                        },
 
                         #[wrap(Some)]
                         set_content = &gtk::StackSidebar {
@@ -91,7 +99,7 @@ impl SimpleComponent for App {
 
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
-                        add_top_bar = &adw::HeaderBar {},
+                        // add_top_bar = &adw::HeaderBar {},
                         set_content: Some(&stack),
                     }
                 },
@@ -111,6 +119,7 @@ impl SimpleComponent for App {
         stack = &gtk::Stack {
             add_titled: (wifi.widget(), Some("wifi"), "Wi-Fi"),
             add_titled: (network.widget(), Some("network"), "Network"),
+            add_titled: (bluetooth.widget(), Some("bluetooth"), "Bluetooth"),
             set_vhomogeneous: false,
         }
     }
@@ -123,14 +132,22 @@ impl SimpleComponent for App {
         let wifi = WifiModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
-        
+
         let network = NetworkModel::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
+
+        let bluetooth = BluetoothModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
 
         let widgets = view_output!();
 
-        let model = App { _wifi: wifi, _network: network };
+        let model = App {
+            _wifi: wifi,
+            _network: network,
+            _bluetooth: bluetooth,
+        };
 
         widgets.stack.connect_visible_child_notify({
             let split_view = widgets.split_view.clone();

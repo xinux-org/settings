@@ -13,7 +13,10 @@ impl SimpleComponent for WifiModel {
     type Output = AppMsg;
 
     view! {
-        adw::PreferencesPage {
+        adw::PreferencesGroup {
+            adw::HeaderBar {},
+
+            adw::PreferencesPage {
 
             adw::PreferencesGroup {
                 adw::ActionRow {
@@ -119,6 +122,7 @@ impl SimpleComponent for WifiModel {
                     }
                 },
             }
+        }
         }
     }
 
