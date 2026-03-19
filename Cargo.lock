@@ -632,6 +632,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
+name = "enquote"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06c36cb11dbde389f4096111698d8b567c0720e3452fd5ac3e6b4e47e1939932"
+dependencies = [
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "enumflags2"
 version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2388,6 +2397,7 @@ name = "settings"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "enquote",
  "gettext-rs",
  "gnome-desktop-xinux",
  "nix-editor",
@@ -2397,6 +2407,7 @@ dependencies = [
  "regex",
  "relm4",
  "sysinfo",
+ "thiserror 1.0.69",
  "tracing",
  "tracing-subscriber",
  "tracker",

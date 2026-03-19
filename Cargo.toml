@@ -35,6 +35,10 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3"
 tracker = "0.2.2"
 nix-editor = "0.3.0"
+thiserror = "1"
+
+# appearance page
+enquote = "1"
 
 # system infos
 sysinfo = "0.38.3"
