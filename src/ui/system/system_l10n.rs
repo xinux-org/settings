@@ -150,17 +150,21 @@ impl SimpleComponent for LanguageModel {
     type Output = SystemRegionLanguageMsg;
 
     view! {
-        // todo: replase this with adw::Window to remove x button
         dialog = adw::Dialog {
-            set_title: &gettext("Select language"),
             set_content_width: 450,
             set_content_height: 450,
-            // set_hexpand: true,
             set_vexpand: true,
 
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {
+                    set_show_end_title_buttons: false,
+
+                    #[wrap(Some)]
+                    set_title_widget = &adw::WindowTitle {
+                    set_title: &gettext("Select language"),
+                    },
+
                     pack_start = &gtk::Button {
                         set_label: &gettext("Cancel"),
                         #[watch]
@@ -256,6 +260,9 @@ impl SimpleComponent for LanguageModel {
         let shortlangs = vec!["uz_UZ.UTF-8", "en_US.UTF-8", "ru_RU.UTF-8"];
 
         let defaultlang = "uz_UZ.UTF-8";
+        // todo: Get file path from nix-data
+        // let output = nix_editor::read::readvalue("", );
+
         model.selected = Some(defaultlang.to_string());
 
         let langbox = gtk::ListBox::new();
