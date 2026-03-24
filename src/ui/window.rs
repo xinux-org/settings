@@ -10,18 +10,11 @@ use relm4::{
 use crate::ui::search::SearchModal;
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
-    bluetooth::BluetoothModel, display::DisplayModel, mouse::MouseAndTouchpad,
-    multitasking::MultitaskingModel, network::NetworkModel, notifications::NotificationsModel,
-    power::PowerModel, privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel,
-    sound::SoundModel, system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
-    appearance::AppearanceModel,
-};
-use crate::ui::{apps::AppModal, rebuild::rebuild_dialog::RebuildInput};
-use crate::ui::appearance;
-use crate::utils::modules::load::LoadOutput;
-use crate::{
-    config::{APP_ID, PROFILE},
-    ui::rebuild::rebuild_dialog::{RebuildInit, RebuildModel},
+    appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
+    mouse::MouseAndTouchpad, multitasking::MultitaskingModel, network::NetworkModel,
+    notifications::NotificationsModel, power::PowerModel,
+    privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel, sound::SoundModel,
+    system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
 };
 use crate::ui::{apps::AppModal, rebuild::rebuild_dialog::RebuildInput};
 use crate::utils::modules::load::LoadOutput;
@@ -92,7 +85,7 @@ impl SimpleComponent for App {
                 "_About" => AboutAction,
             }
         }
-    }and
+    }
 
     view! {
     #[root]
@@ -155,7 +148,6 @@ impl SimpleComponent for App {
                     }
                 },
                 },
-and
                 add_breakpoint = bp_with_setters(
                     adw::Breakpoint::new(
                         adw::BreakpointCondition::new_length(
@@ -253,16 +245,7 @@ and
             .launch(())
             .forward(sender.input_sender(), identity);
         let system = SystemPageModel::builder()
-            .launch(())and
-            .forward(sender.input_sender(), identity);
-
-        let rebuild_dialog = RebuildModel::builder()
-            .transient_for(&root)
-            .launch(RebuildInit {
-                flakepath,
-                // modulepath,
-                generations: config.generations,
-            })
+            .launch(())
             .forward(sender.input_sender(), identity);
 
         let rebuild_dialog = RebuildModel::builder()
@@ -409,4 +392,3 @@ impl AppWidgets {
         }
     }
 }
-
