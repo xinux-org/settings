@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 
 pub mod language;
+pub mod modules;
 pub mod error;
 
 // type Result<T, E = Error> = std::result::Result<T, E>;
