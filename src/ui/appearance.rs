@@ -1,4 +1,7 @@
+use std::process::Command;
+
 use crate::ui::window::AppMsg;
+use crate::utils::parse_dconf;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
@@ -86,7 +89,8 @@ impl SimpleComponent for AppearanceModel {
                                     #[wrap(Some)]
                                     set_child = &gtk::Picture{
                                         set_content_fit: gtk::ContentFit::Fill,
-                                        set_filename: Some("/home/shahruz/.config/background"),
+                                        set_filename:
+                                            Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
                                     },
 
                                     connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -110,7 +114,11 @@ impl SimpleComponent for AppearanceModel {
                                     set_overflow: gtk::Overflow::Hidden,
 
                                     #[wrap(Some)]
-                                    set_child = &gtk::Picture::for_filename("/home/shahruz/.config/background"),
+                                    set_child = &gtk::Picture{
+                                        set_content_fit: gtk::ContentFit::Fill,
+                                        set_filename:
+                                            Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
+                                    },
 
                                     connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
                                 },
@@ -143,6 +151,23 @@ impl SimpleComponent for AppearanceModel {
         match msg {
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
+                
+                match style {
+                    AppearanceStyle::Dark => {
+                        let _ = Command::new("gsettings")
+                        .args(&["set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"])
+                        .output()
+                        .expect("Failed to set appearance style");
+                    },
+                        
+                    AppearanceStyle::Default => {
+                        let _ = Command::new("gsettings")
+                        .args(&["set", "org.gnome.desktop.interface", "color-scheme", "prefer-light"])
+                        .output()
+                        .expect("Failed to set appearance style");
+                    } 
+                }
+
                 // self.add
             }
         }
