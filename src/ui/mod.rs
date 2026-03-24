@@ -5,6 +5,7 @@ pub mod network;
 pub mod notifications;
 pub mod sound;
 pub mod wifi;
+pub mod appearance;
 
 // Pages in separate folders
 pub mod apps;

@@ -935,6 +935,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
+name = "enquote"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06c36cb11dbde389f4096111698d8b567c0720e3452fd5ac3e6b4e47e1939932"
+dependencies = [
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "enumflags2"
 version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2068,9 +2077,9 @@ dependencies = [
 
 [[package]]
 name = "ijson"
-version = "0.1.4"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ce2bfde9cd56af9f5d4b8de37d2d203050cfa1f68cb28d5bb163e32389e810e"
+checksum = "4cc2f7b562d7d60049d4014741530e7088676f46e6d47b5858fc9a20347f9103"
 dependencies = [
  "dashmap",
  "lazy_static",
@@ -3510,6 +3519,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "dconf_rs",
+ "enquote",
  "gettext-rs",
  "gnome-desktop-xinux",
  "nix-data",
@@ -3524,6 +3534,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "sysinfo",
+ "thiserror 1.0.69",
  "tracing",
  "tracing-subscriber",
  "tracker",
@@ -4138,9 +4149,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.10.0"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa5fdc3bce6191a1dbc8c02d5c8bffcf557bafa17c124c5264a458f1b0613fa"
+checksum = "3e61e67053d25a4e82c844e8424039d9745781b3fc4f32b8d55ed50f5f667ef3"
 dependencies = [
  "tinyvec_macros",
 ]
