@@ -6,16 +6,58 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-pub enum Colors {
-    Blue = 0x3d7ccf,
-    Magenta = 0x2e889c,
-    Green = 0x438c50,
-    Yellow = 0xb47805,
-    Brown = 0xd05306,
-    Red = 0xcb2d3f,
-    Pink = 0xc05887,
-    Purple = 0x973d96,
-    Gray = 0x7b7382
+
+#[derive(Debug, Clone)]
+pub struct ColorPicker {
+    value: String,
+    colors: Vec<&'static str>
+}
+
+#[derive(Debug)]
+enum ColorPickerMsg {
+    PickColor(String),
+}
+
+#[derive(Debug)]
+enum ColorPickerOutput {
+    SendPick(String),
+}
+
+#[relm4::factory]
+impl FactoryComponent for ColorPicker {
+    type Init = String;
+    type Input = ColorPickerMsg;
+    type Output = ColorPickerOutput;
+    type CommandOutput = ();
+    type ParentWidget = gtk::Box;
+
+    view! {
+        #[root] {
+            gtk::ToggleButton{
+                    // set_group: Some(&right),
+                set_overflow: gtk::Overflow::Hidden,
+                add_css_class: "style-toggle",
+
+                #[wrap(Some)]
+                set_child = &gtk::Picture{
+                    set_content_fit: gtk::ContentFit::Fill,
+                    set_filename:
+                        Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
+                },
+
+                connect_clicked[sender, color = self.color.clone()] => move |_| {
+                    sender.output(ColorPickerOutput::SendPick(color))
+                },
+            },
+        },
+    }
+
+    fn init_model(value: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
+        Self { 
+            value,
+            colors: vec![ "blue", "teal", "green", "yellow", "orange", "red", "pink", "purple", "slate"] 
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -24,14 +66,16 @@ pub enum AppearanceStyle {
     Dark,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct AppearanceModel {
     style: AppearanceStyle,
+    colors: FactoryVecDeque<ColorPicker>,
 }
 
 #[derive(Debug)]
 pub enum AppearanceMsg {
     SetStyle(AppearanceStyle),
+    PickColor(String),
 }
 
 #[relm4::component(pub)]
@@ -107,7 +151,7 @@ impl SimpleComponent for AppearanceModel {
                                     #[wrap(Some)]
                                     set_child = &gtk::Picture{
                                         set_content_fit: gtk::ContentFit::Fill,
-                                        set_filename:
+                                        set_filename:/org/gnome/desktop/interface/accent-color
                                             Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
                                     },
 
@@ -137,22 +181,32 @@ impl SimpleComponent for AppearanceModel {
                             set_margin_start: 86,
                             set_margin_end: 86,
 
-                            append = &gtk::Box {}
+                            #[local_ref]
+                            color_box -> gtk::Box {
+                               set_orientation: gtk::Orientation::Horizontal,
+                               set_spacing: 16,
+                            }
                         }
                     },
                 },
 
             }
         }
-    }
+    }    
 
     fn init(
         _init: Self::Init,
         root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let colors = FactoryVecDeque::builder()
+            .launch(gtk::Box::default())
+            .forward(_sender.input_sender(), |output| match output {
+                ColorPickerOutput::SendPick(color) => AppearanceMsg::PickColor(color),
+            });
         let style = AppearanceStyle::Default;
-        let model = AppearanceModel { style };
+        let model = AppearanceModel { style, colors };
+        let color_box = model.colors.widget();
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
@@ -187,8 +241,16 @@ impl SimpleComponent for AppearanceModel {
                             .expect("Failed to set appearance style");
                     }
                 }
-
-                // self.add
+            }
+            AppearanceMsg::PickColor(color) => {
+                let _ = Command::new("gsettings")
+                    .args(&[
+                        "set",
+                        "org.gnome.desktop.interface.accent-color",
+                        &color,
+                    ])
+                    .output()
+                    .expect("Failed to set appearance style");
             }
         }
     }
