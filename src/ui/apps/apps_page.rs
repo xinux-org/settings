@@ -43,7 +43,8 @@ impl SimpleComponent for AppModal {
             add = &adw::NavigationPage {
                 set_title: "Apps",
 
-                adw::ToolbarView {
+                #[wrap(Some)]
+                set_child = &adw::ToolbarView {
                     set_top_bar_style: adw::ToolbarStyle::Flat,
 
                     add_top_bar = &adw::HeaderBar {
@@ -54,54 +55,44 @@ impl SimpleComponent for AppModal {
                     },
 
                     #[wrap(Some)]
-                    set_content = &gtk::ScrolledWindow {
-                        set_vexpand: true,
-                        set_hexpand: true,
+                    set_content = &adw::PreferencesPage {
+                        set_title: "Apps",
+                        set_icon_name: Some("application-x-executable-symbolic"),
 
-                        #[wrap(Some)]
-                        set_child = &adw::Clamp {
-                            set_maximum_size: 900,
-                            set_tightening_threshold: 600,
+                        add = &adw::PreferencesGroup {
+                            set_title: "Search",
 
-                            #[wrap(Some)]
-                            set_child = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 12,
-                                set_margin_top: 12,
-                                set_margin_bottom: 12,
-                                set_margin_start: 12,
-                                set_margin_end: 12,
-
-                                gtk::SearchEntry {
-                                    set_placeholder_text: Some("Search apps"),
-                                    connect_search_changed[sender] => move |entry| {
-                                        sender.input(AppsMsg::SearchChanged(entry.text().to_string()));
-                                    }
-                                },
-
-                                adw::PreferencesGroup {
-                                    adw::ActionRow {
-                                        set_title: "Default Apps",
-                                        set_subtitle: "Set which apps open links, files, and media",
-                                        set_activatable: true,
-                                        connect_activated => AppsMsg::OpenDefaultApps,
-
-                                        add_suffix = &gtk::Image {
-                                            set_icon_name: Some("go-next-symbolic"),
-                                            set_valign: gtk::Align::Center,
-                                        }
-                                    }
-                                },
-
-                                adw::PreferencesGroup {
-                                    set_title: "Installed Apps",
-
-                                    #[name = "apps_list"]
-                                    gtk::ListBox {
-                                        add_css_class: "boxed-list",
-                                        set_selection_mode: gtk::SelectionMode::None,
-                                    }
+                            gtk::SearchEntry {
+                                set_placeholder_text: Some("Search apps"),
+                                connect_search_changed[sender] => move |entry| {
+                                    sender.input(AppsMsg::SearchChanged(entry.text().to_string()));
                                 }
+                            }
+                        },
+
+                        add = &adw::PreferencesGroup {
+                            set_title: "General",
+
+                            adw::ActionRow {
+                                set_title: "Default Apps",
+                                set_subtitle: "Set which apps open links, files, and media",
+                                set_activatable: true,
+                                connect_activated => AppsMsg::OpenDefaultApps,
+
+                                add_suffix = &gtk::Image {
+                                    set_icon_name: Some("go-next-symbolic"),
+                                    set_valign: gtk::Align::Center,
+                                }
+                            }
+                        },
+
+                        add = &adw::PreferencesGroup {
+                            set_title: "Installed Apps",
+
+                            #[name = "apps_list"]
+                            gtk::ListBox {
+                                add_css_class: "boxed-list",
+                                set_selection_mode: gtk::SelectionMode::None,
                             }
                         }
                     }

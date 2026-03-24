@@ -14,6 +14,7 @@ let
     gnome-desktop
     libadwaita
     openssl
+    vte-gtk4
   ];
 
   commonNativeBuildInputs = with pkgs; [

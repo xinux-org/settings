@@ -3,7 +3,13 @@ name = "s-helper"
 version = "0.1.0"
 edition = "2024"
 
+# Optimize release binary as much as possible
+[profile.release]
+lto = true
+opt-level = "z"
+
 [dependencies]
+anyhow = "1.0.102"
 clap = { version = "4.1", features = ["derive"] }
 users = "0.11"
 

@@ -23,6 +23,12 @@ use crate::{
     config::{APP_ID, PROFILE},
     ui::rebuild::rebuild_dialog::{RebuildInit, RebuildModel},
 };
+use crate::ui::{apps::AppModal, rebuild::rebuild_dialog::RebuildInput};
+use crate::utils::modules::load::LoadOutput;
+use crate::{
+    config::{APP_ID, PROFILE},
+    ui::rebuild::rebuild_dialog::{RebuildInit, RebuildModel},
+};
 
 use std::{convert::identity, fs, path::Path};
 
@@ -248,6 +254,15 @@ and
             .forward(sender.input_sender(), identity);
         let system = SystemPageModel::builder()
             .launch(())and
+            .forward(sender.input_sender(), identity);
+
+        let rebuild_dialog = RebuildModel::builder()
+            .transient_for(&root)
+            .launch(RebuildInit {
+                flakepath,
+                // modulepath,
+                generations: config.generations,
+            })
             .forward(sender.input_sender(), identity);
 
         let rebuild_dialog = RebuildModel::builder()

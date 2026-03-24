@@ -1,9 +1,6 @@
-#[rustfmt::skip]
-mod config;
-mod ui;
-mod utils;
+// #[rustfmt::skip]
+use tracing::error;
 
-use config::{APP_ID, GETTEXT_PACKAGE, LOCALEDIR, RESOURCES_FILE};
 use gettextrs::{LocaleCategory, gettext};
 use gtk::prelude::ApplicationExt;
 use gtk::{gio, glib};
@@ -12,8 +9,11 @@ use relm4::{
     actions::{AccelsPlus, RelmAction, RelmActionGroup},
     gtk, main_application,
 };
-
-use crate::ui::window::App;
+use settings::utils::modules::load::load;
+use settings::{
+    config::{APP_ID, GETTEXT_PACKAGE, LOCALEDIR, RESOURCES_FILE},
+    ui::window::{App, AppInit},
+};
 
 relm4::new_action_group!(AppActionGroup, "app");
 relm4::new_stateless_action!(QuitAction, AppActionGroup, "quit");
@@ -64,5 +64,13 @@ fn main() {
         )
         .unwrap();
     relm4::set_global_css(&glib::GString::from_utf8_checked(data.to_vec()).unwrap());
-    app.visible_on_activate(false).run::<App>(());
+
+    // app.visible_on_activate(false).run::<App>(());
+    match load() {
+        Ok(load) => app.run::<App>(AppInit { load }),
+        Err(e) => {
+            error!("Failed to load: {}", e);
+            std::process::exit(1);
+        }
+    }
 }

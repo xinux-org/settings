@@ -1,25 +1,27 @@
-use crate::utils::language::get_languages;
 use std::convert::identity;
-
-use gettextrs::gettext;
-use relm4::adw::prelude::*;
-use relm4::gtk::{self};
-use relm4::prelude::*;
-use relm4::{adw, view};
 use tracing::{info, trace};
 
 use crate::ui::system::system_page::SystemPageMsg;
+use crate::utils::language::get_languages;
+use gettextrs::gettext;
+use relm4::{
+    adw::{self, prelude::*},
+    gtk::{self},
+    prelude::*,
+    view,
+};
 
-// Second page modal
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct SystemRegionLanguagePage {
-    language_dialog: Option<Controller<LanguageModel>>,
+    language_dialog: Controller<LanguageModel>,
 }
 
-// Second page message
 #[derive(Debug)]
 pub enum SystemRegionLanguageMsg {
     ShowLanguageDialog,
+    // single line nix path, argument and value
+    Rebuild(String, String, String),
+    Close,
 }
 
 #[relm4::component(pub)]
@@ -85,11 +87,15 @@ impl SimpleComponent for SystemRegionLanguagePage {
 
     fn init(
         _init: Self::Init,
-        _root: Self::Root,
-        _sender: ComponentSender<Self>,
+        root: Self::Root,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let dialog = LanguageModel::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
+
         let model = SystemRegionLanguagePage {
-            language_dialog: None,
+            language_dialog: dialog,
         };
 
         let widgets = view_output!();
@@ -99,16 +105,20 @@ impl SimpleComponent for SystemRegionLanguagePage {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             SystemRegionLanguageMsg::ShowLanguageDialog => {
-                let dialog = LanguageModel::builder()
-                    .launch(())
-                    .forward(sender.input_sender(), identity);
-
-                dialog
+                self.language_dialog
                     .widget()
                     .present(relm4::main_application().active_window().as_ref());
-
-                // Save the controller so it isn't dropped!
-                self.language_dialog = Some(dialog);
+            }
+            SystemRegionLanguageMsg::Rebuild(relative_config_path, argument, value) => {
+                let _a = sender.output(SystemPageMsg::Rebuild(
+                    relative_config_path,
+                    argument,
+                    value,
+                ));
+                sender.input(SystemRegionLanguageMsg::Close);
+            }
+            SystemRegionLanguageMsg::Close => {
+                self.language_dialog.widget().close();
             }
         }
     }
@@ -116,19 +126,21 @@ impl SimpleComponent for SystemRegionLanguagePage {
 
 // ------------------------------------------ Language dialog
 #[tracker::track]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LanguageModel {
     showall: bool,
     selected: Option<String>,
+    rebuild_sensitive: bool,
     selectiongroup: gtk::CheckButton,
     expanders: Vec<adw::ExpanderRow>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LanguageModelMsg {
     ToggleShowall,
     SetSelected(Option<String>),
     CheckSelected,
+    Rebuild(String, String, String), // single line nix path, argument and value
 }
 
 #[relm4::component(pub)]
@@ -138,6 +150,7 @@ impl SimpleComponent for LanguageModel {
     type Output = SystemRegionLanguageMsg;
 
     view! {
+        // todo: replase this with adw::Window to remove x button
         dialog = adw::Dialog {
             set_title: &gettext("Select language"),
             set_content_width: 450,
@@ -152,6 +165,10 @@ impl SimpleComponent for LanguageModel {
                         set_label: &gettext("Cancel"),
                         #[watch]
                         set_visible: true,
+
+                        connect_clicked[dialog] => move |_| {
+                            dialog.close();
+                        }
                     },
 
                     pack_end = &gtk::Button {
@@ -159,6 +176,12 @@ impl SimpleComponent for LanguageModel {
                         add_css_class: "suggested-action",
                         #[watch]
                         set_visible: true,
+                        #[watch]
+                        set_sensitive: model.rebuild_sensitive,
+
+                        connect_clicked[sender] => move |_| {
+                            sender.input(LanguageModelMsg::CheckSelected);
+                        }
                     },
                 },
 
@@ -223,6 +246,7 @@ impl SimpleComponent for LanguageModel {
         let mut model = LanguageModel {
             showall: false,
             selected: None,
+            rebuild_sensitive: false,
             selectiongroup: gtk::CheckButton::new(),
             expanders: vec![],
             tracker: 0,
@@ -231,7 +255,7 @@ impl SimpleComponent for LanguageModel {
         // List of 6 popular languages
         let shortlangs = vec!["uz_UZ.UTF-8", "en_US.UTF-8", "ru_RU.UTF-8"];
 
-        let defaultlang = "uz_UZ.UTF-8/UTF-8";
+        let defaultlang = "uz_UZ.UTF-8";
         model.selected = Some(defaultlang.to_string());
 
         let langbox = gtk::ListBox::new();
@@ -384,8 +408,6 @@ impl SimpleComponent for LanguageModel {
 
         let widgets = view_output!();
         widgets.langstack.set_vhomogeneous(false);
-        let window = relm4::main_application().active_window();
-        root.present(window.as_ref());
 
         ComponentParts { model, widgets }
     }
@@ -403,32 +425,29 @@ impl SimpleComponent for LanguageModel {
             }
             LanguageModelMsg::SetSelected(x) => {
                 info!("Selected language: {:?}", x);
-                if let Some(lang) = &x {
-                    // let _ = sender.output(AppMsg::SetCanGoForward(true));
-                    // let _ = sender.output(AppMsg::SetLanguageConfig(Some(lang.to_string())));
-                } else {
-                    self.selectiongroup.set_active(true);
-                    // let _ = sender.output(AppMsg::SetCanGoForward(false));
-                }
-                self.selected = x;
-                gettextrs::setlocale(
-                    gettextrs::LocaleCategory::LcAll,
-                    self.selected
-                        .as_deref()
-                        .unwrap_or_default()
-                        .split('.')
-                        .next()
-                        .unwrap_or_default(),
-                );
-                
-                
+                self.selectiongroup.set_active(!x.is_some());
+                self.set_rebuild_sensitive(x.is_some());
+                self.set_selected(x);
             }
             LanguageModelMsg::CheckSelected => {
                 trace!(
                     "LanguageModelMsg::CheckSelected {}",
                     self.selected.is_some()
                 );
-                // let _ = sender.output(AppMsg::SetCanGoForward(self.selected.is_some()));
+                if let Some(val) = &self.selected {
+                    sender.input(LanguageModelMsg::Rebuild(
+                        "modules/nixos/l10n/default.nix".to_string(),
+                        "i18n.defaultLocale".to_string(),
+                        val.to_string(),
+                    ));
+                }
+            }
+            LanguageModelMsg::Rebuild(relative_config_path, argument, value) => {
+                let _a = sender.output(SystemRegionLanguageMsg::Rebuild(
+                    relative_config_path,
+                    argument,
+                    value,
+                ));
             }
         }
     }

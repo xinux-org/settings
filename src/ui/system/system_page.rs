@@ -1,8 +1,8 @@
 use std::convert::identity;
 
-use crate::ui::window::AppMsg;
 use crate::ui::system::system_about::SystemAboutPage;
 use crate::ui::system::system_l10n::SystemRegionLanguagePage;
+use crate::ui::window::AppMsg;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
@@ -17,7 +17,8 @@ pub struct SystemPageModel {
 #[derive(Debug)]
 pub enum SystemPageMsg {
     OpenSystemAboutPage,
-    OpenSystemRegionLanguagePage
+    OpenSystemRegionLanguagePage,
+    Rebuild(String, String, String), // single line nix path, argument and value
 }
 
 #[relm4::component(pub)]
@@ -53,7 +54,7 @@ impl SimpleComponent for SystemPageModel {
                                   set_icon_name: Some("go-next-symbolic"),
                                   set_pixel_size: 16,
                               },
-                              
+
                               connect_activated => SystemPageMsg::OpenSystemRegionLanguagePage,
                           },
 
@@ -153,15 +154,18 @@ impl SimpleComponent for SystemPageModel {
 
         ComponentParts { model, widgets }
     }
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             SystemPageMsg::OpenSystemAboutPage => {
                 let page = self.system_about.widget();
                 self.navigation.push(page);
-            },
+            }
             SystemPageMsg::OpenSystemRegionLanguagePage => {
                 let page = self.system_l10n.widget();
                 self.navigation.push(page);
+            }
+            SystemPageMsg::Rebuild(relative_config_path, argument, value) => {
+                sender.output(AppMsg::Rebuild(relative_config_path, argument, value));
             }
         }
     }

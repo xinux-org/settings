@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    <img src=".github/assets/demo.png" alt="GN*ME Settings Demo" width=800>
+    <img src=".github/assets/demo-image.png" alt="GN*ME Settings Demo" width=800>
 </p>
 
 <p align="center">
@@ -17,6 +17,26 @@ Rewritten version of GNOME Control Center for Xinux OS.
 
 ## Development
 
+Add nix-data to your flake.nix input and configuration.nix. ~/.config/nix-data/ your config locations via json here
+flake.nix input
+```nix
+nix-data = {
+  url = "github:xinux-org/nix-data";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+```
+
+Change these to yours in configuration.nix.
+
+```nix
+programs.nix-data = {
+  enable = true;
+  systemconfig = "/home/bahrom/workplace/bahrom04/nix-config/systems/x86_64-linux/dell/default.nix";
+  flake = "/home/bahrom/workplace/bahrom04/nix-config/flake.nix";
+  flakearg = "dell"; # your hostname 
+};
+```
+
 This application has Linux-only dependencies.
 
 ```bash
@@ -24,12 +44,13 @@ This application has Linux-only dependencies.
 nix develop 
 
 # Initiate meson environment for the first time. This will generate ./src/config.rs
-meson setup build
+meson setup build # --reconfigure
 
 # build the project
 nix build . --show-trace
 
-./result/bin/control-center
+cd ..
+./settings/result/bin/settings
 
 # Optional. Generate translation words from /po/POTFILES.in if needed.
 cd ./po
