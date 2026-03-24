@@ -5,6 +5,8 @@ use relm4::prelude::*;
 use ppd::PpdProxyBlocking;
 use zbus::blocking::Connection;
 
+use relm4_components::simple_adw_combo_row::SimpleComboRow;
+
 use std::fmt;
 use std::fs;
 use std::sync::Arc;
@@ -13,6 +15,10 @@ use regex::Regex;
 use std::path::Path;
 
 use crate::ui::power::power_page::PowerMsg;
+
+use dconf_rs;
+
+const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
 
 #[derive(Debug, Clone)]
 struct BatteryModel {
@@ -86,9 +92,14 @@ impl FactoryComponent for BatteryModel {
 pub struct GeneralPowerPageView {
     pub power_mode: PowerMode,
     pub show_battery_percentage: bool,
+    pub power_button_action: u32,
+
+    #[tracker::do_not_track]
+    pub combo_row: Controller<SimpleComboRow<&'static str>>,
 
     #[tracker::do_not_track]
     batteries: FactoryVecDeque<BatteryModel>,
+
     #[tracker::do_not_track]
     pub ppd: Arc<PpdProxyBlocking<'static>>,
 }
@@ -108,6 +119,7 @@ impl fmt::Display for PowerMode {
 pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
     ToggleBatteryPercentage(bool),
+    SelectPowerButtonAction(usize),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -232,10 +244,10 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::PreferencesGroup {
+                    #[local_ref]
+                    combo_row ->
                     adw::ComboRow {
                         set_title: "Power Button Behavior",
-                        set_model: Some(&gtk::StringList::new(&["Suspend", "Shutdown", "Do Nothing"])),
-                        set_selected: 0,
                     },
 
                     adw::ActionRow {
@@ -284,10 +296,22 @@ impl Component for GeneralPowerPageView {
             power_mode: get_current_profile(&proxy),
             show_battery_percentage: false,
 
+            combo_row: SimpleComboRow::builder()
+                .launch(SimpleComboRow {
+                    variants: POWER_BUTTON_ACTIONS.to_vec(),
+                    active_index: Some(get_power_button_action_enum() as usize),
+                })
+                .forward(
+                    sender.input_sender(),
+                    GeneralPowerPageViewMsg::SelectPowerButtonAction,
+                ),
+            power_button_action: get_power_button_action_enum(),
+
             ppd: Arc::new(proxy),
             tracker: 0,
         };
 
+        let combo_row = model.combo_row.widget();
         let battery_list = model.batteries.widget();
         let widgets = view_output!();
 
@@ -305,6 +329,20 @@ impl Component for GeneralPowerPageView {
             }
             GeneralPowerPageViewMsg::ToggleBatteryPercentage(state) => {
                 self.show_battery_percentage = state;
+            }
+
+            GeneralPowerPageViewMsg::SelectPowerButtonAction(index) => {
+                self.power_button_action = index as u32;
+
+                let action = &match POWER_BUTTON_ACTIONS.get(index).unwrap() {
+                    &"Power Off" => "interactive",
+                    s => s,
+                };
+
+                let _ = dconf_rs::set_string(
+                    "/org/gnome/settings-daemon/plugins/power/power-button-action",
+                    action.to_lowercase().as_str(),
+                );
             }
         }
     }
@@ -347,4 +385,17 @@ fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
 }
 fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
     els.iter().map(|el| el.trim().parse().unwrap()).collect()
+}
+
+fn get_power_button_action_enum() -> u32 {
+    match dconf_rs::get_string("/org/gnome/settings-daemon/plugins/power/power-button-action")
+        .unwrap()
+        .trim()
+    {
+        "Nothing" => 3,
+        "Hibernate" => 1,
+        "Suspend" => 2,
+        // Expected Interactive or Power Off
+        _ => 0,
+    }
 }

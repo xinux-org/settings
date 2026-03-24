@@ -856,6 +856,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dconf_rs"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7046468a81e6a002061c01e6a7c83139daf91b11c30e66795b13217c2d885c8b"
+
+[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3142,6 +3148,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "relm4-components"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb3d67f2982131c5e6047af4278d8fe750266767e57b58bc15f2e11e190eef36"
+dependencies = [
+ "once_cell",
+ "relm4",
+ "tracker",
+]
+
+[[package]]
 name = "relm4-css"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3492,6 +3509,7 @@ name = "settings"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dconf_rs",
  "gettext-rs",
  "gnome-desktop-xinux",
  "nix-data",
@@ -3502,6 +3520,7 @@ dependencies = [
  "ppd",
  "regex",
  "relm4",
+ "relm4-components",
  "serde",
  "serde_yaml",
  "sysinfo",

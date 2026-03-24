@@ -2,6 +2,8 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
+use crate::ui::power::power_page::PowerMsg;
+
 #[derive(Debug)]
 pub struct SavingPowerPageView {}
 
@@ -9,7 +11,7 @@ pub struct SavingPowerPageView {}
 impl Component for SavingPowerPageView {
     type Init = ();
     type Input = ();
-    type Output = ();
+    type Output = PowerMsg;
     type CommandOutput = ();
 
     view! {

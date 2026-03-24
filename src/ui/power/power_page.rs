@@ -2,6 +2,7 @@ use crate::ui::window::AppMsg;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
+use std::convert::identity;
 
 use crate::ui::power::general_page::GeneralPowerPageView;
 use crate::ui::power::power_saving::SavingPowerPageView;
@@ -80,8 +81,12 @@ impl SimpleComponent for PowerModel {
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let view_stack = adw::ViewStack::new();
-        let general_page = GeneralPowerPageView::builder().launch(()).detach();
-        let saving_page = SavingPowerPageView::builder().launch(()).detach();
+        let general_page = GeneralPowerPageView::builder()
+            .launch(())
+            .forward(_sender.input_sender(), identity);
+        let saving_page = SavingPowerPageView::builder()
+            .launch(())
+            .forward(_sender.input_sender(), identity);
 
         let model = Self {
             view_stack: view_stack.clone(),
