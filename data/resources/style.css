@@ -1,4 +1,4 @@
-.title-header{
+.title-header {
   font-size: 36px;
   font-weight: bold;
 }
@@ -12,14 +12,26 @@
 }
 
 .battery-bar.level-low trough block {
-    background-color: #f44336; 
+  background-color: #f44336;
 }
 
 .battery-bar.level-high trough block {
-    background-color: #ff9800; 
+  background-color: #ff9800;
 }
 
 .battery-bar.level-full trough block {
-    background-color: #4caf50; 
+  background-color: #4caf50;
 }
 
+.style-toggle {
+  padding: 0px;
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: 6px;
+  border: 2px none red;
+  outline: rgba(0,0,0,0) solid 2px;
+}
+
+.style-toggle:checked{
+  outline-color: var(--accent-color);
+  transition: all 1s;
+}

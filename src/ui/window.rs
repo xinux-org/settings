@@ -10,10 +10,11 @@ use relm4::{
 use crate::ui::search::SearchModal;
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
-    bluetooth::BluetoothModel, display::DisplayModel, mouse::MouseAndTouchpad,
-    multitasking::MultitaskingModel, network::NetworkModel, notifications::NotificationsModel,
-    power::PowerModel, privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel,
-    sound::SoundModel, system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
+    appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
+    mouse::MouseAndTouchpad, multitasking::MultitaskingModel, network::NetworkModel,
+    notifications::NotificationsModel, power::PowerModel,
+    privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel, sound::SoundModel,
+    system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
 };
 use crate::ui::{apps::AppModal, rebuild::rebuild_dialog::RebuildInput};
 use crate::utils::modules::load::LoadOutput;
@@ -29,6 +30,7 @@ pub struct App {
     _network: Controller<NetworkModel>,
     _bluetooth: Controller<BluetoothModel>,
     _display: Controller<DisplayModel>,
+    _appearance: Controller<AppearanceModel>,
     _sound: Controller<SoundModel>,
     _power: Controller<PowerModel>,
     _multitasking: Controller<MultitaskingModel>,
@@ -100,7 +102,7 @@ impl SimpleComponent for App {
             //         "/uz/xinux/Settings/gtk/help-overlay.ui"
             //     )
             //     .object::<gtk::ShortcutsWindow>("help_overlay")
-            //     .unwrap() -> gtk::ShortcutsWindow {
+            //     .unwrap() -> gtk::ShortcutsWindow {and
             //         set_transient_for: Some(&main_window),
             //         set_application: Some(&main_application()),
             // },
@@ -146,7 +148,6 @@ impl SimpleComponent for App {
                     }
                 },
                 },
-
                 add_breakpoint = bp_with_setters(
                     adw::Breakpoint::new(
                         adw::BreakpointCondition::new_length(
@@ -166,6 +167,7 @@ impl SimpleComponent for App {
             add_titled: (network.widget(), Some("network"), "Network"),
             add_titled: (bluetooth.widget(), Some("bluetooth"), "Bluetooth"),
             add_titled: (display.widget(), Some("display"), "Display"),
+            add_titled: (appearance.widget(), Some("appearance"), "Appearance"),
             add_titled: (sound.widget(), Some("sound"), "Sound"),
             add_titled: (power.widget(), Some("power"), "Power"),
             // add_titled: (multitasking.widget(), Some("multitasking"), "Multitasking"),
@@ -201,6 +203,9 @@ impl SimpleComponent for App {
             .launch(())
             .forward(sender.input_sender(), identity);
         let display = DisplayModel::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
+        let appearance = AppearanceModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
         let sound = SoundModel::builder()
@@ -259,6 +264,7 @@ impl SimpleComponent for App {
             _network: network,
             _bluetooth: bluetooth,
             _display: display,
+            _appearance: appearance,
             _sound: sound,
             _power: power,
             _multitasking: multitasking,
