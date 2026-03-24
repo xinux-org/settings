@@ -29,9 +29,9 @@
   border-radius: 6px;
   border: 2px none red;
   outline: rgba(0,0,0,0) solid 2px;
-
 }
 
 .style-toggle:checked{
   outline-color: var(--accent-color);
+  transition: all 1s;
 }
