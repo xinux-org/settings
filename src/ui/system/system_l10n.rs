@@ -1,4 +1,4 @@
-use std::convert::identity;
+use std::{convert::identity, process::Command};
 use tracing::{info, trace};
 
 use crate::ui::system::system_page::SystemPageMsg;
@@ -14,6 +14,7 @@ use relm4::{
 #[derive(Debug)]
 pub struct SystemRegionLanguagePage {
     language_dialog: Controller<LanguageModel>,
+    is_rebuilded: bool,
 }
 
 #[derive(Debug)]
@@ -22,6 +23,7 @@ pub enum SystemRegionLanguageMsg {
     // single line nix path, argument and value
     Rebuild(String, String, String),
     Close,
+    LogOut,
 }
 
 #[relm4::component(pub)]
@@ -38,7 +40,16 @@ impl SimpleComponent for SystemRegionLanguagePage {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
 
                 add_top_bar = &adw::HeaderBar {},
+                add_top_bar = &adw::Banner {
+                    set_align: gtk::Align::Fill,
+                    set_vexpand: true,
+                    set_title: "Language and format will be changed after next login",
+                    #[watch]
+                    set_revealed: model.is_rebuilded,
+                    set_button_label: Some("Log out..."),
 
+                    connect_button_clicked => SystemRegionLanguageMsg::LogOut,
+                },
 
                 adw::PreferencesPage {
                     adw::PreferencesGroup {
@@ -96,6 +107,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
 
         let model = SystemRegionLanguagePage {
             language_dialog: dialog,
+            is_rebuilded: false,
         };
 
         let widgets = view_output!();
@@ -116,9 +128,16 @@ impl SimpleComponent for SystemRegionLanguagePage {
                     value,
                 ));
                 sender.input(SystemRegionLanguageMsg::Close);
+                self.is_rebuilded = true; // show logout banner
             }
             SystemRegionLanguageMsg::Close => {
                 self.language_dialog.widget().close();
+            }
+            SystemRegionLanguageMsg::LogOut => {
+                let _a = Command::new("gnome-session-quit")
+                    .arg("--logout")
+                    .spawn()
+                    .expect("failed to execute process");
             }
         }
     }
@@ -150,17 +169,21 @@ impl SimpleComponent for LanguageModel {
     type Output = SystemRegionLanguageMsg;
 
     view! {
-        // todo: replase this with adw::Window to remove x button
         dialog = adw::Dialog {
-            set_title: &gettext("Select language"),
             set_content_width: 450,
             set_content_height: 450,
-            // set_hexpand: true,
             set_vexpand: true,
 
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {
+                    set_show_end_title_buttons: false,
+
+                    #[wrap(Some)]
+                    set_title_widget = &adw::WindowTitle {
+                    set_title: &gettext("Select language"),
+                    },
+
                     pack_start = &gtk::Button {
                         set_label: &gettext("Cancel"),
                         #[watch]
@@ -256,6 +279,9 @@ impl SimpleComponent for LanguageModel {
         let shortlangs = vec!["uz_UZ.UTF-8", "en_US.UTF-8", "ru_RU.UTF-8"];
 
         let defaultlang = "uz_UZ.UTF-8";
+        // todo: Get file path from nix-data
+        // let output = nix_editor::read::readvalue("", );
+
         model.selected = Some(defaultlang.to_string());
 
         let langbox = gtk::ListBox::new();
