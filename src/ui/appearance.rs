@@ -6,26 +6,17 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-// #[derive(Debug, Clone, Copy)]
-// pub struct BackgroundPreview {
-//     picture: std::path::Path,
-// }
-// impl BackgroundPreview {
-//     pub fn set_picture(&self, path: std::path::Path){
-//         self.picture = path;
-//     }
-
-// }
-
-// #[relm4::widget_template]
-// impl WidgetTemplate for BackgroundPreview {
-//     view! {
-//         gtk::Box {
-//             set_margin_all: 10,
-//             inline_css: format!("background-image: {}", &self.picture) ,
-//         }
-//     }
-// }
+pub enum Colors {
+    Blue = 0x3d7ccf,
+    Magenta = 0x2e889c,
+    Green = 0x438c50,
+    Yellow = 0xb47805,
+    Brown = 0xd05306,
+    Red = 0xcb2d3f,
+    Pink = 0xc05887,
+    Purple = 0x973d96,
+    Gray = 0x7b7382
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum AppearanceStyle {
@@ -130,8 +121,27 @@ impl SimpleComponent for AppearanceModel {
                             },
                         }
                     },
-
                 },
+
+                adw::PreferencesGroup {
+                    set_title: "Accent Color",
+
+                    adw::ActionRow {
+                        add_suffix = &gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_spacing: 24,
+                            set_homogeneous: true,
+                            set_hexpand: true,
+                            set_margin_top: 18,
+                            set_margin_bottom: 18,
+                            set_margin_start: 86,
+                            set_margin_end: 86,
+
+                            append = &gtk::Box {}
+                        }
+                    },
+                },
+
             }
         }
     }
@@ -151,21 +161,31 @@ impl SimpleComponent for AppearanceModel {
         match msg {
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
-                
+
                 match style {
                     AppearanceStyle::Dark => {
                         let _ = Command::new("gsettings")
-                        .args(&["set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"])
-                        .output()
-                        .expect("Failed to set appearance style");
-                    },
-                        
+                            .args(&[
+                                "set",
+                                "org.gnome.desktop.interface",
+                                "color-scheme",
+                                "prefer-dark",
+                            ])
+                            .output()
+                            .expect("Failed to set appearance style");
+                    }
+
                     AppearanceStyle::Default => {
                         let _ = Command::new("gsettings")
-                        .args(&["set", "org.gnome.desktop.interface", "color-scheme", "prefer-light"])
-                        .output()
-                        .expect("Failed to set appearance style");
-                    } 
+                            .args(&[
+                                "set",
+                                "org.gnome.desktop.interface",
+                                "color-scheme",
+                                "prefer-light",
+                            ])
+                            .output()
+                            .expect("Failed to set appearance style");
+                    }
                 }
 
                 // self.add
