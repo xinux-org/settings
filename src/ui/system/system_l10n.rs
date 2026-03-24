@@ -1,4 +1,4 @@
-use std::convert::identity;
+use std::{convert::identity, process::Command};
 use tracing::{info, trace};
 
 use crate::ui::system::system_page::SystemPageMsg;
@@ -14,6 +14,7 @@ use relm4::{
 #[derive(Debug)]
 pub struct SystemRegionLanguagePage {
     language_dialog: Controller<LanguageModel>,
+    is_rebuilded: bool,
 }
 
 #[derive(Debug)]
@@ -22,6 +23,7 @@ pub enum SystemRegionLanguageMsg {
     // single line nix path, argument and value
     Rebuild(String, String, String),
     Close,
+    LogOut,
 }
 
 #[relm4::component(pub)]
@@ -38,7 +40,16 @@ impl SimpleComponent for SystemRegionLanguagePage {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
 
                 add_top_bar = &adw::HeaderBar {},
+                add_top_bar = &adw::Banner {
+                    set_align: gtk::Align::Fill,
+                    set_vexpand: true,
+                    set_title: "Language and format will be changed after next login",
+                    #[watch]
+                    set_revealed: model.is_rebuilded,
+                    set_button_label: Some("Log out..."),
 
+                    connect_button_clicked => SystemRegionLanguageMsg::LogOut,
+                },
 
                 adw::PreferencesPage {
                     adw::PreferencesGroup {
@@ -96,6 +107,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
 
         let model = SystemRegionLanguagePage {
             language_dialog: dialog,
+            is_rebuilded: false,
         };
 
         let widgets = view_output!();
@@ -116,9 +128,16 @@ impl SimpleComponent for SystemRegionLanguagePage {
                     value,
                 ));
                 sender.input(SystemRegionLanguageMsg::Close);
+                self.is_rebuilded = true; // show logout banner
             }
             SystemRegionLanguageMsg::Close => {
                 self.language_dialog.widget().close();
+            }
+            SystemRegionLanguageMsg::LogOut => {
+                let _a = Command::new("gnome-session-quit")
+                    .arg("--logout")
+                    .spawn()
+                    .expect("failed to execute process");
             }
         }
     }
