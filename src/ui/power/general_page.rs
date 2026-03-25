@@ -95,7 +95,7 @@ pub struct GeneralPowerPageView {
     pub power_button_action: u32,
 
     #[tracker::do_not_track]
-    pub combo_row: Controller<SimpleComboRow<&'static str>>,
+    pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
 
     #[tracker::do_not_track]
     batteries: FactoryVecDeque<BatteryModel>,
@@ -144,12 +144,8 @@ impl Component for GeneralPowerPageView {
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_spacing: 12,
+                add_css_class: "heading",
 
-                gtk::Label {
-                    set_label: "Battery Level",
-                    set_halign: gtk::Align::Start,
-                    add_css_class: "heading",
-                },
 
                 #[local_ref]
                 battery_list -> gtk::Box {
@@ -250,10 +246,9 @@ impl Component for GeneralPowerPageView {
                         set_title: "Power Button Behavior",
                     },
 
-                    adw::ActionRow {
-                        set_title: "Show Battery Percentage",
-                        set_subtitle: "Show exact charge level in the top bar",
 
+                    #[local_ref]
+                    show_battery_percentage_button -> adw::ActionRow {
                         add_suffix = &gtk::Switch {
                             set_valign: gtk::Align::Center,
                             #[watch]
@@ -277,12 +272,33 @@ impl Component for GeneralPowerPageView {
         let connection = Connection::system().unwrap();
         let proxy = PpdProxyBlocking::new(&connection).unwrap();
 
-        let mut batteries = FactoryVecDeque::builder().launch_default().detach();
-
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
         let percentages_text = read_file("capacity", "0".into());
         let statuses = read_file("status", "Unknown".into());
 
+        // Make the button invisible in case there is no battery
+        let show_battery_percentage_button = if percentages_float.is_empty() {
+            adw::ActionRow::builder().visible(false).build()
+        } else {
+            adw::ActionRow::builder()
+                .title("Show Battery Percentage")
+                .subtitle("Show exact charge level in the top bar")
+                .build()
+        };
+
+        // Battery level label
+        let battery_level = gtk::Box::builder().build();
+
+        if !percentages_float.is_empty() {
+            battery_level.append(
+                &gtk::Label::builder()
+                    .label("Battery Level")
+                    .halign(gtk::Align::Start)
+                    .build(),
+            );
+        }
+
+        let mut batteries = FactoryVecDeque::builder().launch(battery_level).detach();
         for i in 0..percentages_float.len() {
             batteries.guard().push_back((
                 percentages_float[i],
@@ -291,27 +307,31 @@ impl Component for GeneralPowerPageView {
             ));
         }
 
+        let power_button_action_row = SimpleComboRow::builder()
+            .launch(SimpleComboRow {
+                variants: POWER_BUTTON_ACTIONS.to_vec(),
+                active_index: Some(get_power_button_action_enum() as usize),
+            })
+            .forward(
+                sender.input_sender(),
+                GeneralPowerPageViewMsg::SelectPowerButtonAction,
+            );
+
         let model = Self {
             batteries,
             power_mode: get_current_profile(&proxy),
+
             show_battery_percentage: false,
 
-            combo_row: SimpleComboRow::builder()
-                .launch(SimpleComboRow {
-                    variants: POWER_BUTTON_ACTIONS.to_vec(),
-                    active_index: Some(get_power_button_action_enum() as usize),
-                })
-                .forward(
-                    sender.input_sender(),
-                    GeneralPowerPageViewMsg::SelectPowerButtonAction,
-                ),
+            power_button_action_row,
             power_button_action: get_power_button_action_enum(),
 
             ppd: Arc::new(proxy),
             tracker: 0,
         };
 
-        let combo_row = model.combo_row.widget();
+        // let show_battery_percentage_button = show_battery_percentage_builder.build();
+        let combo_row = model.power_button_action_row.widget();
         let battery_list = model.batteries.widget();
         let widgets = view_output!();
 
@@ -357,7 +377,7 @@ fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
     }
 }
 
-fn get_battery_path() -> Vec<fs::DirEntry> {
+pub fn get_battery_path() -> Vec<fs::DirEntry> {
     let global_path = Path::new("/sys/class/power_supply/");
     let re = Regex::new(r"BAT[0-9]+").expect("Wrong RegEx");
 
@@ -383,7 +403,8 @@ fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
         })
         .collect()
 }
-fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
+
+pub fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
     els.iter().map(|el| el.trim().parse().unwrap()).collect()
 }
 

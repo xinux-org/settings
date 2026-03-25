@@ -1,10 +1,11 @@
+use crate::ui::power::power_saving;
 use crate::ui::window::AppMsg;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 use std::convert::identity;
 
-use crate::ui::power::general_page::GeneralPowerPageView;
+use crate::ui::power::general_page::{GeneralPowerPageView, get_battery_path};
 use crate::ui::power::power_saving::SavingPowerPageView;
 
 #[derive(Debug)]
@@ -108,6 +109,10 @@ impl SimpleComponent for PowerModel {
         saving_view_switcher.set_title(Some("Power Saving"));
         saving_view_switcher.set_name(Some("power-saving")); // do not translate
         saving_view_switcher.set_icon_name(Some("battery-symbolic"));
+
+        if get_battery_path().is_empty() {
+            saving_view_switcher.set_visible(false);
+        }
 
         ComponentParts { model, widgets }
     }
