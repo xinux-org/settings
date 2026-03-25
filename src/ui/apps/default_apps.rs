@@ -7,12 +7,12 @@ use std::collections::BTreeMap;
 
 #[derive(Debug)]
 pub struct DefaultAppsPage {
-    categories: Vec<CategoryState>,
+    rows: Vec<RowState>,
 }
 
 #[derive(Debug, Clone)]
 pub enum DefaultAppsMsg {
-    CategoryChanged(DefaultCategory, u32),
+    RowChanged(DefaultCategory, u32),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,8 +32,10 @@ struct AppChoice {
 }
 
 #[derive(Debug)]
-struct CategoryState {
+struct RowState {
     kind: DefaultCategory,
+    content_type: &'static str,
+    filters: Option<&'static str>,
     choices: Vec<AppChoice>,
 }
 
@@ -49,30 +51,25 @@ impl DefaultCategory {
         }
     }
 
-    fn mime_types(self) -> &'static [&'static str] {
+    fn content_type(self) -> &'static str {
         match self {
-            Self::Web => &["text/html", "application/xhtml+xml"],
-            Self::Mail => &["message/rfc822"],
-            Self::Calendar => &["text/calendar"],
-            Self::Music => &["audio/mpeg", "audio/flac", "audio/x-wav", "audio/ogg"],
-            Self::Video => &[
-                "video/mp4",
-                "video/x-matroska",
-                "video/webm",
-                "video/x-msvideo",
-            ],
-            Self::Photos => &["image/jpeg", "image/png", "image/webp", "image/gif"],
+            Self::Web => "text/html",
+            Self::Mail => "x-scheme-handler/mailto",
+            Self::Calendar => "text/calendar",
+            Self::Music => "audio/x-vorbis+ogg",
+            Self::Video => "video/x-ogm+ogg",
+            Self::Photos => "image/jpeg",
         }
     }
 
-    fn uri_schemes(self) -> &'static [&'static str] {
+    fn filters(self) -> Option<&'static str> {
         match self {
-            Self::Web => &["https", "http"],
-            Self::Mail => &["mailto"],
-            Self::Calendar => &[],
-            Self::Music => &[],
-            Self::Video => &[],
-            Self::Photos => &[],
+            Self::Web => Some("x-scheme-handler/http;x-scheme-handler/https;text/html;text/xml;application/xhtml+xml"),
+            Self::Mail => Some("x-scheme-handler/mailto;message/rfc822"),
+            Self::Calendar => Some("text/calendar"),
+            Self::Music => Some("audio/*"),
+            Self::Video => Some("video/*"),
+            Self::Photos => Some("image/*"),
         }
     }
 }
@@ -117,7 +114,6 @@ impl SimpleComponent for DefaultAppsPage {
                             set_margin_start: 24,
                             set_margin_end: 24,
 
-                            #[name = "default_apps_group"]
                             adw::PreferencesGroup {
                                 set_title: "Default Apps",
 
@@ -165,41 +161,29 @@ impl SimpleComponent for DefaultAppsPage {
     ) -> ComponentParts<Self> {
         let widgets = view_output!();
 
-        let mut model = DefaultAppsPage {
-            categories: Vec::new(),
-        };
+        let mut model = DefaultAppsPage { rows: Vec::new() };
 
-        setup_category_row(
-            &mut model,
-            &widgets.web_row,
-            DefaultCategory::Web,
-            sender.clone(),
-        );
-        setup_category_row(
-            &mut model,
-            &widgets.mail_row,
-            DefaultCategory::Mail,
-            sender.clone(),
-        );
-        setup_category_row(
+        setup_row(&mut model, &widgets.web_row, DefaultCategory::Web, sender.clone());
+        setup_row(&mut model, &widgets.mail_row, DefaultCategory::Mail, sender.clone());
+        setup_row(
             &mut model,
             &widgets.calendar_row,
             DefaultCategory::Calendar,
             sender.clone(),
         );
-        setup_category_row(
+        setup_row(
             &mut model,
             &widgets.music_row,
             DefaultCategory::Music,
             sender.clone(),
         );
-        setup_category_row(
+        setup_row(
             &mut model,
             &widgets.video_row,
             DefaultCategory::Video,
             sender.clone(),
         );
-        setup_category_row(
+        setup_row(
             &mut model,
             &widgets.photos_row,
             DefaultCategory::Photos,
@@ -211,14 +195,15 @@ impl SimpleComponent for DefaultAppsPage {
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         match msg {
-            DefaultAppsMsg::CategoryChanged(kind, selected) => {
-                if let Some(state) = self.categories.iter().find(|s| s.kind == kind) {
-                    if let Some(choice) = state.choices.get(selected as usize) {
-                        if let Err(err) = set_default_for_category(kind, &choice.app_info) {
+            DefaultAppsMsg::RowChanged(kind, selected) => {
+                if let Some(row_state) = self.rows.iter().find(|row| row.kind == kind) {
+                    if let Some(choice) = row_state.choices.get(selected as usize) {
+                        if let Err(err) = set_default_for_row(row_state, &choice.app_info) {
                             eprintln!(
-                                "Failed to set default app for {} to {}: {err}",
+                                "Failed to set default app for {} to {}: {}",
                                 kind.title(),
-                                choice.name
+                                choice.name,
+                                err
                             );
                         }
                     }
@@ -228,21 +213,23 @@ impl SimpleComponent for DefaultAppsPage {
     }
 }
 
-fn setup_category_row(
+fn setup_row(
     model: &mut DefaultAppsPage,
     row: &adw::ComboRow,
     kind: DefaultCategory,
     sender: ComponentSender<DefaultAppsPage>,
 ) {
-    let choices = collect_apps_for_category(kind);
-
-    let selected = current_default_index(kind, &choices).unwrap_or(0) as u32;
+    let content_type = kind.content_type();
+    let filters = kind.filters();
+    let choices = collect_apps_for_row(content_type);
 
     let names: Vec<&str> = if choices.is_empty() {
-        vec!["No applications found"]
+        vec!["No Apps Available"]
     } else {
         choices.iter().map(|choice| choice.name.as_str()).collect()
     };
+
+    let selected = current_default_index(content_type, &choices).unwrap_or(0) as u32;
 
     let string_list = gtk::StringList::new(&names);
     row.set_model(Some(&string_list));
@@ -254,61 +241,60 @@ fn setup_category_row(
         row.set_sensitive(true);
 
         row.connect_selected_notify(move |combo| {
-            sender.input(DefaultAppsMsg::CategoryChanged(kind, combo.selected()));
+            sender.input(DefaultAppsMsg::RowChanged(kind, combo.selected()));
         });
     }
 
-    model.categories.push(CategoryState { kind, choices });
+    model.rows.push(RowState {
+        kind,
+        content_type,
+        filters,
+        choices,
+    });
 }
 
-fn collect_apps_for_category(kind: DefaultCategory) -> Vec<AppChoice> {
+fn collect_apps_for_row(content_type: &str) -> Vec<AppChoice> {
     let mut map: BTreeMap<String, AppChoice> = BTreeMap::new();
+    let default_app = gio::AppInfo::default_for_type(content_type, false);
 
-    for mime in kind.mime_types() {
-        for app in gio::AppInfo::all_for_type(mime) {
-            if !app.should_show() {
-                continue;
-            }
-
-            let key = app
-                .id()
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| app.display_name().to_string().to_lowercase());
-
-            map.entry(key).or_insert_with(|| AppChoice {
-                name: app.display_name().to_string(),
-                app_info: app,
-            });
-        }
+    if let Some(app) = default_app.clone() {
+        insert_app_choice(&mut map, app);
     }
 
-    for scheme in kind.uri_schemes() {
-        let handler = format!("x-scheme-handler/{scheme}");
+    for app in gio::AppInfo::recommended_for_type(content_type) {
+        let is_same_as_default = default_app
+            .as_ref()
+            .map(|default| app.equal(default))
+            .unwrap_or(false);
 
-        for app in gio::AppInfo::all_for_type(&handler) {
-            if !app.should_show() {
-                continue;
-            }
-
-            let key = app
-                .id()
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| app.display_name().to_string().to_lowercase());
-
-            map.entry(key).or_insert_with(|| AppChoice {
-                name: app.display_name().to_string(),
-                app_info: app,
-            });
+        if is_same_as_default {
+            continue;
         }
+
+        insert_app_choice(&mut map, app);
     }
 
-    let mut apps: Vec<AppChoice> = map.into_values().collect();
-    apps.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-    apps
+    map.into_values().collect()
 }
 
-fn current_default_index(kind: DefaultCategory, choices: &[AppChoice]) -> Option<usize> {
-    let current = current_default_app(kind)?;
+fn insert_app_choice(map: &mut BTreeMap<String, AppChoice>, app: gio::AppInfo) {
+    if !app.should_show() {
+        return;
+    }
+
+    let key = app
+        .id()
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| app.display_name().to_string().to_lowercase());
+
+    map.entry(key).or_insert_with(|| AppChoice {
+        name: app.display_name().to_string(),
+        app_info: app,
+    });
+}
+
+fn current_default_index(content_type: &str, choices: &[AppChoice]) -> Option<usize> {
+    let current = gio::AppInfo::default_for_type(content_type, false)?;
 
     let current_id = current.id().map(|s| s.to_string());
     let current_name = current.display_name().to_string();
@@ -319,30 +305,46 @@ fn current_default_index(kind: DefaultCategory, choices: &[AppChoice]) -> Option
     })
 }
 
-fn current_default_app(kind: DefaultCategory) -> Option<gio::AppInfo> {
-    for scheme in kind.uri_schemes() {
-        if let Some(app) = gio::AppInfo::default_for_uri_scheme(scheme) {
-            return Some(app);
-        }
+fn mime_matches_filter(mime: &str, filter: &str) -> bool {
+    if let Some(prefix) = filter.strip_suffix("/*") {
+        mime.starts_with(&format!("{prefix}/"))
+    } else {
+        mime == filter
     }
-
-    for mime in kind.mime_types() {
-        if let Some(app) = gio::AppInfo::default_for_type(mime, false) {
-            return Some(app);
-        }
-    }
-
-    None
 }
 
-fn set_default_for_category(kind: DefaultCategory, app: &gio::AppInfo) -> Result<(), glib::Error> {
-    for scheme in kind.uri_schemes() {
-        let handler = format!("x-scheme-handler/{scheme}");
-        app.set_as_default_for_type(&handler)?;
-    }
+fn set_default_for_row(row: &RowState, app: &gio::AppInfo) -> Result<(), glib::Error> {
+    app.set_as_default_for_type(row.content_type)?;
 
-    for mime in kind.mime_types() {
-        app.set_as_default_for_type(mime)?;
+    if let Some(filters) = row.filters {
+        let patterns: Vec<&str> = filters
+            .split(';')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        let supported_types = app.supported_types();
+
+        for mime in supported_types.iter() {
+            let mime = mime.as_str();
+
+            let matched = patterns
+                .iter()
+                .any(|pattern| mime_matches_filter(mime, pattern));
+
+            if !matched {
+                continue;
+            }
+
+            if let Err(err) = app.set_as_default_for_type(mime) {
+                eprintln!(
+                    "Failed to set '{}' as default for secondary content type '{}': {}",
+                    app.display_name(),
+                    mime,
+                    err
+                );
+            }
+        }
     }
 
     Ok(())
