@@ -1,11 +1,13 @@
+use crate::ui::{
+    system::system_about::SystemAboutPage, system::system_l10n::SystemRegionLanguagePage,
+    window::AppMsg,
+};
+use relm4::{
+    adw::prelude::*,
+    gtk::{self},
+    prelude::*,
+};
 use std::convert::identity;
-
-use crate::ui::system::system_about::SystemAboutPage;
-use crate::ui::system::system_l10n::SystemRegionLanguagePage;
-use crate::ui::window::AppMsg;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
 
 #[derive(Debug)]
 pub struct SystemPageModel {
@@ -165,7 +167,7 @@ impl SimpleComponent for SystemPageModel {
                 self.navigation.push(page);
             }
             SystemPageMsg::Rebuild(relative_config_path, argument, value) => {
-                sender.output(AppMsg::Rebuild(relative_config_path, argument, value));
+                let _a = sender.output(AppMsg::Rebuild(relative_config_path, argument, value));
             }
         }
     }

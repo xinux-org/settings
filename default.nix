@@ -15,6 +15,7 @@ let
     libadwaita
     openssl
     vte-gtk4
+    libgweather
   ];
 
   commonNativeBuildInputs = with pkgs; [

@@ -21,7 +21,7 @@ in
       nixd
       statix
       deadnix
-      alejandra
+      nixfmt
 
       # Rust
       rustc
@@ -30,27 +30,21 @@ in
       clippy
       rust-analyzer
       cargo-watch
-
-      # Other compile time dependencies
       openssl
-      # libressl
-
       # Gnome related
       gtk4
       meson
       ninja
       pango
-      parted
       polkit
       gettext
       vte-gtk4
+      libgweather
       pkg-config
       gdk-pixbuf
       libadwaita
       pkg-config
-      libgweather
       gnome-desktop
-      gtksourceview5
       appstream
       appstream-glib
       wrapGAppsHook4

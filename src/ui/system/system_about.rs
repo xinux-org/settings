@@ -1,20 +1,16 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::ffi::OsStr;
-use std::process::Command;
-
-use relm4::adw;
-use relm4::adw::prelude::*;
-use relm4::gtk::{
-    self,
-    gdk::Texture,
-    gdk_pixbuf::Pixbuf,
-    gio::{Cancellable, MemoryInputStream},
-    glib,
-};
-use relm4::prelude::*;
-
 use crate::ui::system::system_page::SystemPageMsg;
+use relm4::{
+    adw::{self, prelude::*},
+    gtk::{
+        self,
+        gdk::Texture,
+        gdk_pixbuf::Pixbuf,
+        gio::{Cancellable, MemoryInputStream},
+        glib,
+    },
+    prelude::*,
+};
+use std::{collections::HashMap, collections::HashSet, ffi::OsStr, process::Command};
 
 // Second page modal
 #[derive(Debug, Default)]
