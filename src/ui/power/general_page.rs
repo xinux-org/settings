@@ -1,5 +1,6 @@
 use relm4::adw::prelude::*;
 use relm4::gtk;
+use relm4::gtk::glib;
 use relm4::prelude::*;
 
 use ppd::PpdProxyBlocking;
@@ -120,6 +121,7 @@ pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
     ToggleBatteryPercentage(bool),
     SelectPowerButtonAction(usize),
+    UpdateBatteryPercenatege,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -296,6 +298,15 @@ impl Component for GeneralPowerPageView {
                     .halign(gtk::Align::Start)
                     .build(),
             );
+
+            let asyncsender = sender.clone();
+
+            relm4::spawn(async move {
+                loop {
+                    asyncsender.input(GeneralPowerPageViewMsg::UpdateBatteryPercenatege);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            });
         }
 
         let mut batteries = FactoryVecDeque::builder().launch(battery_level).detach();
@@ -364,6 +375,19 @@ impl Component for GeneralPowerPageView {
                     action.to_lowercase().as_str(),
                 );
             }
+            GeneralPowerPageViewMsg::UpdateBatteryPercenatege => {
+                let percentages_float =
+                    get_battery_percentages_float(read_file("capacity", "0".into()));
+                let percentages_text = read_file("capacity", "0".into());
+                let statuses = read_file("status", "Unknown".into());
+
+                _ = self
+                    .batteries
+                    .guard()
+                    .iter_mut()
+                    .zip(vec![1 as u32])
+                    .map(|(battery, s)| battery.status = statuses.first().unwrap().to_string());
+            }
         }
     }
 }
@@ -378,7 +402,7 @@ fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
 }
 
 pub fn get_battery_path() -> Vec<fs::DirEntry> {
-    let global_path = Path::new("/sys/class/power_supply/");
+    let global_path = Path::new("/home/sae/projects/temp/settings");
     let re = Regex::new(r"BAT[0-9]+").expect("Wrong RegEx");
 
     let entries = match global_path.read_dir() {
