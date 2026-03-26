@@ -66,8 +66,25 @@ impl SimpleComponent for SystemAboutPage {
                     adw::PreferencesGroup {
                         adw::EntryRow {
                             set_title: "Device Name",
+                            set_use_underline: true,
                         },
                     },
+
+                    adw::PreferencesGroup {
+                        adw::ActionRow {
+                            set_title: "Hardware model",
+
+                            add_suffix = &gtk::Button {
+                                set_label: "D_onate",
+                                set_use_underline: true,
+                                set_valign: gtk::Align::Center,
+                                add_css_class: "suggested-action",
+
+                                // clicked => $on_donate_button_clicked_cb(template);
+                            }
+                        },
+                    },
+
                     adw::PreferencesGroup {
                       set_title: "Hardware",
 
@@ -112,14 +129,18 @@ impl SimpleComponent for SystemAboutPage {
                       set_title: "Software",
 
                       adw::ActionRow {
-                          set_title: "Operating System",
+                            set_title: "Operating System",
+                            set_subtitle_selectable: true,
+                            add_css_class: "property",
 
-                          add_suffix = &gtk::Label {
-                            set_label: &model.operating_system
-                          }
+                            add_suffix = &gtk::Label {
+                                set_label: &model.operating_system
+                            }
                       },
                       adw::ActionRow {
                           set_title: "Operating System architecture",
+                          set_subtitle_selectable: true,
+                          set_subtitle: &model.os_architecture,
 
                           add_suffix = &gtk::Label {
                             set_label: &model.os_architecture

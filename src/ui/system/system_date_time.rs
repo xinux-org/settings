@@ -30,44 +30,61 @@ impl SimpleComponent for SystemDateTimePage {
                     adw::PreferencesGroup {
                         adw::ActionRow {
                             set_title: "Time format",
+                            set_use_underline: true,
 
-                            add_suffix = &gtk::Box {
-                                set_spacing: 0,
-                                set_halign: gtk::Align::End,
+                            #[name(time_format_toggle_group)]
+                            add_suffix = &adw::ToggleGroup {
                                 set_valign: gtk::Align::Center,
-                                add_css_class: "linked",
+                                set_homogeneous: true,
+                                // notify::active => $change_clock_settings_cb(template);
 
-                                #[name="left"]
-                                gtk::ToggleButton {
-                                    set_group: Some(&right),
-                                    set_label: "24 hours",
-                                    set_active: true,
+                                add = adw::Toggle {
+                                    set_label: Some("24-hour"),
+                                    set_name: Some("twenty-four"),
+                                    set_use_underline: true,
                                 },
 
-                                #[name="right"]
-                                gtk::ToggleButton {
-                                    set_label: "AM / PM",
+                                add = adw::Toggle {
+                                    set_label: Some("AM / PM"),
+                                    set_name: Some("am-pm"),
+                                    set_use_underline: true,
                                 },
-                            }
+                                // set_active_name: Some("all"),
+                                // connect_active_name_notify[sender] => move |group| {
+                                //     // let filter = group.active_name().map_or(ChatListFilter::default(), |tag| tag.as_str().into());
+                                //     // sender.input(ChatListInput::ApplyFilter(filter));
+                                // }
+                            },
                         },
                     },
 
                     adw::PreferencesGroup {
-                        set_title: "Hour and Calendar",
-                        set_description: Some("Yuqori panelda vaqt va qanday boshqarilishini koʻrsating"),
+                        set_title: "Clock and Calendar",
+                        set_description: Some("Control how the time and date is shown in the top bar"),
 
+                        #[name(weekday_row)]
                         adw::SwitchRow {
                             set_title: "Week day",
+                            set_use_underline: true,
                         },
+
+                        #[name(date_row)]
                         adw::SwitchRow {
                             set_title: "Date",
+                            set_use_underline: true,
                         },
+
+                        #[name(seconds_row)]
                         adw::SwitchRow {
-                            set_title: "0 second",
+                            set_title: "Seconds",
+                            set_use_underline: true,
                         },
+
+                        #[name(week_numbers_row)]
                         adw::SwitchRow {
                             set_title: "Week numbers",
-                            set_subtitle: "Showed in opened calendar on gnome-shell",
+                            set_subtitle: "Shown in the dropdown calendar",
+                            set_use_underline: true,
                         },
                     },
                 }
@@ -76,9 +93,9 @@ impl SimpleComponent for SystemDateTimePage {
     }
 
     fn init(
-        _init: Self::Init,
-        _root: Self::Root,
-        _sender: ComponentSender<Self>,
+        init: Self::Init,
+        root: Self::Root,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let mut model = Self {};
 
