@@ -1,4 +1,3 @@
-use crate::ui::power::power_saving;
 use crate::ui::window::AppMsg;
 use relm4::adw::prelude::*;
 use relm4::gtk;
@@ -29,51 +28,69 @@ impl SimpleComponent for PowerModel {
 
     view! {
         #[root]
-        adw::ToolbarView {
-            set_top_bar_style: adw::ToolbarStyle::Flat,
-
-            add_top_bar = &adw::HeaderBar {
-                // A top bar when desktop mode
-                #[wrap(Some)]
-                set_title_widget = &adw::ViewSwitcher {
-                    set_stack: Some(&view_stack),
-                    set_policy: adw::ViewSwitcherPolicy::Wide,
-                },
+        adw::BreakpointBin {
+            // on when no battery found itʻs shows only general page, otherwise shows battery and view_switcher_bar
+            add_breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+                adw::BreakpointConditionLengthType::MaxWidth,
+                550.0,
+                adw::LengthUnit::Sp,
+            )) {
+                add_setter: (&header_bar, "title-widget", None),
+                add_setter: (&view_switcher_bar, "reveal", Some(&true.into())),
             },
 
             #[wrap(Some)]
-            set_content = &gtk::ScrolledWindow {
-                set_hscrollbar_policy: gtk::PolicyType::Never,
-                set_vexpand: true,
+            set_child = &adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
 
-                adw::Clamp {
-                    set_maximum_size: 600,
-                    set_tightening_threshold: 400,
+                #[name(header_bar)]
+                add_top_bar = &adw::HeaderBar {
+                    #[wrap(Some)]
+                    #[name(title_stack)]
+                    set_title_widget = &gtk::Stack {
+                        add_named: (&view_switcher, Some("view_switcher")),
+                        add_named: (&window_title, Some("window_title")),
+                        set_vhomogeneous: false,
+                        set_hhomogeneous: false,
+                    },
+                },
 
-                    gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_margin_all: 12,
-                        set_spacing: 24,
+                #[wrap(Some)]
+                set_content = &gtk::ScrolledWindow {
+                    set_hscrollbar_policy: gtk::PolicyType::Never,
+                    set_vexpand: true,
 
-                        #[local_ref]
-                        view_stack -> adw::ViewStack {
-                            add: model.general_page.widget(),
-                            add: model.saving_page.widget(),
-                        },
-                        // A bottom bar when on mobile. See more:
-                        // https://github.com/blissd/fotema/blob/74160645a25d2cfe4ceb4f1935c247158ec3ab5f/src/app.rs#L401C52-L401C64
-                        // #[name(switcher_bar)]
-                        // adw::ViewSwitcherBar {
-                        //     set_stack: Some(&view_stack),
-                        //     #[track(model.show_view_stack_bar)]
-                        //     // set_reveal: model.show_view_stack_bar,
-                        //     set_reveal: true,
-                        //     }
+                    adw::Clamp {
+                        set_maximum_size: 600,
+                        set_tightening_threshold: 400,
+
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_margin_all: 12,
+                            set_spacing: 24,
+
+                            #[local_ref]
+                            view_stack -> adw::ViewStack {
+                                add: model.general_page.widget(),
+                                add: model.saving_page.widget(),
+                            },
                         },
                     },
                 },
 
-        }
+                #[name(view_switcher_bar)]
+                add_bottom_bar = &adw::ViewSwitcherBar {
+                    set_stack: Some(&view_stack),
+                },
+            }
+        },
+        view_switcher = &adw::ViewSwitcher {
+            set_stack: Some(&view_stack),
+            set_policy: adw::ViewSwitcherPolicy::Wide,
+        },
+        window_title = &adw::WindowTitle {
+            set_title: "General",
+        },
     }
 
     fn init(
@@ -110,8 +127,12 @@ impl SimpleComponent for PowerModel {
         saving_view_switcher.set_name(Some("power-saving")); // do not translate
         saving_view_switcher.set_icon_name(Some("battery-symbolic"));
 
+
+        // please improve logic and add
         if get_battery_path().is_empty() {
             saving_view_switcher.set_visible(false);
+            let title_stack = widgets.title_stack.clone();
+            title_stack.set_visible_child_name("window_title");
         }
 
         ComponentParts { model, widgets }
