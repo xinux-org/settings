@@ -9,7 +9,9 @@ use relm4::{
 pub struct SystemDateTimePage {}
 
 #[derive(Debug)]
-pub enum SystemDateTimeMsg {}
+pub enum SystemDateTimeMsg {
+    ChangeClockSettingsFormat(Option<String>),
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for SystemDateTimePage {
@@ -36,6 +38,16 @@ impl SimpleComponent for SystemDateTimePage {
                             add_suffix = &adw::ToggleGroup {
                                 set_valign: gtk::Align::Center,
                                 set_homogeneous: true,
+
+                                connect_notify: (Some("twenty-four"),  move |_toogle, name| {
+                                    // sender.input(ChangeClockSettingsFormat(name))
+                                    println!("status coming: twenty-four");
+                                }),
+
+                                connect_notify: (Some("am-pm"),  move |_toogle, name| {
+                                    // sender.input(ChangeClockSettingsFormat(name))
+                                    println!("am-pm: {:?}", name);
+                                }),
                                 // notify::active => $change_clock_settings_cb(template);
 
                                 add = adw::Toggle {

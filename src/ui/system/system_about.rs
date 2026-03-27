@@ -64,18 +64,11 @@ impl SimpleComponent for SystemAboutPage {
 
                 adw::PreferencesPage {
                     adw::PreferencesGroup {
-                        adw::EntryRow {
-                            set_title: "Device Name",
-                            set_use_underline: true,
-                        },
-                    },
-
-                    adw::PreferencesGroup {
                         adw::ActionRow {
-                            set_title: "Hardware model",
+                            set_title: "Support GNOME",
 
                             add_suffix = &gtk::Button {
-                                set_label: "D_onate",
+                                set_label: "Donate",
                                 set_use_underline: true,
                                 set_valign: gtk::Align::Center,
                                 add_css_class: "suggested-action",
@@ -86,87 +79,120 @@ impl SimpleComponent for SystemAboutPage {
                     },
 
                     adw::PreferencesGroup {
+                        adw::EntryRow {
+                            set_title: "Device Name",
+                            set_use_underline: true,
+                        },
+                    },
+
+                    adw::PreferencesGroup {
                       set_title: "Hardware",
 
                         adw::ActionRow {
                             set_title: "Hardware model",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.hardware_model,
 
-                            add_suffix = &gtk::Label {
-                              set_label: &model.hardware_model
-                            }
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.hardware_model
+                            // }
                         },
                         adw::ActionRow {
                             set_title: "Processor",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.processor,
 
-                            add_suffix = &gtk::Label {
-                              set_label: &model.processor
-                            }
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.processor
+                            // }
                         },
                         adw::ActionRow {
                             set_title: "Graphics",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: "&model.operating_system",
 
-                            add_suffix = &gtk::Label {
-                              set_label: "&model.graphics"
-                            }
+                            // add_suffix = &gtk::Label {
+                            //     set_label: "&model.graphics"
+                            // }
                         },
                         adw::ActionRow {
                             set_title: "Memory",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.memory,
 
-                            add_suffix = &gtk::Label {
-                              set_label: &model.memory
-                            }
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.memory
+                            // }
                         },
                         adw::ActionRow {
                             set_title: "Disk capacity",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.disk_capacity,
 
-                            add_suffix = &gtk::Label {
-                              set_label: &model.disk_capacity
-                            }
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.disk_capacity
+                            // }
                         },
                     },
 
                     adw::PreferencesGroup {
                       set_title: "Software",
 
-                      adw::ActionRow {
+                        adw::ActionRow {
                             set_title: "Operating System",
-                            set_subtitle_selectable: true,
                             add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.operating_system,
 
-                            add_suffix = &gtk::Label {
-                                set_label: &model.operating_system
-                            }
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.operating_system
+                            // }
                       },
-                      adw::ActionRow {
-                          set_title: "Operating System architecture",
-                          set_subtitle_selectable: true,
-                          set_subtitle: &model.os_architecture,
+                        adw::ActionRow {
+                            set_title: "Operating System architecture",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.os_architecture,
 
-                          add_suffix = &gtk::Label {
-                            set_label: &model.os_architecture
-                          }
-                      },
-                      adw::ActionRow {
-                          set_title: "Karnel version",
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.os_architecture
+                            // }
+                        },
+                        adw::ActionRow {
+                            set_title: "Karnel version",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.kernel_version,
 
-                          add_suffix = &gtk::Label {
-                            set_label: &model.kernel_version
-                          }
-                      },
-                      adw::ActionRow {
-                          set_title: "Desktop environment",
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.kernel_version
+                            // }
+                        },
+                        adw::ActionRow {
+                            set_title: "Desktop environment",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.desktop_environment,
 
-                          add_suffix = &gtk::Label {
-                            set_label: &model.desktop_environment
-                          }
-                      },
-                      adw::ActionRow {
-                          set_title: "Windowing system",
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.desktop_environment
+                            // }
+                        },
+                        adw::ActionRow {
+                            set_title: "Windowing system",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.windowing_system,
 
-                          add_suffix = &gtk::Label {
-                            set_label: &model.windowing_system
-                          }
-                      },
+                            // add_suffix = &gtk::Label {
+                            //     set_label: &model.windowing_system
+                            // }
+                        },
                     }
                 }
             }
