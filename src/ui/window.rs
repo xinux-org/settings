@@ -63,6 +63,7 @@ pub enum AppMsg {
     Rebuild(String, String, String), // single line nix path, argument and value
     Reload,
     Quit,
+    OpenNotificationApp(String),
 }
 
 relm4::new_action_group!(pub(super) WindowActionGroup, "win");
@@ -346,7 +347,12 @@ impl SimpleComponent for App {
                     full_config_path.into_os_string().into_string().unwrap(),
                 ))
             }
+
             AppMsg::Reload => {}
+
+            AppMsg::OpenNotificationApp(app_id) => {
+                println!("Open notification app page for: {app_id}");
+            }
 
             AppMsg::Quit => main_application().quit(),
         }
