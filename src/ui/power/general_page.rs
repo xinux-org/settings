@@ -284,6 +284,7 @@ fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
 }
 
 pub(super) fn get_battery_path() -> Vec<fs::DirEntry> {
+    // for debugging: /home/bahrom/workplace/xinux/settings/batteries /BAT0/capacity
     let global_path = Path::new("/sys/class/power_supply/");
     let re = Regex::new(r"BAT[0-9]+").expect("Wrong RegEx");
 
