@@ -130,6 +130,8 @@ pub struct GeneralPowerPageView {
     pub power_mode: PowerMode,
     pub show_battery_percentage: bool,
     pub power_button_action: u32,
+    pub show_batteries: bool,
+    pub battery_label_text: String,
 
     #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
@@ -179,9 +181,17 @@ impl Component for GeneralPowerPageView {
             set_spacing: 24,
 
             gtk::Box {
+                #[watch]
+                set_visible: model.show_batteries,
                 set_orientation: gtk::Orientation::Vertical,
                 set_spacing: 12,
                 add_css_class: "heading",
+
+
+                gtk::Label {
+                    set_label: model.battery_label_text.as_str(),
+                    set_halign: gtk::Align::Start,
+                },
 
 
                 #[local_ref]
@@ -326,14 +336,12 @@ impl Component for GeneralPowerPageView {
         // Battery level label
         let battery_level = gtk::Box::builder().build();
 
-        if !percentages_float.is_empty() {
-            battery_level.append(
-                &gtk::Label::builder()
-                    .label("Battery Level")
-                    .halign(gtk::Align::Start)
-                    .build(),
-            );
-        }
+        let show_batteries = !percentages_float.is_empty();
+        let battery_label = if percentages_float.len() == 1 {
+            String::from("Battery Level")
+        } else {
+            String::from("Battery Levels")
+        };
 
         let mut batteries = FactoryVecDeque::builder().launch(battery_level).detach();
         for i in 0..percentages_float.len() {
@@ -360,6 +368,8 @@ impl Component for GeneralPowerPageView {
             power_mode: get_current_profile(&proxy),
 
             show_battery_percentage: false,
+            show_batteries,
+            battery_label_text: battery_label,
 
             power_button_action_row,
             power_button_action: get_power_button_action_enum(),
