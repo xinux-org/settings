@@ -11,16 +11,13 @@
   font-weight: bold;
 }
 
-.battery-bar.level-low trough block {
-  background-color: #f44336;
+/* https://docs.gtk.org/gtk3/class.LevelBar.html */
+levelbar block.low {
+  background-color: #ff0000;
 }
 
-.battery-bar.level-high trough block {
+levelbar block.warning {
   background-color: #ff9800;
-}
-
-.battery-bar.level-full trough block {
-  background-color: #4caf50;
 }
 
 .style-toggle {
