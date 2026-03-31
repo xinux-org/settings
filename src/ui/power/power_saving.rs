@@ -15,9 +15,7 @@ impl Component for SavingPowerPageView {
     type CommandOutput = ();
 
     view! {
-        gtk::Box {
-            set_orientation: gtk::Orientation::Vertical,
-            set_spacing: 12,
+        adw::PreferencesPage {
             adw::PreferencesGroup {
                 adw::SwitchRow {
                     set_title: "Automic Power Saver",

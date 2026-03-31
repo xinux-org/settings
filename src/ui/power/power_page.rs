@@ -79,22 +79,16 @@ impl SimpleComponent for PowerModel {
                     set_hscrollbar_policy: gtk::PolicyType::Never,
                     set_vexpand: true,
 
-                    adw::Clamp {
-                        set_maximum_size: 600,
-                        set_tightening_threshold: 400,
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
 
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_margin_all: 12,
-                            set_spacing: 24,
-
-                            #[local_ref]
-                            view_stack -> adw::ViewStack {
-                                add: model.general_page.widget(),
-                                add: model.saving_page.widget(),
-                            },
+                        #[local_ref]
+                        view_stack -> adw::ViewStack {
+                            add: model.general_page.widget(),
+                            add: model.saving_page.widget(),
                         },
                     },
+
                 },
 
                 #[name(view_switcher_bar)]

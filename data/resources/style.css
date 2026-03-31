@@ -11,16 +11,16 @@
   font-weight: bold;
 }
 
-.battery-bar.level-low trough block {
-  background-color: #f44336;
+.battery-bar-level-low trough block {
+  background-color: #ef3326;
 }
 
-.battery-bar.level-high trough block {
+.battery-bar.level-warning trough block {
   background-color: #ff9800;
 }
 
-.battery-bar.level-full trough block {
-  background-color: #4caf50;
+levelbar block.low {
+  background-color: #ff0000;
 }
 
 .style-toggle {
