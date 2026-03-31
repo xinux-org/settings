@@ -1,6 +1,5 @@
 use relm4::adw::prelude::*;
 use relm4::gtk;
-use relm4::gtk::glib;
 use relm4::prelude::*;
 
 use ppd::PpdProxyBlocking;
@@ -23,15 +22,21 @@ const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "N
 
 #[derive(Debug, Clone)]
 struct BatteryModel {
+    index: u8,
     percentage: f64,
     percentage_text: String,
     status: String,
 }
 
+#[derive(Debug)]
+enum BatteryMsg {
+    Update,
+}
+
 #[relm4::factory(pub)]
 impl FactoryComponent for BatteryModel {
-    type Init = (f64, String, String);
-    type Input = ();
+    type Init = BatteryModel;
+    type Input = BatteryMsg;
     type Output = ();
     type CommandOutput = ();
     type ParentWidget = gtk::Box;
@@ -79,11 +84,42 @@ impl FactoryComponent for BatteryModel {
         }
     }
 
-    fn init_model(init: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
+    fn init_model(init: Self::Init, _index: &DynamicIndex, sender: FactorySender<Self>) -> Self {
+        let asyncsender = sender.clone();
+
+        relm4::spawn(async move {
+            loop {
+                asyncsender.input(BatteryMsg::Update);
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+        });
+
         Self {
-            percentage: init.0,
-            percentage_text: init.1,
-            status: init.2,
+            index: init.index,
+            percentage: init.percentage,
+            percentage_text: init.percentage_text,
+            status: init.status,
+        }
+    }
+
+    fn update(&mut self, message: Self::Input, _sender: FactorySender<Self>) {
+        match message {
+            BatteryMsg::Update => {
+                let percentages_float =
+                    get_battery_percentages_float(read_file("capacity", "0".into()));
+                let percentages_text = read_file("capacity", "0".into());
+                let statuses = read_file("status", "Unknown".into());
+
+                if let (Some(pf), Some(pt), Some(st)) = (
+                    percentages_float.get(self.index as usize),
+                    percentages_text.get(self.index as usize),
+                    statuses.get(self.index as usize),
+                ) {
+                    self.percentage = *pf;
+                    self.percentage_text = format!("{}%", pt.trim());
+                    self.status = st.trim().to_string();
+                }
+            }
         }
     }
 }
@@ -121,7 +157,6 @@ pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
     ToggleBatteryPercentage(bool),
     SelectPowerButtonAction(usize),
-    UpdateBatteryPercenatege,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -298,24 +333,16 @@ impl Component for GeneralPowerPageView {
                     .halign(gtk::Align::Start)
                     .build(),
             );
-
-            let asyncsender = sender.clone();
-
-            relm4::spawn(async move {
-                loop {
-                    asyncsender.input(GeneralPowerPageViewMsg::UpdateBatteryPercenatege);
-                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                }
-            });
         }
 
         let mut batteries = FactoryVecDeque::builder().launch(battery_level).detach();
         for i in 0..percentages_float.len() {
-            batteries.guard().push_back((
-                percentages_float[i],
-                format!("{}%", percentages_text[i].trim()),
-                statuses[i].trim().to_string(),
-            ));
+            batteries.guard().push_back(BatteryModel {
+                index: i as u8,
+                percentage: percentages_float[i],
+                percentage_text: format!("{}%", percentages_text[i].trim()),
+                status: statuses[i].trim().to_string(),
+            });
         }
 
         let power_button_action_row = SimpleComboRow::builder()
@@ -341,7 +368,6 @@ impl Component for GeneralPowerPageView {
             tracker: 0,
         };
 
-        // let show_battery_percentage_button = show_battery_percentage_builder.build();
         let combo_row = model.power_button_action_row.widget();
         let battery_list = model.batteries.widget();
         let widgets = view_output!();
@@ -375,19 +401,6 @@ impl Component for GeneralPowerPageView {
                     action.to_lowercase().as_str(),
                 );
             }
-            GeneralPowerPageViewMsg::UpdateBatteryPercenatege => {
-                let percentages_float =
-                    get_battery_percentages_float(read_file("capacity", "0".into()));
-                let percentages_text = read_file("capacity", "0".into());
-                let statuses = read_file("status", "Unknown".into());
-
-                _ = self
-                    .batteries
-                    .guard()
-                    .iter_mut()
-                    .zip(vec![1 as u32])
-                    .map(|(battery, s)| battery.status = statuses.first().unwrap().to_string());
-            }
         }
     }
 }
@@ -402,7 +415,7 @@ fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
 }
 
 pub fn get_battery_path() -> Vec<fs::DirEntry> {
-    let global_path = Path::new("/home/sae/projects/temp/settings");
+    let global_path = Path::new("/sys/class/power_supply/");
     let re = Regex::new(r"BAT[0-9]+").expect("Wrong RegEx");
 
     let entries = match global_path.read_dir() {
