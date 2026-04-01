@@ -52,8 +52,8 @@ impl SimpleComponent for SystemDateTimePage {
                             add_suffix = &adw::ToggleGroup {
                                 set_valign: gtk::Align::Center,
                                 set_homogeneous: true,
-                                // #[watch]
-                                // set_active_name: Some(&model.active_name),
+                                #[watch]
+                                set_active_name: Some(&model.active_name),
 
                                 add = adw::Toggle {
                                     set_label: Some("24-hour"),
@@ -114,17 +114,28 @@ impl SimpleComponent for SystemDateTimePage {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let settings = gio::Settings::new(CLOCK_SCHEMA);
+        let active_format: String = settings.string(CLOCK_FORMAT_KEY).to_string();
+        println!("DEBUG: System GSetting value is: {}", active_format);
+
         let model = Self {
-            active_name: get_active_clock_format(),
+            active_name: active_format,
         };
 
         let widgets = view_output!();
+        // set after widgets exist to avoid timing issue on
+        // setting before toggles drawed
+        // widgets
+        //     .time_format_toggle_group
+        //     .set_active_name(Some(&model.active_name));
+
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             SystemDateTimeMsg::ToggleClockFormat(time_format) => {
+                // gio::Settings::connect_changed
                 let settings = gio::Settings::new(CLOCK_SCHEMA);
                 // let current_format: String = settings.string("clock-format").to_string();
                 let _success =
