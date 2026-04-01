@@ -15,7 +15,7 @@ let
   manifest = (pkgs.lib.importTOML ../../Cargo.toml).package;
 in
 pkgs.stdenv.mkDerivation {
-  name = "${manifest.name}-dev";
+  name = "${manifest.name}";
 
   # Compile time dependencies
   nativeBuildInputs = with pkgs; [
