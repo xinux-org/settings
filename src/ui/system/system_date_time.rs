@@ -1,16 +1,30 @@
 use crate::ui::system::system_page::SystemPageMsg;
 use relm4::{
     adw::{self, prelude::*},
-    gtk::{self},
+    gtk::{self, gio},
     prelude::*,
 };
 
+const CLOCK_SCHEMA: &str = "org.gnome.desktop.interface";
+const CLOCK_FORMAT_KEY: &str = "clock-format";
+const CLOCK_SHOW_WEEKDAY_KEY: &str = "clock-show-weekday";
+const CLOCK_SHOW_DATE_KEY: &str = "clock-show-date";
+const CLOCK_SHOW_SECONDS_KEY: &str = "clock-show-seconds";
+const CALENDAR_SCHEMA: &str = "org.gnome.desktop.calendar";
+const CALENDAR_SHOW_WEEK_NUMBERS_KEY: &str = "show-weekdate";
+const CALENDAR_WEEK_START_DAY_KEY: &str = "week-start-day";
+const FILECHOOSER_SCHEMA: &str = "org.gtk.Settings.FileChooser";
+const DATETIME_SCHEMA: &str = "org.gnome.desktop.datetime";
+const AUTO_TIMEZONE_KEY: &str = "automatic-timezone";
+
 #[derive(Debug, Default)]
-pub struct SystemDateTimePage {}
+pub struct SystemDateTimePage {
+    active_name: String,
+}
 
 #[derive(Debug)]
 pub enum SystemDateTimeMsg {
-    ChangeClockSettingsFormat(Option<String>),
+    ToggleClockFormat(Option<String>),
 }
 
 #[relm4::component(pub)]
@@ -38,34 +52,25 @@ impl SimpleComponent for SystemDateTimePage {
                             add_suffix = &adw::ToggleGroup {
                                 set_valign: gtk::Align::Center,
                                 set_homogeneous: true,
-
-                                connect_notify: (Some("twenty-four"),  move |_toogle, name| {
-                                    // sender.input(ChangeClockSettingsFormat(name))
-                                    println!("status coming: twenty-four");
-                                }),
-
-                                connect_notify: (Some("am-pm"),  move |_toogle, name| {
-                                    // sender.input(ChangeClockSettingsFormat(name))
-                                    println!("am-pm: {:?}", name);
-                                }),
-                                // notify::active => $change_clock_settings_cb(template);
+                                // #[watch]
+                                // set_active_name: Some(&model.active_name),
 
                                 add = adw::Toggle {
                                     set_label: Some("24-hour"),
-                                    set_name: Some("twenty-four"),
+                                    set_name: Some("24h"),
                                     set_use_underline: true,
                                 },
 
                                 add = adw::Toggle {
                                     set_label: Some("AM / PM"),
-                                    set_name: Some("am-pm"),
+                                    set_name: Some("12h"),
                                     set_use_underline: true,
                                 },
-                                // set_active_name: Some("all"),
-                                // connect_active_name_notify[sender] => move |group| {
-                                //     // let filter = group.active_name().map_or(ChatListFilter::default(), |tag| tag.as_str().into());
-                                //     // sender.input(ChatListInput::ApplyFilter(filter));
-                                // }
+
+                                connect_notify: (None, move |toogle, _param_sec| {
+                                    sender.input(SystemDateTimeMsg::ToggleClockFormat(toogle.active_name().map(|toogle| toogle.to_string())))
+                                }),
+
                             },
                         },
                     },
@@ -109,9 +114,31 @@ impl SimpleComponent for SystemDateTimePage {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let mut model = Self {};
+        let model = Self {
+            active_name: get_active_clock_format(),
+        };
 
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
+
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+        match message {
+            SystemDateTimeMsg::ToggleClockFormat(time_format) => {
+                let settings = gio::Settings::new(CLOCK_SCHEMA);
+                // let current_format: String = settings.string("clock-format").to_string();
+                let _success =
+                    settings.set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap());
+                self.active_name = time_format.unwrap();
+            }
+        }
+    }
+}
+
+fn get_active_clock_format() -> String {
+    let settings = gio::Settings::new(CLOCK_SCHEMA);
+    let active_format: String = settings.string(CLOCK_FORMAT_KEY).to_string();
+    println!("DEBUG: System GSetting value is: {}", active_format);
+    // Some(active_format)
+    active_format
 }
