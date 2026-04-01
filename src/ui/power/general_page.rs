@@ -21,7 +21,9 @@ pub struct GeneralPowerPageView {
     pub power_button_action: u32,
     pub show_batteries: bool,
     pub battery_label_text: String,
-
+    pub charging_mode: ChargingMode,
+    pub show_charging_mode_widget: bool,
+    
     #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
 
@@ -46,6 +48,7 @@ impl fmt::Display for PowerMode {
 #[derive(Debug)]
 pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
+    SetChargingMode(ChargingMode),
     ToggleBatteryPercentage(bool),
     SelectPowerButtonAction(usize),
 }
@@ -55,6 +58,13 @@ pub enum PowerMode {
     Performance, // performance
     Balanced,    // balanced
     PowerSaver,  // power-saver
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ChargingMode {
+    Preserve, // with a threshold
+    Maximize, // 100% without a threshold
 }
 
 #[relm4::component(pub)]
@@ -79,6 +89,51 @@ impl Component for GeneralPowerPageView {
                 },
             },
 
+            adw::PreferencesGroup {
+                set_title: "Battery Charging",
+
+                adw::ActionRow {
+                    set_title: "Maximize Charge",
+                    set_subtitle: "Uses all battery capacity. Degrades batteries more quickly.",
+                    set_activatable: true,
+
+                    set_activatable_widget: Some(&activatable_maximize),
+
+                    #[name = "activatable_maximize"]
+                    add_prefix = &gtk::CheckButton {
+                        set_group: Some(&activatable_preserve),
+
+                        #[watch]
+                        set_active: model.charging_mode == ChargingMode::Maximize,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetChargingMode(ChargingMode::Maximize));
+                            }
+                        },
+                    },
+                },
+
+                adw::ActionRow {
+                    set_title: "Preserve Battery Health",
+                    set_subtitle: "Increases battery longevity by maintaining lower charge levels.",
+                    set_activatable: true,
+
+                    set_activatable_widget: Some(&activatable_preserve),
+
+                    #[name = "activatable_preserve"]
+                    add_prefix = &gtk::CheckButton {
+
+                        #[watch]
+                        set_active: model.charging_mode == ChargingMode::Preserve,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetChargingMode(ChargingMode::Preserve));
+                            }
+                        },
+                    },
+                },
+            },
+            
             adw::PreferencesGroup {
                 set_title: "Power Mode",
 
@@ -225,8 +280,10 @@ impl Component for GeneralPowerPageView {
         let model = Self {
             batteries,
             power_mode: get_current_profile(&proxy),
+            charging_mode: ChargingMode::Preserve,
+            show_charging_mode_widget: !percentages_float.is_empty(),
 
-            show_battery_percentage: false,
+            show_battery_percentage: !percentages_float.is_empty(),
             show_batteries,
             battery_label_text: battery_label,
 
@@ -269,6 +326,9 @@ impl Component for GeneralPowerPageView {
                     "/org/gnome/settings-daemon/plugins/power/power-button-action",
                     action.to_lowercase().as_str(),
                 );
+            }
+            GeneralPowerPageViewMsg::SetChargingMode(mode) => {
+                self.charging_mode = mode;
             }
         }
     }
