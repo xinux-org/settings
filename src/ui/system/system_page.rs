@@ -1,7 +1,7 @@
 use crate::ui::{
     system::{
         system_about::SystemAboutPage,
-        system_date_time::{SystemDateTimePage},
+        system_datetime::{SystemDateTimePage},
         system_l10n::SystemRegionLanguagePage,
     },
     window::AppMsg,
