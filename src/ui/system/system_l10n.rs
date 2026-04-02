@@ -10,11 +10,12 @@ use relm4::{
     prelude::*,
     view,
 };
-use std::{collections::HashMap, convert::identity, process::Command};
+use std::{collections::HashMap, convert::identity, fs, process::Command};
 use tracing::{debug, info, trace};
 
 #[derive(Debug)]
 pub struct SystemRegionLanguagePage {
+    default_display_lang: String,
     language_dialog: Controller<LanguageModel>,
     region_dialog: Controller<RegionModel>,
     is_rebuilded: bool,
@@ -25,6 +26,7 @@ pub enum SystemRegionLanguageMsg {
     ShowLanguageDialog,
     ShowRegionDialog,
     // single line nix path, argument and value
+    SetDefaultDisplayLang(String),
     Rebuild(String, String, String),
     Close,
     LogOut,
@@ -79,8 +81,9 @@ impl SimpleComponent for SystemRegionLanguagePage {
                             connect_activated => SystemRegionLanguageMsg::ShowLanguageDialog,
 
                             add_suffix = &gtk::Label {
-                              set_label: "test language",
-                              add_css_class: "grey_color",
+                                #[watch]
+                                set_label: &model.default_display_lang,
+                                add_css_class: "grey_color",
 
                             },
                         },
@@ -115,6 +118,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
             .forward(sender.input_sender(), identity);
 
         let model = SystemRegionLanguagePage {
+            default_display_lang: String::new(),
             language_dialog,
             region_dialog,
             is_rebuilded: false,
@@ -135,6 +139,9 @@ impl SimpleComponent for SystemRegionLanguagePage {
                 self.region_dialog
                     .widget()
                     .present(relm4::main_application().active_window().as_ref());
+            }
+            SystemRegionLanguageMsg::SetDefaultDisplayLang(lang) => {
+                self.default_display_lang = lang;
             }
             SystemRegionLanguageMsg::Rebuild(relative_config_path, argument, value) => {
                 let _a = sender.output(SystemPageMsg::Rebuild(
@@ -167,6 +174,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
 pub struct LanguageModel {
     showall: bool,
     selected: Option<String>,
+    default_display_lang: String,
     rebuild_sensitive: bool,
     selectiongroup: gtk::CheckButton,
     expanders: Vec<adw::ExpanderRow>,
@@ -175,7 +183,7 @@ pub struct LanguageModel {
 #[derive(Debug, Clone)]
 pub enum LanguageModelMsg {
     ToggleShowall,
-    SetSelected(Option<String>),
+    SetSelected(Option<String>, Option<String>),
     CheckSelected,
     Rebuild(String, String, String), // single line nix path, argument and value
 }
@@ -269,7 +277,7 @@ impl SimpleComponent for LanguageModel {
                                 set_label: &if model.showall { gettext("Show less") } else { gettext("Show all") },
                                 connect_clicked[sender] => move |_| {
                                     sender.input(LanguageModelMsg::ToggleShowall);
-                                    sender.input(LanguageModelMsg::SetSelected(None));
+                                    sender.input(LanguageModelMsg::SetSelected(None, None));
                                 }
                             }
 
@@ -288,20 +296,34 @@ impl SimpleComponent for LanguageModel {
         let mut model = LanguageModel {
             showall: false,
             selected: None,
+            default_display_lang: String::new(),
             rebuild_sensitive: false,
             selectiongroup: gtk::CheckButton::new(),
             expanders: vec![],
             tracker: 0,
         };
 
-        // List of 6 popular languages
-        let shortlangs = vec!["uz_UZ.UTF-8", "en_US.UTF-8", "ru_RU.UTF-8"];
+        let binding = fs::read_to_string("/etc/locale.conf").unwrap_or_default();
+        let currentlang = binding
+            .lines()
+            .find(|line| line.starts_with("LANG="))
+            .and_then(|line| line.split_once("="))
+            .map(|(_lang, val)| val.trim())
+            .filter(|val| !val.is_empty());
 
-        let defaultlang = "uz_UZ.UTF-8";
-        // todo: Get file path from nix-data
-        // let output = nix_editor::read::readvalue("", );
+        let defaultlang = match currentlang {
+            Some(val) => val,
+            None => "",
+        };
+
+        // List of 6 popular languages
+        let mut shortlangs = vec!["uz_UZ.UTF-8", "en_US.UTF-8", "ru_RU.UTF-8"];
+        if !shortlangs.contains(&defaultlang) {
+            shortlangs.push(defaultlang)
+        }
 
         model.selected = Some(defaultlang.to_string());
+        // model.defaultlang = defaultlang.to_string();
 
         let langbox = gtk::ListBox::new();
         let shortlangbox = gtk::ListBox::new();
@@ -334,9 +356,9 @@ impl SimpleComponent for LanguageModel {
                                 gtk::CheckButton {
                                     set_halign: gtk::Align::End,
                                     set_group: Some(&model.selectiongroup),
-                                    connect_toggled[sender, locale = locale.to_string()] => move |x| {
+                                    connect_toggled[sender, locale = locale.to_string(), title = title.to_string()] => move |x| {
                                         if x.is_active() {
-                                            sender.input(LanguageModelMsg::SetSelected(Some(locale.to_string())))
+                                            sender.input(LanguageModelMsg::SetSelected(Some(title.to_string()), Some(locale.to_string())))
                                         }
                                     }
                                 }
@@ -344,7 +366,12 @@ impl SimpleComponent for LanguageModel {
                         }
                     };
                     shortlangbox.append(&row);
-                    rowbtn.set_active(locale == &defaultlang);
+                    if locale == &defaultlang {
+                        rowbtn.set_active(true);
+                        let _ = sender.output(SystemRegionLanguageMsg::SetDefaultDisplayLang(
+                            title.to_string(),
+                        ));
+                    }
                 }
             }
 
@@ -381,9 +408,9 @@ impl SimpleComponent for LanguageModel {
                                 gtk::CheckButton {
                                     set_halign: gtk::Align::End,
                                     set_group: Some(&model.selectiongroup),
-                                    connect_toggled[sender, locale] => move |x| {
+                                    connect_toggled[sender, locale, title] => move |x| {
                                         if x.is_active() {
-                                            sender.input(LanguageModelMsg::SetSelected(Some(locale.to_string())))
+                                            sender.input(LanguageModelMsg::SetSelected(Some(title.to_string()), Some(locale.to_string())))
                                         }
                                     }
                                 }
@@ -438,9 +465,9 @@ impl SimpleComponent for LanguageModel {
                             gtk::CheckButton {
                                 set_halign: gtk::Align::End,
                                 set_group: Some(&model.selectiongroup),
-                                connect_toggled[sender, locale] => move |x| {
+                                connect_toggled[sender, locale, title] => move |x| {
                                     if x.is_active() {
-                                        sender.input(LanguageModelMsg::SetSelected(Some(locale.to_string())))
+                                        sender.input(LanguageModelMsg::SetSelected(Some(title.to_string()), Some(locale.to_string())))
                                     }
                                 }
                             }
@@ -468,11 +495,14 @@ impl SimpleComponent for LanguageModel {
                 }
                 self.set_showall(!self.showall);
             }
-            LanguageModelMsg::SetSelected(x) => {
-                info!("Selected language: {:?}", x);
-                self.selectiongroup.set_active(x.is_none());
-                self.set_rebuild_sensitive(x.is_some());
-                self.set_selected(x);
+            LanguageModelMsg::SetSelected(title, locale) => {
+                info!("Selected language: {:?}", locale);
+                self.selectiongroup.set_active(locale.is_none());
+                self.set_rebuild_sensitive(locale.is_some());
+                self.set_selected(locale);
+                if let Some(title) = title {
+                    self.set_default_display_lang(title);
+                }
             }
             LanguageModelMsg::CheckSelected => {
                 trace!(
@@ -488,10 +518,13 @@ impl SimpleComponent for LanguageModel {
                 }
             }
             LanguageModelMsg::Rebuild(relative_config_path, argument, value) => {
-                let _a = sender.output(SystemRegionLanguageMsg::Rebuild(
+                let _ = sender.output(SystemRegionLanguageMsg::Rebuild(
                     relative_config_path,
                     argument,
                     value,
+                ));
+                let _ = sender.output(SystemRegionLanguageMsg::SetDefaultDisplayLang(
+                    self.default_display_lang.clone(),
                 ));
             }
         }
