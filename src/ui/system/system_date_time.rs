@@ -13,19 +13,29 @@ const CLOCK_SHOW_DATE_KEY: &str = "clock-show-date";
 const CLOCK_SHOW_SECONDS_KEY: &str = "clock-show-seconds";
 const CALENDAR_SCHEMA: &str = "org.gnome.desktop.calendar";
 const CALENDAR_SHOW_WEEK_NUMBERS_KEY: &str = "show-weekdate";
-const CALENDAR_WEEK_START_DAY_KEY: &str = "week-start-day";
-const FILECHOOSER_SCHEMA: &str = "org.gtk.Settings.FileChooser";
-const DATETIME_SCHEMA: &str = "org.gnome.desktop.datetime";
-const AUTO_TIMEZONE_KEY: &str = "automatic-timezone";
+const _CALENDAR_WEEK_START_DAY_KEY: &str = "week-start-day";
+const _FILECHOOSER_SCHEMA: &str = "org.gtk.Settings.FileChooser";
+const _DATETIME_SCHEMA: &str = "org.gnome.desktop.datetime";
+const _AUTO_TIMEZONE_KEY: &str = "automatic-timezone";
 
 #[derive(Debug, Default)]
 pub struct SystemDateTimePage {
+    clock_settings: Option<gio::Settings>,
+    calendar_settings: Option<gio::Settings>,
     active_clock_format: String,
+    active_week_day: bool,
+    active_date: bool,
+    active_seconds: bool,
+    active_week_numbers: bool,
 }
 
 #[derive(Debug)]
 pub enum SystemDateTimeMsg {
     ToggleClockFormat(Option<String>),
+    ToggleWeekDay(bool),
+    ToggleDate(bool),
+    ToggleSeconds(bool),
+    ToggleWeekNumbers(bool),
 }
 
 #[relm4::component(pub)]
@@ -44,6 +54,8 @@ impl SimpleComponent for SystemDateTimePage {
                 add_top_bar = &adw::HeaderBar {},
 
                 adw::PreferencesPage {
+                    // We do not need automatic clock time.
+                    // Itʻs done by nix config?
                     adw::PreferencesGroup {
                         adw::ActionRow {
                             set_title: &gettext("Time format"),
@@ -58,13 +70,13 @@ impl SimpleComponent for SystemDateTimePage {
 
                                 add = adw::Toggle {
                                     set_label: Some(&gettext("24-hour")),
-                                    set_name: Some("24h"),
+                                    set_name: Some("24h"), // donʻt trans
                                     set_use_underline: true,
                                 },
 
                                 add = adw::Toggle {
                                     set_label: Some(&gettext("AM / PM")),
-                                    set_name: Some("12h"),
+                                    set_name: Some("12h"), // donʻt trans
                                     set_use_underline: true,
                                 },
 
@@ -77,32 +89,56 @@ impl SimpleComponent for SystemDateTimePage {
                     },
 
                     adw::PreferencesGroup {
-                        set_title: "Clock and Calendar",
-                        set_description: Some("Control how the time and date is shown in the top bar"),
+                        set_title: &gettext("Clock and Calendar"),
+                        set_description: Some(&gettext("Control how the time and date is shown in the top bar")),
 
                         #[name(weekday_row)]
                         adw::SwitchRow {
-                            set_title: "Week day",
+                            set_title: &gettext("Week day"),
                             set_use_underline: true,
+                            #[watch]
+                            set_active: model.active_week_day,
+
+                            connect_active_notify[sender] => move |row| {
+                                sender.input(SystemDateTimeMsg::ToggleWeekDay(row.is_active()));
+                            }
                         },
 
                         #[name(date_row)]
                         adw::SwitchRow {
-                            set_title: "Date",
+                            set_title: &gettext("Date"),
                             set_use_underline: true,
+                            #[watch]
+                            set_active: model.active_date,
+
+                            connect_active_notify[sender] => move |row| {
+                                sender.input(SystemDateTimeMsg::ToggleDate(row.is_active()));
+                            }
                         },
 
                         #[name(seconds_row)]
                         adw::SwitchRow {
-                            set_title: "Seconds",
+                            set_title: &gettext("Seconds"),
                             set_use_underline: true,
+                            #[watch]
+                            set_active: model.active_seconds,
+
+                            connect_active_notify[sender] => move |row| {
+                                sender.input(SystemDateTimeMsg::ToggleSeconds(row.is_active()));
+                            }
                         },
 
                         #[name(week_numbers_row)]
                         adw::SwitchRow {
-                            set_title: "Week numbers",
-                            set_subtitle: "Shown in the dropdown calendar",
+                            set_title: &gettext("Week numbers"),
+                            set_subtitle: &gettext("Shown in the dropdown calendar"),
                             set_use_underline: true,
+                            #[watch]
+                            set_active: model.active_week_numbers,
+
+                            connect_active_notify[sender] => move |row| {
+                                sender.input(SystemDateTimeMsg::ToggleWeekNumbers(row.is_active()));
+                            }
                         },
                     },
                 }
@@ -115,11 +151,23 @@ impl SimpleComponent for SystemDateTimePage {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let settings = gio::Settings::new(CLOCK_SCHEMA);
-        let active_clock_format: String = settings.string(CLOCK_FORMAT_KEY).to_string();
+        let clock_settings = gio::Settings::new(CLOCK_SCHEMA);
+        let active_clock_format: String = clock_settings.string(CLOCK_FORMAT_KEY).to_string();
+        let active_week_day: bool = clock_settings.boolean(CLOCK_SHOW_WEEKDAY_KEY);
+        let active_date: bool = clock_settings.boolean(CLOCK_SHOW_DATE_KEY);
+        let active_seconds: bool = clock_settings.boolean(CLOCK_SHOW_SECONDS_KEY);
+
+        let calendar_settings = gio::Settings::new(CALENDAR_SCHEMA);
+        let active_week_numbers: bool = calendar_settings.boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY);
 
         let model = Self {
+            clock_settings: Some(clock_settings),
+            calendar_settings: Some(calendar_settings),
             active_clock_format,
+            active_week_day,
+            active_date,
+            active_seconds,
+            active_week_numbers,
         };
 
         let widgets = view_output!();
@@ -133,15 +181,42 @@ impl SimpleComponent for SystemDateTimePage {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             SystemDateTimeMsg::ToggleClockFormat(time_format) => {
-                // gio::Settings::connect_changed
-                let settings = gio::Settings::new(CLOCK_SCHEMA);
-                // let current_format: String = settings.string("clock-format").to_string();
-                let _success =
-                    settings.set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap());
+                let _success = self
+                    .clock_settings
+                    .clone()
+                    .map(|s| s.set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap()));
                 self.active_clock_format = time_format.unwrap();
+            }
+            SystemDateTimeMsg::ToggleWeekDay(week_day) => {
+                let _success = self
+                    .clock_settings
+                    .clone()
+                    .map(|s| s.set_boolean(CLOCK_SHOW_WEEKDAY_KEY, week_day));
+                self.active_week_day = week_day;
+            }
+            SystemDateTimeMsg::ToggleDate(date) => {
+                let _success = self
+                    .clock_settings
+                    .clone()
+                    .map(|s| s.set_boolean(CLOCK_SHOW_DATE_KEY, date));
+                self.active_date = date;
+            }
+            SystemDateTimeMsg::ToggleSeconds(seconds) => {
+                let _success = self
+                    .clock_settings
+                    .clone()
+                    .map(|s| s.set_boolean(CLOCK_SHOW_SECONDS_KEY, seconds));
+                self.active_seconds = seconds;
+            }
+            SystemDateTimeMsg::ToggleWeekNumbers(week_numbers) => {
+                let _success = self
+                    .calendar_settings
+                    .clone()
+                    .map(|s| s.set_boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY, week_numbers));
+                self.active_week_numbers = week_numbers;
             }
         }
     }
