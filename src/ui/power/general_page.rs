@@ -11,6 +11,11 @@ use relm4_components::simple_adw_combo_row::SimpleComboRow;
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
+/// Possible actions for power button(usually turn on/off)
+/// - Power Off - which is sometimes stated as Interactive will prompt you to decide if you really to turn off your device.
+/// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
+/// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or love power consumption mode keeping the applications open and running.
+/// - Nothing - the name is self explanatory.
 const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
 
 #[derive(Debug)]
@@ -23,7 +28,7 @@ pub struct GeneralPowerPageView {
     pub battery_label_text: String,
     pub charging_mode: ChargingMode,
     pub show_charging_mode_widget: bool,
-    
+
     #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
 
@@ -60,7 +65,6 @@ pub enum PowerMode {
     PowerSaver,  // power-saver
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChargingMode {
     Preserve, // with a threshold
@@ -91,6 +95,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Battery Charging",
+                set_visible: model.show_charging_mode_widget,
 
                 adw::ActionRow {
                     set_title: "Maximize Charge",
@@ -133,7 +138,7 @@ impl Component for GeneralPowerPageView {
                     },
                 },
             },
-            
+
             adw::PreferencesGroup {
                 set_title: "Power Mode",
 
@@ -190,7 +195,7 @@ impl Component for GeneralPowerPageView {
                     add_prefix = &gtk::CheckButton {
                         #[watch]
                         set_active: model.power_mode == PowerMode::PowerSaver,
-                        connect_activate[sender] => move |btn| {
+                        connect_toggled[sender] => move |btn| {
                             if btn.is_active() {
                                 sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::PowerSaver));
                             }
@@ -230,27 +235,28 @@ impl Component for GeneralPowerPageView {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let connection = Connection::system().unwrap();
-        let proxy = PpdProxyBlocking::new(&connection).unwrap();
+        let connection = Connection::system().expect("Connection failed");
+        let proxy = PpdProxyBlocking::new(&connection).expect("PPD Proxy failed");
 
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
         let percentages_text = read_file("capacity", "0".into());
         let statuses = read_file("status", "Unknown".into());
 
+        // If the percentages_float vector is empty is means there was not battery found in `/sys/class/power_supply/` folder.
+        // self-explanatory: TRUE if battery exists FALSE if not
+        let has_battery = !percentages_float.is_empty();
+
         // Make the button invisible in case there is no battery
-        let show_battery_percentage_button = if percentages_float.is_empty() {
-            adw::ActionRow::builder().visible(false).build()
-        } else {
-            adw::ActionRow::builder()
-                .title("Show Battery Percentage")
-                .subtitle("Show exact charge level in the top bar")
-                .build()
-        };
+        let show_battery_percentage_button = adw::ActionRow::builder()
+            .title("Show Battery Percentage")
+            .subtitle("Show exact charge level in the top bar")
+            .visible(has_battery)
+            .build();
 
         // Battery level label
         let battery_level = gtk::ListBox::builder().build();
 
-        let show_batteries = !percentages_float.is_empty();
+        let show_batteries = has_battery;
         let battery_label = if percentages_float.len() == 1 {
             String::from("Battery Level")
         } else {
@@ -281,9 +287,9 @@ impl Component for GeneralPowerPageView {
             batteries,
             power_mode: get_current_profile(&proxy),
             charging_mode: ChargingMode::Preserve,
-            show_charging_mode_widget: !percentages_float.is_empty(),
+            show_charging_mode_widget: has_battery,
 
-            show_battery_percentage: !percentages_float.is_empty(),
+            show_battery_percentage: has_battery,
             show_batteries,
             battery_label_text: battery_label,
 
@@ -329,6 +335,11 @@ impl Component for GeneralPowerPageView {
             }
             GeneralPowerPageViewMsg::SetChargingMode(mode) => {
                 self.charging_mode = mode;
+
+                match mode {
+                    ChargingMode::Preserve => change_battery_threshold(40, 80),
+                    ChargingMode::Maximize => change_battery_threshold(20, 100),
+                }
             }
         }
     }
@@ -372,7 +383,27 @@ pub(super) fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
 }
 
 pub(super) fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
-    els.iter().map(|el| el.trim().parse().unwrap()).collect()
+    els.iter()
+        .map(|el| el.trim().parse().unwrap_or(0.0))
+        .collect()
+}
+
+fn change_battery_threshold(start: u8, end: u8) {
+    let batteries = get_battery_path();
+
+    for bat in batteries {
+        let path = bat.path();
+
+        let start_path = path.join("charge_control_start_threshold");
+        let end_path = path.join("charge_control_end_threshold");
+
+        if !start_path.exists() || !end_path.exists() {
+            continue;
+        }
+
+        fs::write(&start_path, start.to_string()).unwrap();
+        fs::write(&end_path, end.to_string()).unwrap();
+    }
 }
 
 fn get_power_button_action_enum() -> u32 {
