@@ -63,7 +63,6 @@ pub enum AppMsg {
     Rebuild(String, String, String), // single line nix path, argument and value
     Reload,
     Quit,
-    OpenNotificationApp(String),
 }
 
 relm4::new_action_group!(pub(super) WindowActionGroup, "win");
@@ -221,9 +220,7 @@ impl SimpleComponent for App {
         let apps = AppModal::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
-        let notifications = NotificationsModel::builder()
-            .launch(())
-            .forward(sender.input_sender(), identity);
+        let notifications = NotificationsModel::builder().launch(()).detach();
         let search = SearchModal::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
@@ -349,10 +346,6 @@ impl SimpleComponent for App {
             }
 
             AppMsg::Reload => {}
-
-            AppMsg::OpenNotificationApp(app_id) => {
-                println!("Open notification app page for: {app_id}");
-            }
 
             AppMsg::Quit => main_application().quit(),
         }
