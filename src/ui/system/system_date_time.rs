@@ -1,4 +1,5 @@
 use crate::ui::system::system_page::SystemPageMsg;
+use gettextrs::gettext;
 use relm4::{
     adw::{self, prelude::*},
     gtk::{self, gio},
@@ -19,7 +20,7 @@ const AUTO_TIMEZONE_KEY: &str = "automatic-timezone";
 
 #[derive(Debug, Default)]
 pub struct SystemDateTimePage {
-    active_name: String,
+    active_clock_format: String,
 }
 
 #[derive(Debug)]
@@ -35,7 +36,7 @@ impl SimpleComponent for SystemDateTimePage {
 
     view! {
         adw::NavigationPage {
-            set_title: "Date & Time",
+            set_title: &gettext("Date & Time"),
 
             adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
@@ -45,7 +46,7 @@ impl SimpleComponent for SystemDateTimePage {
                 adw::PreferencesPage {
                     adw::PreferencesGroup {
                         adw::ActionRow {
-                            set_title: "Time format",
+                            set_title: &gettext("Time format"),
                             set_use_underline: true,
 
                             #[name(time_format_toggle_group)]
@@ -53,23 +54,23 @@ impl SimpleComponent for SystemDateTimePage {
                                 set_valign: gtk::Align::Center,
                                 set_homogeneous: true,
                                 #[watch]
-                                set_active_name: Some(&model.active_name),
+                                set_active_name: Some(&model.active_clock_format),
 
                                 add = adw::Toggle {
-                                    set_label: Some("24-hour"),
+                                    set_label: Some(&gettext("24-hour")),
                                     set_name: Some("24h"),
                                     set_use_underline: true,
                                 },
 
                                 add = adw::Toggle {
-                                    set_label: Some("AM / PM"),
+                                    set_label: Some(&gettext("AM / PM")),
                                     set_name: Some("12h"),
                                     set_use_underline: true,
                                 },
 
-                                connect_notify: (None, move |toogle, _param_sec| {
+                                connect_active_name_notify[sender] => move |toogle| {
                                     sender.input(SystemDateTimeMsg::ToggleClockFormat(toogle.active_name().map(|toogle| toogle.to_string())))
-                                }),
+                                }
 
                             },
                         },
@@ -110,24 +111,24 @@ impl SimpleComponent for SystemDateTimePage {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let settings = gio::Settings::new(CLOCK_SCHEMA);
-        let active_format: String = settings.string(CLOCK_FORMAT_KEY).to_string();
-        println!("DEBUG: System GSetting value is: {}", active_format);
+        let active_clock_format: String = settings.string(CLOCK_FORMAT_KEY).to_string();
 
         let model = Self {
-            active_name: active_format,
+            active_clock_format,
         };
 
         let widgets = view_output!();
+
         // set after widgets exist to avoid timing issue on
         // setting before toggles drawed
-        // widgets
-        //     .time_format_toggle_group
-        //     .set_active_name(Some(&model.active_name));
+        widgets
+            .time_format_toggle_group
+            .set_active_name(Some(&model.active_clock_format));
 
         ComponentParts { model, widgets }
     }
@@ -140,16 +141,8 @@ impl SimpleComponent for SystemDateTimePage {
                 // let current_format: String = settings.string("clock-format").to_string();
                 let _success =
                     settings.set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap());
-                self.active_name = time_format.unwrap();
+                self.active_clock_format = time_format.unwrap();
             }
         }
     }
-}
-
-fn get_active_clock_format() -> String {
-    let settings = gio::Settings::new(CLOCK_SCHEMA);
-    let active_format: String = settings.string(CLOCK_FORMAT_KEY).to_string();
-    println!("DEBUG: System GSetting value is: {}", active_format);
-    // Some(active_format)
-    active_format
 }
