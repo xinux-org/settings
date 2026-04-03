@@ -1,7 +1,6 @@
 use crate::ui::{
     system::{
-        system_about::SystemAboutPage,
-        system_datetime::{SystemDateTimePage},
+        system_about::SystemAboutPage, system_datetime::SystemDateTimePage,
         system_l10n::SystemRegionLanguagePage,
     },
     window::AppMsg,
@@ -96,7 +95,9 @@ impl SimpleComponent for SystemPageModel {
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_pixel_size: 16,
-                                }
+                                },
+
+                                connect_activated => SystemPageMsg::OpenSystemDateTimePage
                             },
 
                             // adw::ActionRow {
