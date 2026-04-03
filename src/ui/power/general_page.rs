@@ -15,7 +15,7 @@ use zbus::blocking::Connection;
 /// Possible actions for power button(usually turn on/off)
 /// - Power Off - which is sometimes stated as Interactive will prompt you to decide if you really to turn off your device.
 /// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
-/// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or love power consumption mode keeping the applications open and running.
+/// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or low power consumption mode keeping the applications open and running.
 /// - Nothing - the name is self explanatory.
 const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
 
@@ -28,7 +28,6 @@ pub struct GeneralPowerPageView {
     pub show_batteries: bool,
     pub battery_label_text: String,
     pub charging_mode: ChargingMode,
-    pub show_charging_mode_widget: bool,
 
     #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
@@ -96,7 +95,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Battery Charging",
-                set_visible: model.show_charging_mode_widget,
+                set_visible: model.show_batteries,
 
                 adw::ActionRow {
                     set_title: "Maximize Charge",
@@ -216,7 +215,11 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
+                    set_title: "Show Battery Percentage",
+                    set_subtitle: "Show exact charge level in the top bar",
+
                     set_visible: model.show_batteries,
+
                     add_suffix = &gtk::Switch {
                         set_valign: gtk::Align::Center,
                         #[watch]
@@ -280,8 +283,7 @@ impl Component for GeneralPowerPageView {
         let model = Self {
             batteries,
             power_mode: get_current_profile(&proxy),
-            charging_mode: ChargingMode::Preserve,
-            show_charging_mode_widget: has_battery,
+            charging_mode: decide_charging_mode(),
 
             show_battery_percentage: has_battery,
             show_batteries,
@@ -426,5 +428,31 @@ fn get_power_button_action_enum() -> u32 {
         "Suspend" => 2,
         // Expected Interactive or Power Off
         _ => 0,
+    }
+}
+
+fn decide_charging_mode() -> ChargingMode {
+    let batteries = get_battery_path();
+
+    let charging_modes = batteries
+        .iter()
+        .map(|bat| {
+            fs::read_to_string(bat.path().join("charge_control_end_threshold"))
+                // if it got this far, i hope there won't be any problem with reading it
+                .unwrap()
+                .trim()
+                // kill the \n
+                .parse::<u32>()
+                // only hope
+                .unwrap()
+        })
+        .collect::<Vec<u32>>();
+
+    println!("{:?}", charging_modes);
+
+    if charging_modes.contains(&(100)) {
+        ChargingMode::Maximize
+    } else {
+        ChargingMode::Preserve
     }
 }
