@@ -8,6 +8,7 @@ use relm4::{
     prelude::*,
 };
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
+use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
@@ -388,7 +389,7 @@ pub(super) fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
         .collect()
 }
 
-fn change_battery_threshold(start: u8, end: u8) {
+fn change_battery_threshold(_start: u8, end: u8) {
     let batteries = get_battery_path();
 
     for bat in batteries {
@@ -401,8 +402,24 @@ fn change_battery_threshold(start: u8, end: u8) {
             continue;
         }
 
-        fs::write(&start_path, start.to_string()).unwrap();
-        fs::write(&end_path, end.to_string()).unwrap();
+        relm4::spawn(async move {
+            let echo_child = Command::new("echo")
+                .arg(end.to_string())
+                .stdout(Stdio::piped())
+                .spawn();
+            // ASSUMED that echo command never fails
+            let echo_child_stdout = echo_child.unwrap().stdout.unwrap();
+            // same as echo_child variable
+
+            let output = tokio::process::Command::new("pkexec")
+                .arg("tee")
+                .arg(end_path)
+                .stdin(Stdio::from(echo_child_stdout))
+                .output()
+                .await;
+
+            println!("{:?}", output.unwrap());
+        });
     }
 }
 
