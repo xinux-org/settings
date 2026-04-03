@@ -215,8 +215,8 @@ impl Component for GeneralPowerPageView {
                     set_title: "Power Button Behavior",
                 },
 
-                #[local_ref]
-                show_battery_percentage_button -> adw::ActionRow {
+                adw::ActionRow {
+                    set_visible: model.show_batteries,
                     add_suffix = &gtk::Switch {
                         set_valign: gtk::Align::Center,
                         #[watch]
@@ -232,7 +232,7 @@ impl Component for GeneralPowerPageView {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -246,13 +246,6 @@ impl Component for GeneralPowerPageView {
         // If the percentages_float vector is empty is means there was not battery found in `/sys/class/power_supply/` folder.
         // self-explanatory: TRUE if battery exists FALSE if not
         let has_battery = !percentages_float.is_empty();
-
-        // Make the button invisible in case there is no battery
-        let show_battery_percentage_button = adw::ActionRow::builder()
-            .title("Show Battery Percentage")
-            .subtitle("Show exact charge level in the top bar")
-            .visible(has_battery)
-            .build();
 
         // Battery level label
         let battery_level = gtk::ListBox::builder().build();
