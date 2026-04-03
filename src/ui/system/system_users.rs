@@ -2,7 +2,7 @@ use crate::ui::system::system_page::SystemPageMsg;
 use gettextrs::gettext;
 use relm4::{
     adw::{self, prelude::*},
-    gtk::{self, gio},
+    gtk::{self},
     prelude::*,
 };
 
@@ -20,34 +20,65 @@ impl SimpleComponent for SystemUsersPage {
 
     view! {
         adw::NavigationPage {
+            set_tag: Some("users"),
             set_title: &gettext("Users"),
 
             adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
 
                 add_top_bar = &adw::HeaderBar {},
+                add_top_bar = &adw::Banner {
+                    set_align: gtk::Align::Fill,
+                    set_vexpand: true,
+                    set_title: "Unlock to edit",
+                    #[watch]
+                    set_revealed: true,
+                    set_button_label: Some("Unlock..."),
 
-                adw::PreferencesPage {
-                    adw::PreferencesGroup {
-                        adw::ActionRow {
-                            set_title: &gettext("Time format"),
-                            set_use_underline: true,
+                    // connect_button_clicked => SystemRegionLanguageMsg::LogOut,
+                },
 
-                            #[name(time_format_toggle_group)]
-                            add_suffix = &adw::ToggleGroup {
-                                set_valign: gtk::Align::Center,
-                                set_homogeneous: true,
+                #[name(navigation)]
+                adw::NavigationView {
+                    add = &adw::NavigationPage {
+                        #[name(preferences_page)]
+                        adw::PreferencesPage {
+                            // #[local_ref]
+                            // current_user -> adw::PreferencesGroup {},
 
-                                add = adw::Toggle {
-                                    set_label: Some(&gettext("24-hour")),
-                                    set_name: Some("24h"), // donʻt trans
-                                    set_use_underline: true,
+                            adw::PreferencesGroup {
+                                #[watch]
+                                // set_visible: model.show_other_users,
+                                set_title: "Other Users",
+
+                                #[name(user_list)]
+                                gtk::ListBox {
+                                    set_selection_mode: gtk::SelectionMode::None,
+                                    add_css_class: "boxed-list",
+                                    // connect_row_activated => MoveMsg::UserRowActivated,
                                 },
 
+                                adw::ButtonRow {
+                                    set_title: "Add User",
+                                    set_end_icon_name: Some("go-next-symbolic"),
+                                    set_use_underline: true,
+                                    // connect_activated => MoveMsg::AddUser,
+                                },
                             },
+
                         },
-                    },
-                }
+                    }
+                },
+
+
+                // adw::ButtonRow {
+                //     #[watch]
+                //     // set_visible: model.is_enterprise_enabled,
+                //     set_title: "Add Enterprise Login",
+                //     set_use_underline: true,
+                //     set_end_icon_name: Some("go-next-symbolic"),
+                //     // connect_activated => MoveMsg::AddEnterpriseUser,
+                // }
             }
         }
     }
