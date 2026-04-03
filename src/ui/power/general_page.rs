@@ -8,9 +8,15 @@ use relm4::{
     prelude::*,
 };
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
+use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
+/// Possible actions for power button(usually turn on/off)
+/// - Power Off - which is sometimes stated as Interactive will prompt you to decide if you really to turn off your device.
+/// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
+/// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or low power consumption mode keeping the applications open and running.
+/// - Nothing - the name is self explanatory.
 const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
 
 #[derive(Debug)]
@@ -21,6 +27,7 @@ pub struct GeneralPowerPageView {
     pub power_button_action: u32,
     pub show_batteries: bool,
     pub battery_label_text: String,
+    pub charging_mode: ChargingMode,
 
     #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
@@ -46,6 +53,7 @@ impl fmt::Display for PowerMode {
 #[derive(Debug)]
 pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
+    SetChargingMode(ChargingMode),
     ToggleBatteryPercentage(bool),
     SelectPowerButtonAction(usize),
 }
@@ -55,6 +63,12 @@ pub enum PowerMode {
     Performance, // performance
     Balanced,    // balanced
     PowerSaver,  // power-saver
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ChargingMode {
+    Preserve, // with a threshold
+    Maximize, // 100% without a threshold
 }
 
 #[relm4::component(pub)]
@@ -76,6 +90,52 @@ impl Component for GeneralPowerPageView {
                 battery_list -> gtk::ListBox {
                     set_selection_mode: gtk::SelectionMode::None,
                     add_css_class: "boxed-list",
+                },
+            },
+
+            adw::PreferencesGroup {
+                set_title: "Battery Charging",
+                set_visible: model.show_batteries,
+
+                adw::ActionRow {
+                    set_title: "Maximize Charge",
+                    set_subtitle: "Uses all battery capacity. Degrades batteries more quickly.",
+                    set_activatable: true,
+
+                    set_activatable_widget: Some(&activatable_maximize),
+
+                    #[name = "activatable_maximize"]
+                    add_prefix = &gtk::CheckButton {
+                        set_group: Some(&activatable_preserve),
+
+                        #[watch]
+                        set_active: model.charging_mode == ChargingMode::Maximize,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetChargingMode(ChargingMode::Maximize));
+                            }
+                        },
+                    },
+                },
+
+                adw::ActionRow {
+                    set_title: "Preserve Battery Health",
+                    set_subtitle: "Increases battery longevity by maintaining lower charge levels.",
+                    set_activatable: true,
+
+                    set_activatable_widget: Some(&activatable_preserve),
+
+                    #[name = "activatable_preserve"]
+                    add_prefix = &gtk::CheckButton {
+
+                        #[watch]
+                        set_active: model.charging_mode == ChargingMode::Preserve,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetChargingMode(ChargingMode::Preserve));
+                            }
+                        },
+                    },
                 },
             },
 
@@ -135,7 +195,7 @@ impl Component for GeneralPowerPageView {
                     add_prefix = &gtk::CheckButton {
                         #[watch]
                         set_active: model.power_mode == PowerMode::PowerSaver,
-                        connect_activate[sender] => move |btn| {
+                        connect_toggled[sender] => move |btn| {
                             if btn.is_active() {
                                 sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::PowerSaver));
                             }
@@ -154,8 +214,12 @@ impl Component for GeneralPowerPageView {
                     set_title: "Power Button Behavior",
                 },
 
-                #[local_ref]
-                show_battery_percentage_button -> adw::ActionRow {
+                adw::ActionRow {
+                    set_title: "Show Battery Percentage",
+                    set_subtitle: "Show exact charge level in the top bar",
+
+                    set_visible: model.show_batteries,
+
                     add_suffix = &gtk::Switch {
                         set_valign: gtk::Align::Center,
                         #[watch]
@@ -171,31 +235,25 @@ impl Component for GeneralPowerPageView {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let connection = Connection::system().unwrap();
-        let proxy = PpdProxyBlocking::new(&connection).unwrap();
+        let connection = Connection::system().expect("Connection failed");
+        let proxy = PpdProxyBlocking::new(&connection).expect("PPD Proxy failed");
 
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
         let percentages_text = read_file("capacity", "0".into());
         let statuses = read_file("status", "Unknown".into());
 
-        // Make the button invisible in case there is no battery
-        let show_battery_percentage_button = if percentages_float.is_empty() {
-            adw::ActionRow::builder().visible(false).build()
-        } else {
-            adw::ActionRow::builder()
-                .title("Show Battery Percentage")
-                .subtitle("Show exact charge level in the top bar")
-                .build()
-        };
+        // If the percentages_float vector is empty is means there was not battery found in `/sys/class/power_supply/` folder.
+        // self-explanatory: TRUE if battery exists FALSE if not
+        let has_battery = !percentages_float.is_empty();
 
         // Battery level label
         let battery_level = gtk::ListBox::builder().build();
 
-        let show_batteries = !percentages_float.is_empty();
+        let show_batteries = has_battery;
         let battery_label = if percentages_float.len() == 1 {
             String::from("Battery Level")
         } else {
@@ -225,8 +283,9 @@ impl Component for GeneralPowerPageView {
         let model = Self {
             batteries,
             power_mode: get_current_profile(&proxy),
+            charging_mode: decide_charging_mode(),
 
-            show_battery_percentage: false,
+            show_battery_percentage: has_battery,
             show_batteries,
             battery_label_text: battery_label,
 
@@ -270,6 +329,14 @@ impl Component for GeneralPowerPageView {
                     action.to_lowercase().as_str(),
                 );
             }
+            GeneralPowerPageViewMsg::SetChargingMode(mode) => {
+                self.charging_mode = mode;
+
+                match mode {
+                    ChargingMode::Preserve => change_battery_threshold(40, 80),
+                    ChargingMode::Maximize => change_battery_threshold(20, 100),
+                }
+            }
         }
     }
 }
@@ -312,7 +379,43 @@ pub(super) fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
 }
 
 pub(super) fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
-    els.iter().map(|el| el.trim().parse().unwrap()).collect()
+    els.iter()
+        .map(|el| el.trim().parse().unwrap_or(0.0))
+        .collect()
+}
+
+fn change_battery_threshold(_start: u8, end: u8) {
+    let batteries = get_battery_path();
+
+    for bat in batteries {
+        let path = bat.path();
+
+        let start_path = path.join("charge_control_start_threshold");
+        let end_path = path.join("charge_control_end_threshold");
+
+        if !start_path.exists() || !end_path.exists() {
+            continue;
+        }
+
+        relm4::spawn(async move {
+            let echo_child = Command::new("echo")
+                .arg(end.to_string())
+                .stdout(Stdio::piped())
+                .spawn();
+            // ASSUMED that echo command never fails
+            let echo_child_stdout = echo_child.unwrap().stdout.unwrap();
+            // same as echo_child variable
+
+            let output = tokio::process::Command::new("pkexec")
+                .arg("tee")
+                .arg(end_path)
+                .stdin(Stdio::from(echo_child_stdout))
+                .output()
+                .await;
+
+            println!("{:?}", output.unwrap());
+        });
+    }
 }
 
 fn get_power_button_action_enum() -> u32 {
@@ -325,5 +428,31 @@ fn get_power_button_action_enum() -> u32 {
         "Suspend" => 2,
         // Expected Interactive or Power Off
         _ => 0,
+    }
+}
+
+fn decide_charging_mode() -> ChargingMode {
+    let batteries = get_battery_path();
+
+    let charging_modes = batteries
+        .iter()
+        .map(|bat| {
+            fs::read_to_string(bat.path().join("charge_control_end_threshold"))
+                // if it got this far, i hope there won't be any problem with reading it
+                .unwrap()
+                .trim()
+                // kill the \n
+                .parse::<u32>()
+                // only hope
+                .unwrap()
+        })
+        .collect::<Vec<u32>>();
+
+    println!("{:?}", charging_modes);
+
+    if charging_modes.contains(&(100)) {
+        ChargingMode::Maximize
+    } else {
+        ChargingMode::Preserve
     }
 }
