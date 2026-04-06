@@ -67,8 +67,9 @@ pub enum PowerMode {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChargingMode {
-    Preserve, // with a threshold
-    Maximize, // 100% without a threshold
+    Preserve,    // with a threshold
+    Maximize,    // 100% without a threshold
+    Unsupported, // couldn't find the threshold file
 }
 
 #[relm4::component(pub)]
@@ -95,7 +96,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Battery Charging",
-                set_visible: model.show_batteries,
+                set_visible: model.charging_mode != ChargingMode::Unsupported || !has_battery,
 
                 adw::ActionRow {
                     set_title: "Maximize Charge",
@@ -335,6 +336,7 @@ impl Component for GeneralPowerPageView {
                 match mode {
                     ChargingMode::Preserve => change_battery_threshold(40, 80),
                     ChargingMode::Maximize => change_battery_threshold(20, 100),
+                    ChargingMode::Unsupported => change_battery_threshold(20, 100),
                 }
             }
         }
@@ -436,17 +438,30 @@ fn decide_charging_mode() -> ChargingMode {
 
     let charging_modes = batteries
         .iter()
-        .map(|bat| {
-            fs::read_to_string(bat.path().join("charge_control_end_threshold"))
-                // if it got this far, i hope there won't be any problem with reading it
-                .unwrap()
-                .trim()
-                // kill the \n
-                .parse::<u32>()
-                // only hope
-                .unwrap()
+        .filter_map(|bat| {
+            let path = bat.path().join("charge_control_end_threshold");
+
+            let content = match fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(error) => {
+                    println!("Failed to read {:?}: {}", path, error);
+                    return None;
+                }
+            };
+
+            match content.trim().parse::<u32>() {
+                Ok(v) => Some(v),
+                Err(error) => {
+                    eprintln!("Failed to parse content: {}", error);
+                    None
+                }
+            }
         })
         .collect::<Vec<u32>>();
+
+    if charging_modes.is_empty() {
+        return ChargingMode::Unsupported;
+    }
 
     println!("{:?}", charging_modes);
 
