@@ -60,7 +60,6 @@ impl SimpleComponent for AppNotificationsPageModel {
         adw::PreferencesPage {
             set_vexpand: true,
 
-            
             add = &adw::PreferencesGroup {
                 #[name(notifications_row)]
                 adw::SwitchRow {
@@ -68,8 +67,10 @@ impl SimpleComponent for AppNotificationsPageModel {
                     set_subtitle: "Show in notifications list",
                     #[watch]
                     set_active: model.app.enable,
-                    #[watch]
                     set_sensitive: true,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(AppNotificationsPageInput::SetNotifications(row.is_active()));
+                    }
                 },
 
                 #[name(sound_alerts_row)]
@@ -80,10 +81,12 @@ impl SimpleComponent for AppNotificationsPageModel {
                     set_active: model.app.enable_sound_alerts,
                     #[watch]
                     set_sensitive: model.app.enable,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(AppNotificationsPageInput::SetSoundAlerts(row.is_active()));
+                    }
                 },
             },
 
-            
             add = &adw::PreferencesGroup {
                 set_title: "Banners",
 
@@ -95,6 +98,9 @@ impl SimpleComponent for AppNotificationsPageModel {
                     set_active: model.app.show_banners,
                     #[watch]
                     set_sensitive: model.app.enable && !model.do_not_disturb,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(AppNotificationsPageInput::SetShowBanners(row.is_active()));
+                    }
                 },
 
                 #[name(banner_content_row)]
@@ -105,10 +111,12 @@ impl SimpleComponent for AppNotificationsPageModel {
                     set_active: model.app.force_expanded,
                     #[watch]
                     set_sensitive: model.app.enable && model.app.show_banners && !model.do_not_disturb,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(AppNotificationsPageInput::SetForceExpanded(row.is_active()));
+                    }
                 },
             },
 
-            
             add = &adw::PreferencesGroup {
                 set_title: "Lock Screen",
 
@@ -120,6 +128,9 @@ impl SimpleComponent for AppNotificationsPageModel {
                     set_active: model.app.show_in_lock_screen,
                     #[watch]
                     set_sensitive: model.app.enable && model.lock_screen_notifications,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(AppNotificationsPageInput::SetShowInLockScreen(row.is_active()));
+                    }
                 },
 
                 #[name(lock_screen_content_row)]
@@ -129,7 +140,12 @@ impl SimpleComponent for AppNotificationsPageModel {
                     #[watch]
                     set_active: model.app.details_in_lock_screen,
                     #[watch]
-                    set_sensitive: model.app.enable && model.app.show_in_lock_screen && model.lock_screen_notifications,
+                    set_sensitive: model.app.enable
+                        && model.app.show_in_lock_screen
+                        && model.lock_screen_notifications,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(AppNotificationsPageInput::SetDetailsInLockScreen(row.is_active()));
+                    }
                 },
             },
         }
@@ -147,44 +163,6 @@ impl SimpleComponent for AppNotificationsPageModel {
         };
 
         let widgets = view_output!();
-
-        {
-            let s = sender.input_sender().clone();
-            widgets.notifications_row.connect_active_notify(move |row| {
-                let _ = s.send(AppNotificationsPageInput::SetNotifications(row.is_active()));
-            });
-        }
-        {
-            let s = sender.input_sender().clone();
-            widgets.sound_alerts_row.connect_active_notify(move |row| {
-                let _ = s.send(AppNotificationsPageInput::SetSoundAlerts(row.is_active()));
-            });
-        }
-        {
-            let s = sender.input_sender().clone();
-            widgets.banners_row.connect_active_notify(move |row| {
-                let _ = s.send(AppNotificationsPageInput::SetShowBanners(row.is_active()));
-            });
-        }
-        {
-            let s = sender.input_sender().clone();
-            widgets.banner_content_row.connect_active_notify(move |row| {
-                let _ = s.send(AppNotificationsPageInput::SetForceExpanded(row.is_active()));
-            });
-        }
-        {
-            let s = sender.input_sender().clone();
-            widgets.lock_screen_row.connect_active_notify(move |row| {
-                let _ = s.send(AppNotificationsPageInput::SetShowInLockScreen(row.is_active()));
-            });
-        }
-        {
-            let s = sender.input_sender().clone();
-            widgets.lock_screen_content_row.connect_active_notify(move |row| {
-                let _ = s.send(AppNotificationsPageInput::SetDetailsInLockScreen(row.is_active()));
-            });
-        }
-
         ComponentParts { model, widgets }
     }
 
@@ -193,34 +171,66 @@ impl SimpleComponent for AppNotificationsPageModel {
             AppNotificationsPageInput::SetNotifications(value) => {
                 self.app.enable = value;
                 save_app_bool(&self.app.canonical_id, "enable", value);
-            }
-            AppNotificationsPageInput::SetSoundAlerts(value) => {
-                self.app.enable_sound_alerts = value;
-                save_app_bool(&self.app.canonical_id, "enable-sound-alerts", value);
-            }
-            AppNotificationsPageInput::SetShowBanners(value) => {
-                self.app.show_banners = value;
-                save_app_bool(&self.app.canonical_id, "show-banners", value);
+
                 if !value {
+                    self.app.enable_sound_alerts = false;
+                    self.app.show_banners = false;
                     self.app.force_expanded = false;
-                    save_app_bool(&self.app.canonical_id, "force-expanded", false);
-                }
-            }
-            AppNotificationsPageInput::SetForceExpanded(value) => {
-                self.app.force_expanded = value;
-                save_app_bool(&self.app.canonical_id, "force-expanded", value);
-            }
-            AppNotificationsPageInput::SetShowInLockScreen(value) => {
-                self.app.show_in_lock_screen = value;
-                save_app_bool(&self.app.canonical_id, "show-in-lock-screen", value);
-                if !value {
+                    self.app.show_in_lock_screen = false;
                     self.app.details_in_lock_screen = false;
+
+                    save_app_bool(&self.app.canonical_id, "enable-sound-alerts", false);
+                    save_app_bool(&self.app.canonical_id, "show-banners", false);
+                    save_app_bool(&self.app.canonical_id, "force-expanded", false);
+                    save_app_bool(&self.app.canonical_id, "show-in-lock-screen", false);
                     save_app_bool(&self.app.canonical_id, "details-in-lock-screen", false);
                 }
             }
+
+            AppNotificationsPageInput::SetSoundAlerts(value) => {
+                if self.app.enable {
+                    self.app.enable_sound_alerts = value;
+                    save_app_bool(&self.app.canonical_id, "enable-sound-alerts", value);
+                }
+            }
+
+            AppNotificationsPageInput::SetShowBanners(value) => {
+                if self.app.enable && !self.do_not_disturb {
+                    self.app.show_banners = value;
+                    save_app_bool(&self.app.canonical_id, "show-banners", value);
+
+                    if !value {
+                        self.app.force_expanded = false;
+                        save_app_bool(&self.app.canonical_id, "force-expanded", false);
+                    }
+                }
+            }
+
+            AppNotificationsPageInput::SetForceExpanded(value) => {
+                if self.app.enable && self.app.show_banners && !self.do_not_disturb {
+                    self.app.force_expanded = value;
+                    save_app_bool(&self.app.canonical_id, "force-expanded", value);
+                }
+            }
+
+            AppNotificationsPageInput::SetShowInLockScreen(value) => {
+                if self.app.enable && self.lock_screen_notifications {
+                    self.app.show_in_lock_screen = value;
+                    save_app_bool(&self.app.canonical_id, "show-in-lock-screen", value);
+
+                    if !value {
+                        self.app.details_in_lock_screen = false;
+                        save_app_bool(&self.app.canonical_id, "details-in-lock-screen", false);
+                    }
+                }
+            }
+
             AppNotificationsPageInput::SetDetailsInLockScreen(value) => {
-                self.app.details_in_lock_screen = value;
-                save_app_bool(&self.app.canonical_id, "details-in-lock-screen", value);
+                if self.app.enable && self.app.show_in_lock_screen && self.lock_screen_notifications
+                {
+                    self.app.details_in_lock_screen = value;
+                    save_app_bool(&self.app.canonical_id, "details-in-lock-screen", value);
+                }
             }
         }
 
