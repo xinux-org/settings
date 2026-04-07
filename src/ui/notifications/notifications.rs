@@ -45,8 +45,6 @@ impl Component for NotificationsModel {
 
             #[name(nav_view)]
             adw::NavigationView {
-
-                // ── Page 1: List ──
                 adw::NavigationPage {
                     set_title: "Notifications",
                     set_tag: Some("list"),
@@ -100,10 +98,14 @@ impl Component for NotificationsModel {
                     }
                 },
 
-
                 #[name(detail_nav_page)]
                 adw::NavigationPage {
-                    set_title: "App",
+                    #[watch]
+                    set_title: if let Some(i) = model.selected_app {
+                        &model.apps[i].title
+                    } else {
+                        "App"
+                    },
                     set_tag: Some("detail"),
 
                     adw::ToolbarView {
@@ -150,6 +152,7 @@ impl Component for NotificationsModel {
 
         let widgets = view_output!();
         populate_app_list(&widgets.app_listbox, &model.apps, sender.input_sender());
+
         ComponentParts { model, widgets }
     }
 
@@ -166,22 +169,30 @@ impl Component for NotificationsModel {
                 let settings = gio::Settings::new(MASTER_SCHEMA);
                 let _ = settings.set_boolean("show-banners", !value);
             }
+
             NotificationsInput::ToggleLockScreen(value) => {
                 self.lock_screen_notifications = value;
                 let settings = gio::Settings::new(MASTER_SCHEMA);
                 let _ = settings.set_boolean("show-in-lock-screen", value);
             }
+
             NotificationsInput::OpenApp(app_id) => {
                 if let Some(index) = self.apps.iter().position(|a| a.app_id == app_id) {
                     self.selected_app = Some(index);
                     self.mount_app_page(index, widgets, &sender);
+                    self.update_view(widgets, sender.clone());
                     widgets.nav_view.push_by_tag("detail");
+                    return;
                 }
             }
+
             NotificationsInput::BackToList => {
                 self.selected_app = None;
-                widgets.nav_view.pop();
+                if widgets.nav_view.visible_page_tag().as_deref() == Some("detail") {
+                    widgets.nav_view.pop();
+                }
             }
+
             NotificationsInput::AppPageChanged(updated) => {
                 if let Some(i) = self
                     .apps
@@ -190,9 +201,12 @@ impl Component for NotificationsModel {
                 {
                     self.apps[i] = updated;
                 }
+
                 populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
             }
         }
+
+        self.update_view(widgets, sender);
     }
 }
 
@@ -233,6 +247,7 @@ fn populate_app_list(
     while let Some(child) = listbox.first_child() {
         listbox.remove(&child);
     }
+
     for app in apps {
         let row = build_app_row(app.clone(), sender.clone());
         listbox.append(&row);
@@ -267,6 +282,7 @@ fn build_app_row(
     let arrow = gtk::Image::from_icon_name("go-next-symbolic");
     arrow.set_pixel_size(16);
     suffix_box.append(&arrow);
+
     row.add_suffix(&suffix_box);
 
     row.connect_activated(move |_| {
@@ -288,21 +304,31 @@ fn load_notification_apps(master_settings: &gio::Settings) -> Vec<AppNotificatio
         let Some(app_id) = app_info.id() else {
             continue;
         };
+
         let Some(desktop) = gio::DesktopAppInfo::new(&app_id) else {
             continue;
         };
+
         if !desktop.boolean("X-GNOME-UsesNotifications") {
             continue;
         }
+
         if app_is_system_service(&desktop) {
             continue;
         }
+
         let canonical_id = canonicalize_app_id(&app_id);
         if seen.contains(&canonical_id) {
             continue;
         }
+
         let title = app_info.name().to_string();
+        if title.is_empty() {
+            continue;
+        }
+
         let icon = app_info.icon();
+
         seen.insert(canonical_id.clone());
         items.push(AppNotificationItem {
             app_id: strip_desktop_suffix(&app_id),
@@ -345,6 +371,7 @@ fn maybe_add_app_from_canonical(
     let Some(desktop) = gio::DesktopAppInfo::new(full_app_id.as_str()) else {
         return;
     };
+
     if app_is_system_service(&desktop) {
         return;
     }
@@ -356,6 +383,7 @@ fn maybe_add_app_from_canonical(
     }
 
     let icon = app_info.icon();
+
     seen.insert(canonical_id.to_string());
     items.push(AppNotificationItem {
         app_id: strip_desktop_suffix(full_app_id.as_str()),
@@ -373,6 +401,7 @@ fn maybe_add_app_from_canonical(
 
 fn canonicalize_app_id(app_id: &str) -> String {
     let raw = strip_desktop_suffix(app_id);
+
     raw.chars()
         .map(|ch| {
             if ch.is_ascii_alphanumeric() || ch == '-' {
@@ -393,9 +422,11 @@ fn strip_desktop_suffix(app_id: &str) -> String {
 
 fn app_is_system_service(app: &gio::DesktopAppInfo) -> bool {
     let categories = app.categories().unwrap_or_default();
+
     if categories.is_empty() {
         return false;
     }
+
     categories
         .split(';')
         .any(|cat| matches!(cat, "X-GNOME-Settings-Panel" | "Settings" | "System"))
