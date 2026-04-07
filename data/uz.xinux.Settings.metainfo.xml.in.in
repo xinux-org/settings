@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Bilal Elmoussaoui 2019 <bil.elmoussaoui@gmail.com> -->
 <component type="desktop-application">
-  <id>uz.xinux.Settings</id>
+  <id>@app-id@</id>
   <metadata_license>CC0</metadata_license>
   <!-- Insert your license of choice here -->
   <!-- <project_license>MIT</project_license> -->

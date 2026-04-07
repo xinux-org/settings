@@ -14,7 +14,7 @@ let
   # Manifest via Cargo.toml
   manifest = (pkgs.lib.importTOML ../../Cargo.toml).package;
 in
-pkgs.stdenv.mkDerivation {
+pkgs.mkShell {
   name = "${manifest.name}";
 
   # Compile time dependencies

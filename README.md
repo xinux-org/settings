@@ -44,7 +44,10 @@ This application has Linux-only dependencies.
 nix develop 
 
 # Initiate meson environment for the first time. This will generate ./src/config.rs
-meson setup build # --reconfigure
+meson setup builddir # --reconfigure
+meson setup builddir --prefix=$PWD/install --reconfigure --buildtype=debug -Dprofile=development
+
+ninja -C builddir install && ./install/bin/settings
 
 # build the project
 nix build . --show-trace
