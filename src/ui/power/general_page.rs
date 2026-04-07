@@ -96,7 +96,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Battery Charging",
-                set_visible: model.charging_mode != ChargingMode::Unsupported || !has_battery,
+                set_visible: model.charging_mode != ChargingMode::Unsupported,
 
                 adw::ActionRow {
                     set_title: "Maximize Charge",
