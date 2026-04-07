@@ -286,7 +286,7 @@ impl Component for GeneralPowerPageView {
             power_mode: get_current_profile(&proxy),
             charging_mode: decide_charging_mode(),
 
-            show_battery_percentage: has_battery,
+            show_battery_percentage: get_show_battery_percentage(),
             show_batteries,
             battery_label_text: battery_label,
 
@@ -315,6 +315,11 @@ impl Component for GeneralPowerPageView {
             }
             GeneralPowerPageViewMsg::ToggleBatteryPercentage(state) => {
                 self.show_battery_percentage = state;
+
+                let _ = dconf_rs::set_boolean(
+                    "/org/gnome/desktop/interface/show-battery-percentage",
+                    state,
+                );
             }
 
             GeneralPowerPageViewMsg::SelectPowerButtonAction(index) => {
@@ -431,6 +436,10 @@ fn get_power_button_action_enum() -> u32 {
         // Expected Interactive or Power Off
         _ => 0,
     }
+}
+
+fn get_show_battery_percentage() -> bool {
+    dconf_rs::get_boolean("/org/gnome/desktop/interface/show-battery-percentage").unwrap()
 }
 
 fn decide_charging_mode() -> ChargingMode {
