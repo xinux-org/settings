@@ -119,7 +119,7 @@ impl SimpleComponent for App {
 
                 #[wrap(Some)]
                 set_sidebar = &adw::NavigationPage {
-                    set_title: "Setasdasdtings",
+                    set_title: "Settings",
 
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
