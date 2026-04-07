@@ -254,11 +254,9 @@ impl Component for GeneralPowerPageView {
         // Battery level label
         let battery_level = gtk::ListBox::builder().build();
 
-        let show_batteries = has_battery;
-        let battery_label = if percentages_float.len() == 1 {
-            String::from("Battery Level")
-        } else {
-            String::from("Battery Levels")
+        let battery_label = match percentages_float.len() {
+            1 => String::from("Battery Level"),
+            _ => String::from("Battery Levels"),
         };
 
         let mut batteries = FactoryVecDeque::builder().launch(battery_level).detach();
@@ -287,7 +285,7 @@ impl Component for GeneralPowerPageView {
             charging_mode: decide_charging_mode(),
 
             show_battery_percentage: get_show_battery_percentage(),
-            show_batteries,
+            show_batteries: has_battery,
             battery_label_text: battery_label,
 
             power_button_action_row,
