@@ -1,5 +1,5 @@
 global_conf = configuration_data()
-cargo_options = [ '--manifest-path', meson.project_source_root() / 's-helper' /  'Cargo.toml' ]
+cargo_options = [ '--manifest-path', meson.project_source_root() / 's-helper' /  'Cargo.toml']
 cargo_options += [ '--target-dir', meson.project_build_root() / 's-helper' /  'src' ]
 
 if get_option('profile') == 'default'
@@ -11,7 +11,6 @@ else
   message('Building in debug mode')
 endif
 
-cargo_env = [ 'CARGO_HOME=' + meson.project_build_root() / 's-helper' / 'cargo-home' ]
 
 cargo_build = custom_target(
   'cargo-build',
@@ -21,9 +20,9 @@ cargo_build = custom_target(
   console: true,
   install: true,
   install_dir: get_option('libexecdir'),
+  env: cargo_env,
   command: [
     'env',
-    cargo_env,
     cargo, 'build',
     cargo_options,
     '&&',

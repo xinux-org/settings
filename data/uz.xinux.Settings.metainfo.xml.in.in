@@ -42,14 +42,14 @@
   <developer id="gnome.org">
     <name translate="no">Bilal Elmoussaoui</name>
   </developer>
-  <!-- 
+  <!--
     Branding colors:
     https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines/#brand-color
   -->
   <branding>
     <color type="primary" scheme_preference="light">#ff00ff</color>
     <color type="primary" scheme_preference="dark">#993d3d</color>
-  </branding>  
+  </branding>
   <update_contact>bil.elmoussaoui@gmail.com</update_contact>
   <translation type="gettext">@gettext-package@</translation>
   <launchable type="desktop-id">@app-id@.desktop</launchable>

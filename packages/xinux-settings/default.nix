@@ -54,6 +54,10 @@ craneLib.buildPackage {
   nativeBuildInputs = commonNativeBuildInputs;
   buildInputs = commonBuildInputs;
 
+  preConfigure = ''
+    mesonFlagsArray+=("-Dcargo_home=$CARGO_HOME")
+  '';
+
   configurePhase = ''
     mesonConfigurePhase
     runHook postConfigure

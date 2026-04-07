@@ -45,9 +45,9 @@ nix develop
 
 # Initiate meson environment for the first time. This will generate ./src/config.rs
 meson setup builddir # --reconfigure
-meson setup builddir --prefix=$PWD/install --reconfigure --buildtype=debug -Dprofile=development
+meson setup builddir --prefix=~/.local --reconfigure --buildtype=debug -Dprofile=development
 
-ninja -C builddir install && ./install/bin/settings
+ninja -C builddir install && ~/.local/bin/settings
 
 # build the project
 nix build . --show-trace

@@ -18,7 +18,7 @@ dependency('libadwaita-1', version :'>=1.8')
 
 cargo = find_program('cargo', required: true)
 gresource = find_program('glib-compile-resources', required: true)
-glib_compile_schemas = find_program('glib-compile-schemas')
+glib_compile_schemas = find_program('glib-compile-schemas', required: true)
 desktop_file_validate = find_program('desktop-file-validate', required: false)
 appstreamcli = find_program('appstreamcli', required: false)
 
@@ -35,19 +35,10 @@ iconsdir = datadir / 'icons'
 podir = meson.project_source_root() / 'po'
 gettext_package = meson.project_name()
 
-subdir('data')
-subdir('po')
-subdir('src')
-subdir('s-helper/src')
-
 if get_option('profile') == 'development'
   message('Building in debug mode')
-  profile = '.Devel'
+  profile = 'Devel'
   vcs_tag = run_command('git', 'rev-parse', '--short', 'HEAD').stdout().strip()
-
-  # Setup pre-commit hook for ensuring coding style is always consistent
-  message('Setting up git pre-commit hook..')
-  run_command('cp', '-f', 'hooks/pre-commit.hook', '.git/hooks/pre-commit', check: false)
 
   if vcs_tag == ''
     version_suffix = '-devel'
@@ -55,7 +46,7 @@ if get_option('profile') == 'development'
     version_suffix = '-@0@'.format (vcs_tag)
   endif
   application_id = '@0@.@1@'.format(base_id, profile)
-  
+
   rust_target = 'debug'
   cargo_release_option = []
 else
@@ -68,18 +59,40 @@ else
   cargo_release_option = [ '--release' ]
 endif
 
-cargo_home = meson.project_build_root() / 'cargo-home'
+cargo_home = get_option('cargo_home')
+
+if cargo_home == ''
+  cargo_home = meson.project_build_root() / 'cargo-home'
+endif
+
 cargo_target = meson.project_build_root() / 'cargo-target'
 cargo_env = environment()
 cargo_env.set('CARGO_HOME', cargo_home)
 cargo_env.set('CARGO_TARGET_DIR', cargo_target)
 meson.add_devenv(cargo_env)
 
-cargo = find_program('cargo-vendor-filterer', required: true)
+find_program('cargo-vendor-filterer', required: false)
 meson.add_dist_script(
-  'scripts/dist-vendor.sh',
+  'build-aux/dist-vendor.sh',
   cargo_home,
   cargo_target,
+)
+
+if get_option('profile') == 'development'
+  # Setup pre-commit hook for ensuring coding style is always consistent
+  message('Setting up git pre-commit hook..')
+  run_command('cp', '-f', 'hooks/pre-commit.hook', '.git/hooks/pre-commit', check: false)
+endif
+
+subdir('data')
+subdir('po')
+subdir('src')
+subdir('s-helper/src')
+
+gnome.post_install(
+  gtk_update_icon_cache: true,
+  glib_compile_schemas: true,
+  update_desktop_database: true,
 )
 
 # see more: https://github.com/alatiera/gnome-podcasts/blob/main/meson.build
@@ -97,9 +110,3 @@ meson.add_dist_script(
 #   workdir: meson.project_source_root(),
 #   timeout: 3000
 # )
-
-gnome.post_install(
-  gtk_update_icon_cache: true,
-  glib_compile_schemas: true,
-  update_desktop_database: true,
-)
