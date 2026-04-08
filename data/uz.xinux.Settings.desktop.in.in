@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Xinux Settings
-Comment=Write a GTK + Rust application
+Comment=Xinux GTK/libadwaita settings app
 Type=Application
 Exec=settings
 Terminal=false

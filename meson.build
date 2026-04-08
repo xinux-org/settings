@@ -2,7 +2,7 @@ project(
   'settings',
   'rust',
   version: '0.1.0',
-  meson_version: '>= 0.59',
+  meson_version: '>= 1.10.1',
   license: 'GPL_2_0_ONLY',
 )
 
