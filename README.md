@@ -37,23 +37,23 @@ programs.nix-data = {
 };
 ```
 
+## Build & run
 This application has Linux-only dependencies.
-
 ```bash
 # download dependencies
 nix develop 
 
-# Initiate meson environment for the first time. This will generate ./src/config.rs
-meson setup builddir # --reconfigure
-meson setup builddir --prefix=~/.local --reconfigure --buildtype=debug -Dprofile=development
-
-ninja -C builddir install && ~/.local/bin/settings
-
-# build the project
-nix build . --show-trace
+just install
 
 cd ..
+./settings/builddir/install/bin/settings 
+
+# or with nix when ready for release
+nix build . --show-trace
 ./settings/result/bin/settings
+
+# app run
+just run
 
 # Optional. Generate translation words from /po/POTFILES.in if needed.
 cd ./po
