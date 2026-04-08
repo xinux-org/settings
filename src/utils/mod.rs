@@ -1,18 +1,12 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
+pub mod error;
 pub mod language;
 pub mod modules;
-pub mod error;
 
-// type Result<T, E = Error> = std::result::Result<T, E>;
-
-
-// #[derive(Debug, Error)]
-// #[non_exhaustive]
-// pub enum Error {
-//     #[error("{command} exited with status code {code}")]
-//     CommandFailed { command: String, code: i32 },
-// }
+// Source - https://stackoverflow.com/a/69812881
+// Posted by yolenoyer, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-04-08, License - CC BY-SA 4.0
 
 pub fn get_stdout(command: &str, args: &[&str]) -> Result<String> {
     use std::process::Command;
@@ -28,7 +22,6 @@ pub fn get_stdout(command: &str, args: &[&str]) -> Result<String> {
         Err(anyhow!("asjkldas;ldkfja;slkdjf"))
     }
 }
-
 
 pub fn parse_dconf(command: &str, args: &[&str]) -> Result<String> {
     let mut stdout = enquote::unquote(&get_stdout(command, args)?)?;

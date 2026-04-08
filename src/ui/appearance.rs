@@ -2,61 +2,77 @@ use std::process::Command;
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
+use relm4::adw::AccentColor;
+use relm4::adw::StyleManager;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-
 #[derive(Debug, Clone)]
-pub struct ColorPicker {
-    value: String,
-    colors: Vec<&'static str>
+struct AccentColorWrapped(AccentColor);
+
+impl AccentColorWrapped {
+    pub fn iterator() -> impl Iterator<Item = AccentColor> {
+        use relm4::adw::AccentColor::*;
+        [Blue, Teal, Green, Yellow, Orange, Red, Pink, Purple, Slate]
+            .iter()
+            .copied()
+    }
 }
 
 #[derive(Debug)]
-enum ColorPickerMsg {
-    PickColor(String),
+struct MyColorButton {
+    value: AccentColorWrapped,
 }
+// #[derive(Debug)]
+// enum MyColorButtonMsg {
+//     Pick(DynamicIndex),
+// }
 
 #[derive(Debug)]
-enum ColorPickerOutput {
-    SendPick(String),
+enum MyColorButtonOutput {
+    SendPick(AccentColorWrapped),
 }
 
-#[relm4::factory]
-impl FactoryComponent for ColorPicker {
-    type Init = String;
-    type Input = ColorPickerMsg;
-    type Output = ColorPickerOutput;
+#[relm4::factory(pub)]
+impl FactoryComponent for MyColorButton {
+    type Init = AccentColorWrapped;
+    type Input = ();
+    type Output = MyColorButtonOutput;
     type CommandOutput = ();
     type ParentWidget = gtk::Box;
 
     view! {
-        #[root] {
+        #[root]
             gtk::ToggleButton{
-                    // set_group: Some(&right),
-                set_overflow: gtk::Overflow::Hidden,
-                add_css_class: "style-toggle",
+              // set_group: Some(&right),
+              // set_overflow: gtk::Overflow::Hidden,
+              add_css_class: "style-toggle",
+              // set_width_request: 12,
+              // set_height_request: 12,
 
-                #[wrap(Some)]
-                set_child = &gtk::Picture{
-                    set_content_fit: gtk::ContentFit::Fill,
-                    set_filename:
-                        Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
-                },
+              #[wrap(Some)]
+              set_child = &gtk::ColorDialogButton{
+                  set_width_request: 2,
+                  // set_height_request: 12,
+                  add_css_class: "accent-color-button",
+                  set_rgba: &AccentColor::Blue.to_rgba()
+              },
 
-                connect_clicked[sender, color = self.color.clone()] => move |_| {
-                    sender.output(ColorPickerOutput::SendPick(color))
-                },
+              connect_clicked[sender, index, value = self.value.0.to_owned()] => move |_| {
+                  sender.output(MyColorButtonOutput::SendPick(AccentColorWrapped(value.to_owned()))).unwrap();
+              },
             },
-        },
     }
 
-    fn init_model(value: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
-        Self { 
-            value,
-            colors: vec![ "blue", "teal", "green", "yellow", "orange", "red", "pink", "purple", "slate"] 
-        }
+    fn init_model(_value: Self::Init, _index: &DynamicIndex, sender: FactorySender<Self>) -> Self {
+        // Get the current desktop accent color
+        let value = AccentColorWrapped(StyleManager::default().accent_color());
+
+        sender
+            .output(MyColorButtonOutput::SendPick(value.clone()))
+            .unwrap();
+        Self { value }
     }
 }
 
@@ -69,13 +85,13 @@ pub enum AppearanceStyle {
 #[derive(Debug)]
 pub struct AppearanceModel {
     style: AppearanceStyle,
-    colors: FactoryVecDeque<ColorPicker>,
+    color_buttons: FactoryVecDeque<MyColorButton>,
 }
 
 #[derive(Debug)]
 pub enum AppearanceMsg {
     SetStyle(AppearanceStyle),
-    PickColor(String),
+    SendPick(AccentColorWrapped),
 }
 
 #[relm4::component(pub)]
@@ -151,7 +167,7 @@ impl SimpleComponent for AppearanceModel {
                                     #[wrap(Some)]
                                     set_child = &gtk::Picture{
                                         set_content_fit: gtk::ContentFit::Fill,
-                                        set_filename:/org/gnome/desktop/interface/accent-color
+                                        set_filename:
                                             Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
                                     },
 
@@ -182,31 +198,43 @@ impl SimpleComponent for AppearanceModel {
                             set_margin_end: 86,
 
                             #[local_ref]
-                            color_box -> gtk::Box {
-                               set_orientation: gtk::Orientation::Horizontal,
-                               set_spacing: 16,
-                            }
-                        }
+                            color_button_box -> gtk::Box {
+                              set_orientation: gtk::Orientation::Vertical,
+                              set_spacing: 5,
+                            },
+                        },
                     },
                 },
 
             }
         }
-    }    
+    }
 
     fn init(
         _init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let colors = FactoryVecDeque::builder()
-            .launch(gtk::Box::default())
-            .forward(_sender.input_sender(), |output| match output {
-                ColorPickerOutput::SendPick(color) => AppearanceMsg::PickColor(color),
-            });
         let style = AppearanceStyle::Default;
-        let model = AppearanceModel { style, colors };
-        let color_box = model.colors.widget();
+        let color_buttons = FactoryVecDeque::builder()
+            .launch(gtk::Box::default())
+            .forward(sender.input_sender(), |output| match output {
+                MyColorButtonOutput::SendPick(value) => AppearanceMsg::SendPick(value),
+            });
+
+        let mut model = AppearanceModel {
+            style,
+            color_buttons,
+        };
+
+        for color in AccentColorWrapped::iterator() {
+            model
+                .color_buttons
+                .guard()
+                .push_back(AccentColorWrapped(color));
+        }
+
+        let color_button_box = model.color_buttons.widget();
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
@@ -242,13 +270,14 @@ impl SimpleComponent for AppearanceModel {
                     }
                 }
             }
-            AppearanceMsg::PickColor(color) => {
+            AppearanceMsg::SendPick(color) => {
                 let _ = Command::new("gsettings")
                     .args(&[
                         "set",
                         "org.gnome.desktop.interface.accent-color",
-                        &color,
+                        &format!("{:?}", color),
                     ])
+                    // .args(&["set", "org.gnome.desktop.interface.accent-color", "blue"])
                     .output()
                     .expect("Failed to set appearance style");
             }
