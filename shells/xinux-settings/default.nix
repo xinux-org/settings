@@ -34,6 +34,7 @@ pkgs.mkShell {
     cargo-watch
     openssl
     just
+    just-lsp
     # Gnome related
     gtk4
     meson

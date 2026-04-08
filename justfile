@@ -2,6 +2,7 @@
 builddir := "builddir"
 prefix := justfile_directory() / builddir / "install"
 profile := "development"
+bin := "settings"
 
 meson_flags := "-Dprofile=" + profile + " -Dprefix=" + prefix
 
@@ -30,7 +31,7 @@ run: install
     RUST_LOG=nix_software_center=DEBUG \
     GSETTINGS_SCHEMA_DIR={{prefix}}/share/glib-2.0/schemas \
     XDG_DATA_DIRS="{{prefix}}/share:${XDG_DATA_DIRS}" \
-    {{prefix}}/bin/nix-software-center
+    {{prefix}}/bin/{{bin}}
 
 # Clean build directory
 clean:
