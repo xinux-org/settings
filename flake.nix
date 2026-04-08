@@ -5,9 +5,7 @@
     # Stable for keeping thins clean
     # # Fresh and new for testing
     nixpkgs.url = "github:xinux-org/nixpkgs/nixos-unstable";
-
-    crane.url = "github:ipetkov/crane";
-
+    
     xinux-lib = {
       url = "github:xinux-org/lib/main";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -33,6 +33,7 @@ pkgs.mkShell {
     rust-analyzer
     cargo-watch
     openssl
+    just
     # Gnome related
     gtk4
     meson

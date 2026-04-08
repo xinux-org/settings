@@ -1,5 +1,3 @@
-option('cargo_home', type: 'string', value: '')
-
 option(
   'profile',
   type: 'combo',
