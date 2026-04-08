@@ -28,7 +28,7 @@ install: build
 
 # Build, install, and run the app
 run: install
-    RUST_LOG=nix_software_center=DEBUG \
+    RUST_LOG={{bin}}=DEBUG \
     GSETTINGS_SCHEMA_DIR={{prefix}}/share/glib-2.0/schemas \
     XDG_DATA_DIRS="{{prefix}}/share:${XDG_DATA_DIRS}" \
     {{prefix}}/bin/{{bin}}
