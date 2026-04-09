@@ -38,6 +38,7 @@ pkgs.mkShell {
     # Gnome related
     gtk4
     meson
+    mesonlsp
     ninja
     pango
     polkit
