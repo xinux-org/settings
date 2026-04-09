@@ -48,15 +48,13 @@ impl FactoryComponent for MyColorButton {
               // set_group: Some(&right),
               // set_overflow: gtk::Overflow::Hidden,
               add_css_class: "style-toggle",
-              // set_width_request: 12,
-              // set_height_request: 12,
 
               #[wrap(Some)]
               set_child = &gtk::ColorDialogButton{
-                  set_width_request: 2,
-                  // set_height_request: 12,
                   add_css_class: "accent-color-button",
-                  set_rgba: &AccentColor::Blue.to_rgba()
+                  set_rgba: &self.value.0.to_rgba(),
+                  set_width_request: 20,
+                  set_height_request: 20,
               },
 
               connect_clicked[sender, index, value = self.value.0.to_owned()] => move |_| {
@@ -199,7 +197,7 @@ impl SimpleComponent for AppearanceModel {
 
                             #[local_ref]
                             color_button_box -> gtk::Box {
-                              set_orientation: gtk::Orientation::Vertical,
+                              set_orientation: gtk::Orientation::Horizontal,
                               set_spacing: 5,
                             },
                         },

@@ -28,18 +28,21 @@
   background-color: rgba(0, 0, 0, 0);
   border-radius: 6px;
   border: 2px none red;
-  outline: rgba(0,0,0,0) solid 2px;
+  outline: rgba(0, 0, 0, 0) solid 2px;
 }
 
-.style-toggle:checked{
+.style-toggle:checked {
   outline-color: var(--accent-color);
   transition: all 1s;
 }
 
-.accent-color-button{
+.accent-color-button {
   width: 2px;
   border-radius: 50%;
-  padding:  0px;
-  margin:  0px;
+  padding: 0px;
+  margin: 0px;
 }
 
+.accent-color-button .color {
+  padding: 0px;
+}
