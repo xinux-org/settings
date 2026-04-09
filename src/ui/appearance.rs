@@ -63,13 +63,7 @@ impl FactoryComponent for MyColorButton {
             },
     }
 
-    fn init_model(_value: Self::Init, _index: &DynamicIndex, sender: FactorySender<Self>) -> Self {
-        // Get the current desktop accent color
-        let value = AccentColorWrapped(StyleManager::default().accent_color());
-
-        sender
-            .output(MyColorButtonOutput::SendPick(value.clone()))
-            .unwrap();
+    fn init_model(value: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
         Self { value }
     }
 }
