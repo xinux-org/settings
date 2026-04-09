@@ -11,9 +11,9 @@ gnome = import('gnome')
 
 base_id = 'uz.xinux.Settings'
 
-dependency('glib-2.0', version: '>= 2.66')
-dependency('gio-2.0', version: '>= 2.66')
-dependency('gtk4', version: '>= 4.0.0')
+dependency('glib-2.0', version: '>= 2.86.3')
+dependency('gio-2.0', version: '>= 2.86.3')
+dependency('gtk4', version: '>= 4.20.3')
 
 find_program('glib-compile-resources')
 glib_compile_schemas = find_program('glib-compile-schemas')
@@ -48,12 +48,6 @@ else
   version_suffix = ''
   application_id = base_id
 endif
-
-meson.add_dist_script(
-  'build-aux/dist-vendor.sh',
-  meson.project_build_root() / 'meson-dist' / meson.project_name() + '-' + version,
-  meson.project_source_root()
-)
 
 if get_option('profile') == 'development'
   # Setup pre-commit hook for ensuring coding style is always consistent
