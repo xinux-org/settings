@@ -66,9 +66,9 @@ impl FactoryComponent for BatteryModel {
                         set_max_value: 100.0,
 
                         // min/max values to activate css class
-                        add_offset_value: ("low", 15.0),
-                        add_offset_value: ("warning", 25.0),
-                        add_offset_value: (gtk::LEVEL_BAR_OFFSET_HIGH, 79.0),
+                        add_offset_value: ("warning-battery-offset", 15.0),
+                        add_offset_value: ("low-battery-offset", 25.0),
+                        add_offset_value: ("high-battery-offset", 79.0),
                         add_offset_value: (gtk::LEVEL_BAR_OFFSET_FULL, 100.0),
                         #[watch]
                         set_value: self.percentage,
