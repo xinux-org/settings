@@ -3,7 +3,6 @@ use std::process::Command;
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
 use relm4::adw::AccentColor;
-use relm4::adw::StyleManager;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
@@ -24,10 +23,6 @@ impl AccentColorWrapped {
 struct MyColorButton {
     value: AccentColorWrapped,
 }
-// #[derive(Debug)]
-// enum MyColorButtonMsg {
-//     Pick(DynamicIndex),
-// }
 
 #[derive(Debug)]
 enum MyColorButtonOutput {
@@ -44,8 +39,9 @@ impl FactoryComponent for MyColorButton {
 
     view! {
         #[root]
+            #[name = "accent_color" ]
             gtk::ToggleButton{
-              // set_group: Some(&right),
+              set_group: Some(&accent_color),
               // set_overflow: gtk::Overflow::Hidden,
               add_css_class: "style-toggle",
 
@@ -122,7 +118,7 @@ impl SimpleComponent for AppearanceModel {
                                 set_orientation: gtk::Orientation::Vertical,
                                 set_spacing: 18,
 
-                                #[name= "left" ]
+                                #[name = "left" ]
                                 // #[wrap(Some)]
                                 append = &gtk::ToggleButton{
                                     set_group: Some(&right),
@@ -150,7 +146,7 @@ impl SimpleComponent for AppearanceModel {
                                 set_orientation: gtk::Orientation::Vertical,
                                 set_spacing: 18,
 
-                                #[name= "right" ]
+                                #[name = "right" ]
                                 // #[wrap(Some)]
                                 append = &gtk::ToggleButton{
                                     add_css_class: "style-toggle",
@@ -266,12 +262,15 @@ impl SimpleComponent for AppearanceModel {
                 let _ = Command::new("gsettings")
                     .args(&[
                         "set",
-                        "org.gnome.desktop.interface.accent-color",
-                        &format!("{:?}", color),
+                        "org.gnome.desktop.interface",
+                        "accent-color",
+                        &format!("{:?}", color.0).to_lowercase(),
                     ])
                     // .args(&["set", "org.gnome.desktop.interface.accent-color", "blue"])
                     .output()
                     .expect("Failed to set appearance style");
+
+                println!("ACTIVE ACCENT: {}", format!("{:?}", color.0).to_lowercase())
             }
         }
     }
