@@ -245,7 +245,7 @@ impl Component for SavingPowerPageView {
             sleep_inactive_battery_timeout: dconf_rs::get_int(
                 "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout",
             )
-            .unwrap() as u16,
+            .unwrap_or(0) as u16,
 
             sleep_inactive_ac_type: matches!(
                 (dconf_rs::get_string(
@@ -259,7 +259,7 @@ impl Component for SavingPowerPageView {
             sleep_inactive_ac_timeout: dconf_rs::get_int(
                 "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout",
             )
-            .unwrap() as u16,
+            .unwrap_or(0) as u16,
         };
 
         let widgets = view_output!();

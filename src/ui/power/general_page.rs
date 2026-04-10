@@ -446,9 +446,9 @@ impl Component for GeneralPowerPageView {
             ),
 
             sleep_inactive_ac_timeout: dconf_rs::get_int(
-                "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout",
+                "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout",
             )
-            .unwrap() as u16,
+            .unwrap_or(0) as u16,
         };
 
         let combo_row = model.power_button_action_row.widget();
