@@ -1,91 +1,23 @@
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
-
+use crate::ui::power::{battery_row::BatteryModel, power_page::PowerMsg};
+use dconf_rs;
 use ppd::PpdProxyBlocking;
+use regex::Regex;
+use relm4::{
+    adw::prelude::*,
+    gtk::{self},
+    prelude::*,
+};
+use relm4_components::simple_adw_combo_row::SimpleComboRow;
+use std::process::{Command, Stdio};
+use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
-use relm4_components::simple_adw_combo_row::SimpleComboRow;
-
-use std::fmt;
-use std::fs;
-use std::sync::Arc;
-
-use regex::Regex;
-use std::path::Path;
-
-use crate::ui::power::power_page::PowerMsg;
-
-use dconf_rs;
-
+/// Possible actions for power button(usually turn on/off)
+/// - Power Off - which is sometimes stated as Interactive will prompt you to decide if you really to turn off your device.
+/// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
+/// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or low power consumption mode keeping the applications open and running.
+/// - Nothing - the name is self explanatory.
 const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
-
-#[derive(Debug, Clone)]
-struct BatteryModel {
-    percentage: f64,
-    percentage_text: String,
-    status: String,
-}
-
-#[relm4::factory(pub)]
-impl FactoryComponent for BatteryModel {
-    type Init = (f64, String, String);
-    type Input = ();
-    type Output = ();
-    type CommandOutput = ();
-    type ParentWidget = gtk::Box;
-
-    view! {
-        #[root]
-        adw::PreferencesGroup {
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
-                set_valign: gtk::Align::Center,
-                set_spacing: 8,
-                set_margin_all: 16,
-                add_css_class: "action-row",
-
-                gtk::LevelBar {
-                    set_min_value: 1.0,
-                    set_max_value: 100.0,
-                    add_offset_value: ("low", 20.0),
-                    add_offset_value: ("high", 60.0),
-                    add_offset_value: ("full", 100.0),
-                    #[watch]
-                    set_value: self.percentage,
-                    set_hexpand: true,
-                    add_css_class: "battery-bar",
-                },
-
-                gtk::Box {
-                    set_orientation: gtk::Orientation::Horizontal,
-                    set_spacing: 8,
-
-                    gtk::Label {
-                        #[watch]
-                        set_label: &self.status,
-                        set_halign: gtk::Align::Start,
-                        set_hexpand: true,
-                    },
-
-                    gtk::Label {
-                        #[watch]
-                        set_label: &self.percentage_text,
-                        set_halign: gtk::Align::End,
-                    },
-                },
-            },
-        }
-    }
-
-    fn init_model(init: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
-        Self {
-            percentage: init.0,
-            percentage_text: init.1,
-            status: init.2,
-        }
-    }
-}
 
 #[derive(Debug)]
 #[tracker::track]
@@ -93,9 +25,12 @@ pub struct GeneralPowerPageView {
     pub power_mode: PowerMode,
     pub show_battery_percentage: bool,
     pub power_button_action: u32,
+    pub show_batteries: bool,
+    pub battery_label_text: String,
+    pub charging_mode: ChargingMode,
 
     #[tracker::do_not_track]
-    pub combo_row: Controller<SimpleComboRow<&'static str>>,
+    pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
 
     #[tracker::do_not_track]
     batteries: FactoryVecDeque<BatteryModel>,
@@ -118,6 +53,7 @@ impl fmt::Display for PowerMode {
 #[derive(Debug)]
 pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
+    SetChargingMode(ChargingMode),
     ToggleBatteryPercentage(bool),
     SelectPowerButtonAction(usize),
 }
@@ -129,6 +65,13 @@ pub enum PowerMode {
     PowerSaver,  // power-saver
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ChargingMode {
+    Preserve,    // with a threshold
+    Maximize,    // 100% without a threshold
+    Unsupported, // couldn't find the threshold file
+}
+
 #[relm4::component(pub)]
 impl Component for GeneralPowerPageView {
     type Init = ();
@@ -137,131 +80,154 @@ impl Component for GeneralPowerPageView {
     type CommandOutput = ();
 
     view! {
-        gtk::Box {
-            set_orientation: gtk::Orientation::Vertical,
-            set_spacing: 24,
-
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
-                set_spacing: 12,
-
-                gtk::Label {
-                    set_label: "Battery Level",
-                    set_halign: gtk::Align::Start,
-                    add_css_class: "heading",
-                },
+        adw::PreferencesPage {
+            #[name(battery_section)]
+            adw::PreferencesGroup {
+                #[watch]
+                set_visible: model.show_batteries,
+                set_title: model.battery_label_text.as_str(),
 
                 #[local_ref]
-                battery_list -> gtk::Box {
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 8,
+                battery_list -> gtk::ListBox {
+                    set_selection_mode: gtk::SelectionMode::None,
+                    add_css_class: "boxed-list",
                 },
             },
 
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
-                set_spacing: 12,
+            adw::PreferencesGroup {
+                set_title: "Battery Charging",
+                set_visible: model.charging_mode != ChargingMode::Unsupported || !has_battery,
 
-                gtk::Label {
-                    set_label: "Power Mode",
-                    set_halign: gtk::Align::Start,
-                    add_css_class: "heading",
+                adw::ActionRow {
+                    set_title: "Maximize Charge",
+                    set_subtitle: "Uses all battery capacity. Degrades batteries more quickly.",
+                    set_activatable: true,
+
+                    set_activatable_widget: Some(&activatable_maximize),
+
+                    #[name = "activatable_maximize"]
+                    add_prefix = &gtk::CheckButton {
+                        set_group: Some(&activatable_preserve),
+
+                        #[watch]
+                        set_active: model.charging_mode == ChargingMode::Maximize,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetChargingMode(ChargingMode::Maximize));
+                            }
+                        },
+                    },
                 },
 
-                adw::PreferencesGroup {
-                    adw::ActionRow {
-                        set_title: "Performance",
-                        set_subtitle: "High performance and power usage",
-                        set_activatable: true,
+                adw::ActionRow {
+                    set_title: "Preserve Battery Health",
+                    set_subtitle: "Increases battery longevity by maintaining lower charge levels.",
+                    set_activatable: true,
 
-                        set_activatable_widget: Some(&activatable_performance),
+                    set_activatable_widget: Some(&activatable_preserve),
 
-                        #[name = "activatable_performance"]
-                        add_prefix = &gtk::CheckButton {
-                            set_group: Some(&activatable_balanced),
+                    #[name = "activatable_preserve"]
+                    add_prefix = &gtk::CheckButton {
 
-                            #[watch]
-                            set_active: model.power_mode == PowerMode::Performance,
-                            connect_toggled[sender] => move |btn| {
-                                if btn.is_active() {
-                                    sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::Performance));
-                                }
-                            },
-                        },
-                    },
-
-                    adw::ActionRow {
-                        set_title: "Balanced",
-                        set_subtitle: "Standard performance and power usage",
-                        set_activatable: true,
-
-                        set_activatable_widget: Some(&activatable_balanced),
-
-                        #[name = "activatable_balanced"]
-                        add_prefix = &gtk::CheckButton {
-                            set_group: Some(&activatable_powersaver),
-
-                            #[watch]
-                            set_active: model.power_mode == PowerMode::Balanced,
-                            connect_toggled[sender] => move |btn| {
-                                if btn.is_active() {
-                                    sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::Balanced));
-                                }
-                            },
-                        },
-                    },
-
-                    adw::ActionRow {
-                        set_title: "Power Saver",
-                        set_subtitle: "Reduced performance and power usage",
-                        set_activatable: true,
-
-                        set_activatable_widget: Some(&activatable_powersaver),
-
-                        #[name = "activatable_powersaver"]
-                        add_prefix = &gtk::CheckButton {
-                            #[watch]
-                            set_active: model.power_mode == PowerMode::PowerSaver,
-                            connect_activate[sender] => move |btn| {
-                                if btn.is_active() {
-                                    sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::PowerSaver));
-                                }
-                            },
+                        #[watch]
+                        set_active: model.charging_mode == ChargingMode::Preserve,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetChargingMode(ChargingMode::Preserve));
+                            }
                         },
                     },
                 },
             },
 
+            adw::PreferencesGroup {
+                set_title: "Power Mode",
 
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
-                set_spacing: 12,
+                adw::ActionRow {
+                    set_title: "Performance",
+                    set_subtitle: "High performance and power usage",
+                    set_activatable: true,
 
-                gtk::Label {
-                    set_label: "General",
-                    set_halign: gtk::Align::Start,
-                    add_css_class: "heading",
+                    set_activatable_widget: Some(&activatable_performance),
+
+                    #[name = "activatable_performance"]
+                    add_prefix = &gtk::CheckButton {
+                        set_group: Some(&activatable_balanced),
+
+                        #[watch]
+                        set_active: model.power_mode == PowerMode::Performance,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::Performance));
+                            }
+                        },
+                    },
                 },
 
-                adw::PreferencesGroup {
-                    #[local_ref]
-                    combo_row ->
-                    adw::ComboRow {
-                        set_title: "Power Button Behavior",
+                adw::ActionRow {
+                    set_title: "Balanced",
+                    set_subtitle: "Standard performance and power usage",
+                    set_activatable: true,
+
+                    set_activatable_widget: Some(&activatable_balanced),
+
+                    #[name = "activatable_balanced"]
+                    add_prefix = &gtk::CheckButton {
+                        set_group: Some(&activatable_powersaver),
+
+                        #[watch]
+                        set_active: model.power_mode == PowerMode::Balanced,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::Balanced));
+                            }
+                        },
                     },
+                },
 
-                    adw::ActionRow {
-                        set_title: "Show Battery Percentage",
-                        set_subtitle: "Show exact charge level in the top bar",
+                adw::ActionRow {
+                    set_title: "Power Saver",
+                    set_subtitle: "Reduced performance and power usage",
+                    set_activatable: true,
 
-                        add_suffix = &gtk::Switch {
-                            set_valign: gtk::Align::Center,
-                            #[watch]
-                            set_active: model.show_battery_percentage,
-                            connect_state_set[sender] => move |_, state| {
-                                sender.input(GeneralPowerPageViewMsg::ToggleBatteryPercentage(state));
-                                gtk::glib::Propagation::Proceed
-                            },
+                    set_activatable_widget: Some(&activatable_powersaver),
+
+                    #[name = "activatable_powersaver"]
+                    add_prefix = &gtk::CheckButton {
+                        #[watch]
+                        set_active: model.power_mode == PowerMode::PowerSaver,
+                        connect_toggled[sender] => move |btn| {
+                            if btn.is_active() {
+                                sender.input(GeneralPowerPageViewMsg::SetPowerMode(PowerMode::PowerSaver));
+                            }
+                        },
+                    },
+                },
+
+            },
+
+            adw::PreferencesGroup {
+                set_title: "General",
+
+                #[local_ref]
+                combo_row ->
+                adw::ComboRow {
+                    set_title: "Power Button Behavior",
+                },
+
+                adw::ActionRow {
+                    set_title: "Show Battery Percentage",
+                    set_subtitle: "Show exact charge level in the top bar",
+
+                    set_visible: model.show_batteries,
+
+                    add_suffix = &gtk::Switch {
+                        set_valign: gtk::Align::Center,
+                        #[watch]
+                        set_active: model.show_battery_percentage,
+                        connect_state_set[sender] => move |_, state| {
+                            sender.input(GeneralPowerPageViewMsg::ToggleBatteryPercentage(state));
+                            gtk::glib::Propagation::Proceed
                         },
                     },
                 },
@@ -270,48 +236,68 @@ impl Component for GeneralPowerPageView {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let connection = Connection::system().unwrap();
-        let proxy = PpdProxyBlocking::new(&connection).unwrap();
-
-        let mut batteries = FactoryVecDeque::builder().launch_default().detach();
+        let connection = Connection::system().expect("Connection failed");
+        let proxy = PpdProxyBlocking::new(&connection).expect("PPD Proxy failed");
 
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
         let percentages_text = read_file("capacity", "0".into());
         let statuses = read_file("status", "Unknown".into());
 
+        // If the percentages_float vector is empty is means there was not battery found in `/sys/class/power_supply/` folder.
+        // self-explanatory: TRUE if battery exists FALSE if not
+        let has_battery = !percentages_float.is_empty();
+
+        // Battery level label
+        let battery_level = gtk::ListBox::builder().build();
+
+        let show_batteries = has_battery;
+        let battery_label = if percentages_float.len() == 1 {
+            String::from("Battery Level")
+        } else {
+            String::from("Battery Levels")
+        };
+
+        let mut batteries = FactoryVecDeque::builder().launch(battery_level).detach();
         for i in 0..percentages_float.len() {
-            batteries.guard().push_back((
-                percentages_float[i],
-                format!("{}%", percentages_text[i].trim()),
-                statuses[i].trim().to_string(),
-            ));
+            batteries.guard().push_back(BatteryModel {
+                index: i as u8,
+                percentage: percentages_float[i],
+                percentage_text: format!("{}%", percentages_text[i].trim()),
+                status: statuses[i].trim().to_string(),
+            });
         }
+
+        let power_button_action_row = SimpleComboRow::builder()
+            .launch(SimpleComboRow {
+                variants: POWER_BUTTON_ACTIONS.to_vec(),
+                active_index: Some(get_power_button_action_enum() as usize),
+            })
+            .forward(
+                sender.input_sender(),
+                GeneralPowerPageViewMsg::SelectPowerButtonAction,
+            );
 
         let model = Self {
             batteries,
             power_mode: get_current_profile(&proxy),
-            show_battery_percentage: false,
+            charging_mode: decide_charging_mode(),
 
-            combo_row: SimpleComboRow::builder()
-                .launch(SimpleComboRow {
-                    variants: POWER_BUTTON_ACTIONS.to_vec(),
-                    active_index: Some(get_power_button_action_enum() as usize),
-                })
-                .forward(
-                    sender.input_sender(),
-                    GeneralPowerPageViewMsg::SelectPowerButtonAction,
-                ),
+            show_battery_percentage: has_battery,
+            show_batteries,
+            battery_label_text: battery_label,
+
+            power_button_action_row,
             power_button_action: get_power_button_action_enum(),
 
             ppd: Arc::new(proxy),
             tracker: 0,
         };
 
-        let combo_row = model.combo_row.widget();
+        let combo_row = model.power_button_action_row.widget();
         let battery_list = model.batteries.widget();
         let widgets = view_output!();
 
@@ -344,6 +330,15 @@ impl Component for GeneralPowerPageView {
                     action.to_lowercase().as_str(),
                 );
             }
+            GeneralPowerPageViewMsg::SetChargingMode(mode) => {
+                self.charging_mode = mode;
+
+                match mode {
+                    ChargingMode::Preserve => change_battery_threshold(40, 80),
+                    ChargingMode::Maximize => change_battery_threshold(20, 100),
+                    ChargingMode::Unsupported => change_battery_threshold(20, 100),
+                }
+            }
         }
     }
 }
@@ -357,7 +352,8 @@ fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
     }
 }
 
-fn get_battery_path() -> Vec<fs::DirEntry> {
+pub(super) fn get_battery_path() -> Vec<fs::DirEntry> {
+    // for debugging: /home/bahrom/workplace/xinux/settings/batteries /BAT0/capacity
     let global_path = Path::new("/sys/class/power_supply/");
     let re = Regex::new(r"BAT[0-9]+").expect("Wrong RegEx");
 
@@ -372,7 +368,7 @@ fn get_battery_path() -> Vec<fs::DirEntry> {
         .collect()
 }
 
-fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
+pub(super) fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
     let batteries = get_battery_path();
 
     batteries
@@ -383,8 +379,45 @@ fn read_file(file_name: &str, no_entry: String) -> Vec<String> {
         })
         .collect()
 }
-fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
-    els.iter().map(|el| el.trim().parse().unwrap()).collect()
+
+pub(super) fn get_battery_percentages_float(els: Vec<String>) -> Vec<f64> {
+    els.iter()
+        .map(|el| el.trim().parse().unwrap_or(0.0))
+        .collect()
+}
+
+fn change_battery_threshold(_start: u8, end: u8) {
+    let batteries = get_battery_path();
+
+    for bat in batteries {
+        let path = bat.path();
+
+        let start_path = path.join("charge_control_start_threshold");
+        let end_path = path.join("charge_control_end_threshold");
+
+        if !start_path.exists() || !end_path.exists() {
+            continue;
+        }
+
+        relm4::spawn(async move {
+            let echo_child = Command::new("echo")
+                .arg(end.to_string())
+                .stdout(Stdio::piped())
+                .spawn();
+            // ASSUMED that echo command never fails
+            let echo_child_stdout = echo_child.unwrap().stdout.unwrap();
+            // same as echo_child variable
+
+            let output = tokio::process::Command::new("pkexec")
+                .arg("tee")
+                .arg(end_path)
+                .stdin(Stdio::from(echo_child_stdout))
+                .output()
+                .await;
+
+            println!("{:?}", output.unwrap());
+        });
+    }
 }
 
 fn get_power_button_action_enum() -> u32 {
@@ -397,5 +430,44 @@ fn get_power_button_action_enum() -> u32 {
         "Suspend" => 2,
         // Expected Interactive or Power Off
         _ => 0,
+    }
+}
+
+fn decide_charging_mode() -> ChargingMode {
+    let batteries = get_battery_path();
+
+    let charging_modes = batteries
+        .iter()
+        .filter_map(|bat| {
+            let path = bat.path().join("charge_control_end_threshold");
+
+            let content = match fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(error) => {
+                    println!("Failed to read {:?}: {}", path, error);
+                    return None;
+                }
+            };
+
+            match content.trim().parse::<u32>() {
+                Ok(v) => Some(v),
+                Err(error) => {
+                    eprintln!("Failed to parse content: {}", error);
+                    None
+                }
+            }
+        })
+        .collect::<Vec<u32>>();
+
+    if charging_modes.is_empty() {
+        return ChargingMode::Unsupported;
+    }
+
+    println!("{:?}", charging_modes);
+
+    if charging_modes.contains(&(100)) {
+        ChargingMode::Maximize
+    } else {
+        ChargingMode::Preserve
     }
 }

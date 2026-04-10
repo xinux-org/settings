@@ -3,34 +3,22 @@
 
   inputs = {
     # Stable for keeping thins clean
-    # nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    # # Fresh and new for testing
+    nixpkgs.url = "git+https://git.oss.uzinfocom.uz/xinux/nixpkgs?ref=nixos-unstable&shallow=1";
 
-    # Fresh and new for testing
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-
-    # The flake-utils library
-    flake-utils.url = "github:numtide/flake-utils";
-
-    crane.url = "github:ipetkov/crane";
+    xinux-lib = {
+      url = "git+https://git.oss.uzinfocom.uz/xinux/lib?ref=main&shallow=1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = {
-    nixpkgs,
-    flake-utils,
-    crane,
-    ...
-  }:
-  # @ inputs:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {inherit system;};
-    in {
-      # Nix script formatter
-      formatter = pkgs.alejandra;
-
-      # Development environment
-      devShells.default = import ./shell.nix {inherit pkgs;};
-
-      # Output package
-      packages.default = pkgs.callPackage ./. {inherit pkgs crane;};
-    });
+  outputs =
+    inputs:
+    inputs.xinux-lib.mkFlake {
+      inherit inputs;
+      alias.packages.default = "xinux-settings";
+      alias.shells.default = "xinux-settings";
+      src = ./.;
+      hydraJobs = inputs.self.packages.x86_64-linux;
+    };
 }

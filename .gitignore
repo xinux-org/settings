@@ -13,3 +13,4 @@
 .flatpak-builder/
 .direnv
 result
+batteries

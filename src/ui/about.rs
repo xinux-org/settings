@@ -16,15 +16,14 @@ impl SimpleComponent for AboutDialog {
     fn init_root() -> Self::Root {
         adw::AboutDialog::builder()
             .application_icon(APP_ID)
-            .license_type(gtk::License::Apache20)
+            .license_type(gtk::License::Gpl20)
+            .version(VERSION)
             .website("https://xinux.uz/")
             .issue_url("https://github.com/xinux-org/control-center/issues")
             .application_name("Xinux Settings")
-            .version(VERSION)
-            .translator_credits("translator-credits")
             .copyright("© 2025 Xinux Developers")
-            .developers(vec!["BeMeritus https://github.com/bemeritus"])
-            .designers(vec!["BeMeritus https://github.com/bemeritus"])
+            .developers(vec!["Xinux Developers https://github.com/xinux-org"])
+            // .translator_credits("translator-credits")
             .build()
     }
 
@@ -40,6 +39,4 @@ impl SimpleComponent for AboutDialog {
 
         ComponentParts { model, widgets }
     }
-
-    fn update_view(&self, _dialog: &mut Self::Widgets, _sender: ComponentSender<Self>) {}
 }

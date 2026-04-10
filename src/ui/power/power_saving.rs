@@ -15,9 +15,7 @@ impl Component for SavingPowerPageView {
     type CommandOutput = ();
 
     view! {
-        gtk::Box {
-            set_orientation: gtk::Orientation::Vertical,
-            set_spacing: 12,
+        adw::PreferencesPage {
             adw::PreferencesGroup {
                 adw::SwitchRow {
                     set_title: "Automic Power Saver",
@@ -98,8 +96,8 @@ impl Component for SavingPowerPageView {
                     set_title: "Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled.",
 
                     add_prefix = &gtk::Image {
-                        set_icon_name: Some("issue-symbolic"),
-                        set_pixel_size: 16,
+                        set_icon_name: Some("info-outline"),
+                        set_pixel_size: 24,
                     }
                 }
             }
