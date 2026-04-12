@@ -1,5 +1,4 @@
 use crate::ui::power::{battery_row::BatteryModel, power_page::PowerMsg};
-use dconf_rs;
 use ppd::PpdProxyBlocking;
 use regex::Regex;
 use relm4::{
@@ -12,47 +11,57 @@ use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
+use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
+use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
+use gtk::gio::Settings;
+use gtk::gio::prelude::*;
+
+#[derive(Debug, Clone)]
+pub struct PowerSettings {
+    pub session: Settings,
+    pub power: Settings,
+    pub interface: Settings,
+}
+
+impl PowerSettings {
+    pub fn new() -> Self {
+        Self {
+            session: Settings::new("org.gnome.desktop.session"),
+            power: Settings::new("org.gnome.settings-daemon.plugins.power"),
+            interface: Settings::new("org.gnome.desktop.interface"),
+        }
+    }
+}
+
 /// Possible actions for power button(usually turn on/off)
 /// - Power Off - which is sometimes stated as Interactive will prompt you to decide if you really to turn off your device.
 /// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
 /// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or low power consumption mode keeping the applications open and running.
 /// - Nothing - the name is self explanatory.
-const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
-
-#[derive(Debug)]
-#[tracker::track]
-pub struct GeneralPowerPageView {
-    pub power_mode: PowerMode,
-    pub show_battery_percentage: bool,
-    pub power_button_action: u32,
-    pub show_batteries: bool,
-    pub battery_label_text: String,
-    pub charging_mode: ChargingMode,
-
-    #[tracker::do_not_track]
-    pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
-
-    #[tracker::do_not_track]
-    batteries: FactoryVecDeque<BatteryModel>,
-
-    #[tracker::do_not_track]
-    pub ppd: Arc<PpdProxyBlocking<'static>>,
-
-    // Power Saving Options
-    /// Dim screen
-    pub idle_dim: bool,
-    /// Automatic Screen Black (uint32 0)
-    /// Custom for ComboRow
-    pub auto_screen_black: bool,
-    /// Automatic Screen Black (uint32 0)
-    pub idle_delay: String,
-
-    // Automatic Suspend
-    /// While plugged in (ac => Alternating Current)
-    pub sleep_inactive_ac_type: bool,
-    /// Suspend on AC timeout
-    pub sleep_inactive_ac_timeout: u16,
-}
+pub const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
+pub const SUSPEND_DELAY_TIMEOUT: [&str; 10] = [
+    "15 minute",
+    "20 minute",
+    "25 minute",
+    "30 minute",
+    "45 minute",
+    "1 hour",
+    "1 hour 20 minute",
+    "1 hour 30 minute",
+    "1 hour 40 minute",
+    "2 hours",
+];
+pub const SCREEN_BLACK_DELAY_TIMEOUT: [&str; 9] = [
+    "1 minute",
+    "2 minute",
+    "3 minute",
+    "4 minute",
+    "5 minute",
+    "8 minute",
+    "10 minute",
+    "12 minute",
+    "15 minute",
+];
 
 impl fmt::Display for PowerMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -66,6 +75,52 @@ impl fmt::Display for PowerMode {
 }
 
 #[derive(Debug)]
+#[tracker::track]
+pub struct GeneralPowerPageView {
+    #[tracker::do_not_track]
+    pub settings: PowerSettings,
+
+    pub power_mode: PowerMode,
+    pub charging_mode: ChargingMode,
+
+    pub show_battery_percentage: bool,
+    pub show_batteries: bool,
+
+    pub power_button_action: u32,
+    pub battery_label_text: String,
+
+    #[tracker::do_not_track]
+    pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
+
+    #[tracker::do_not_track]
+    batteries: FactoryVecDeque<BatteryModel>,
+
+    #[tracker::do_not_track]
+    pub ppd: Arc<PpdProxyBlocking<'static>>,
+
+    // Power Saving Options
+    /// Dim screen
+    idle_dim: bool,
+    #[tracker::do_not_track]
+    dim_screen_controller: Controller<DimScreen>,
+    /// Automatic Screen Black (uint32 0)
+    /// Custom for ComboRow
+    pub auto_screen_black: bool,
+    pub auto_screen_black_delay: u16,
+    #[tracker::do_not_track]
+    auto_screen_black_controller: Controller<AutoScreenBlack>,
+
+    /// Automatic Screen Black (uint32 0)
+    pub idle_delay: String,
+
+    // Automatic Suspend
+    /// While plugged in (ac => Alternating Current)
+    pub sleep_inactive_ac_type: bool,
+    /// Suspend on AC timeout
+    pub sleep_inactive_ac_timeout: u16,
+}
+
+#[derive(Debug)]
 pub enum GeneralPowerPageViewMsg {
     SetPowerMode(PowerMode),
     SetChargingMode(ChargingMode),
@@ -75,7 +130,9 @@ pub enum GeneralPowerPageViewMsg {
     // Automatic Suspend
     SetIdleDim(bool),
     SetSleepInactiveACType(bool),
-    SetAutoScreenBlack(bool),
+
+    SetAutoScreenBlackEnabled(bool),
+    SetAutoScreenBlackDelay(u16),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -253,65 +310,20 @@ impl Component for GeneralPowerPageView {
                 },
             },
 
-            adw::PreferencesGroup {
-                set_title: "Power Saving",
 
+            // Dim Screen
+            adw::PreferencesGroup {
+                #[watch]
                 set_visible: !model.show_batteries,
 
-
-                adw::PreferencesGroup {
-                    adw::ActionRow {
-                        set_title: "Dim Screen",
-                        set_subtitle: "Reduce screen brightness when the device is inactive",
-
-                        add_suffix = &gtk::Switch {
-                            set_valign: gtk::Align::Center,
-                            #[watch]
-                            set_active: model.idle_dim,
-                            connect_state_set[sender] => move |_, state| {
-                                sender.input(GeneralPowerPageViewMsg::SetIdleDim(state));
-                                gtk::glib::Propagation::Proceed
-                            },
-                        },
-                    },
-                },
+                model.dim_screen_controller.widget(),
             },
 
             adw::PreferencesGroup {
+                #[watch]
                 set_visible: !model.show_batteries,
 
-                adw::ActionRow {
-                    set_title: "Automatic Screen Blank",
-                    set_subtitle: "Turn the screen off after a period of inactivity",
-
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.auto_screen_black,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(GeneralPowerPageViewMsg::SetAutoScreenBlack(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
-                adw::ComboRow {
-                    #[watch]
-                    set_sensitive: model.auto_screen_black,
-
-                    set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&[
-                        "1 minute",
-                        "2 minute",
-                        "3 minute",
-                        "4 minute",
-                        "5 minute",
-                        "8 minute",
-                        "10 minute",
-                        "12 minute",
-                        "15 minute",
-                    ])),
-                }
+                model.auto_screen_black_controller.widget(),
             },
 
             adw::PreferencesGroup {
@@ -336,18 +348,7 @@ impl Component for GeneralPowerPageView {
                     set_sensitive: model.sleep_inactive_ac_type,
 
                     set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&[
-                        "15 minute",
-                        "20 minute",
-                        "25 minute",
-                        "30 minute",
-                        "45 minute",
-                        "1 hour",
-                        "1 hour 20 minute",
-                        "1 hour 30 minute",
-                        "1 hour 40 minute",
-                        "2 hours",
-                    ])),
+                    set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
                 }
             },
 
@@ -376,7 +377,18 @@ impl Component for GeneralPowerPageView {
     ) -> ComponentParts<Self> {
         let connection = Connection::system().expect("Connection failed");
         let proxy = PpdProxyBlocking::new(&connection).expect("PPD Proxy failed");
+        let settings = PowerSettings::new();
 
+        let idle_dim = settings.power.boolean("idle-dim");
+        let idle_delay = settings.session.uint("idle-delay").to_string();
+        let show_battery_percentage = settings.interface.boolean("show-battery-percentage");
+        let sleep_inactive_ac_type = matches!(
+            (settings.power.string("sleep-inactive-ac-type").as_str(),),
+            ("suspend",)
+        );
+        let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-ac-timeout") as u16;
+        let power_button_action =
+            get_power_button_action_enum(settings.power.string("power-button-action").to_string());
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
         let percentages_text = read_file("capacity", "0".into());
         let statuses = read_file("status", "Unknown".into());
@@ -406,49 +418,66 @@ impl Component for GeneralPowerPageView {
         let power_button_action_row = SimpleComboRow::builder()
             .launch(SimpleComboRow {
                 variants: POWER_BUTTON_ACTIONS.to_vec(),
-                active_index: Some(get_power_button_action_enum() as usize),
+                active_index: Some(power_button_action as usize),
             })
             .forward(
                 sender.input_sender(),
                 GeneralPowerPageViewMsg::SelectPowerButtonAction,
             );
 
+        let idle_dim = settings.power.boolean("idle-dim");
+
+        let dim_screen_controller =
+            DimScreen::builder()
+                .launch(idle_dim)
+                .forward(sender.input_sender(), |out| match out {
+                    DimScreenOutput::Toggled(state) => GeneralPowerPageViewMsg::SetIdleDim(state),
+                });
+
+        let current_delay = settings.session.uint("idle-delay");
+
+        let enabled = current_delay != 0;
+        let delay = current_delay as u16;
+
+        let auto_screen_black_controller = AutoScreenBlack::builder()
+            .launch((enabled, delay))
+            .forward(sender.input_sender(), |out| match out {
+                AutoScreenBlackOutput::Toggled(state) => {
+                    GeneralPowerPageViewMsg::SetAutoScreenBlackEnabled(state)
+                }
+                AutoScreenBlackOutput::Delay(seconds) => {
+                    GeneralPowerPageViewMsg::SetAutoScreenBlackDelay(seconds)
+                }
+            });
+
         let model = Self {
+            settings,
             batteries,
             power_mode: get_current_profile(&proxy),
             charging_mode: decide_charging_mode(),
 
-            show_battery_percentage: get_show_battery_percentage(),
+            show_battery_percentage,
             show_batteries: has_battery,
             battery_label_text: battery_label,
 
             power_button_action_row,
-            power_button_action: get_power_button_action_enum(),
+            power_button_action,
 
             ppd: Arc::new(proxy),
             tracker: 0,
 
             // In case there is no battery
-            idle_dim: dconf_rs::get_boolean("/org/gnome/settings-daemon/plugins/power/idle-dim")
-                .unwrap(),
+            idle_dim,
+            dim_screen_controller,
 
-            auto_screen_black: true,
+            auto_screen_black: enabled,
+            auto_screen_black_delay: delay,
+            auto_screen_black_controller,
 
-            idle_delay: dconf_rs::get_string("/org/gnome/desktop/session/idle-delay").unwrap(),
+            idle_delay,
 
-            sleep_inactive_ac_type: matches!(
-                (dconf_rs::get_string(
-                    "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                )
-                .unwrap()
-                .as_str(),),
-                ("suspend",)
-            ),
-
-            sleep_inactive_ac_timeout: dconf_rs::get_int(
-                "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout",
-            )
-            .unwrap_or(0) as u16,
+            sleep_inactive_ac_type,
+            sleep_inactive_ac_timeout,
         };
 
         let combo_row = model.power_button_action_row.widget();
@@ -470,10 +499,10 @@ impl Component for GeneralPowerPageView {
             GeneralPowerPageViewMsg::ToggleBatteryPercentage(state) => {
                 self.show_battery_percentage = state;
 
-                let _ = dconf_rs::set_boolean(
-                    "/org/gnome/desktop/interface/show-battery-percentage",
-                    state,
-                );
+                let _ = self
+                    .settings
+                    .interface
+                    .set_boolean("show-battery-percentage", state);
             }
 
             GeneralPowerPageViewMsg::SelectPowerButtonAction(index) => {
@@ -484,10 +513,10 @@ impl Component for GeneralPowerPageView {
                     s => s,
                 };
 
-                let _ = dconf_rs::set_string(
-                    "/org/gnome/settings-daemon/plugins/power/power-button-action",
-                    action.to_lowercase().as_str(),
-                );
+                let _ = self
+                    .settings
+                    .power
+                    .set_string("power-button-action", action.to_lowercase().as_str());
             }
             GeneralPowerPageViewMsg::SetChargingMode(mode) => {
                 self.charging_mode = mode;
@@ -502,32 +531,46 @@ impl Component for GeneralPowerPageView {
             GeneralPowerPageViewMsg::SetIdleDim(state) => {
                 self.idle_dim = state;
 
-                let _ = dconf_rs::set_boolean(
-                    "/org/gnome/settings-daemon/plugins/power/idle-dim",
-                    state,
-                );
+                let _ = self.settings.power.set_boolean("idle-dim", state);
             }
 
             GeneralPowerPageViewMsg::SetSleepInactiveACType(state) => match state {
                 true => {
                     self.sleep_inactive_ac_type = state;
 
-                    let _ = dconf_rs::set_string(
-                        "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                        "suspend",
-                    );
+                    let _ = self
+                        .settings
+                        .power
+                        .set_string("sleep-inactive-ac-type", "suspend");
                 }
                 false => {
                     self.sleep_inactive_ac_type = state;
 
-                    let _ = dconf_rs::set_string(
-                        "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                        "nothing",
-                    );
+                    let _ = self
+                        .settings
+                        .power
+                        .set_string("sleep-inactive-ac-type", "nothing");
                 }
             },
-            GeneralPowerPageViewMsg::SetAutoScreenBlack(state) => {
+
+            GeneralPowerPageViewMsg::SetAutoScreenBlackEnabled(state) => {
                 self.auto_screen_black = state;
+
+                let value = if state {
+                    self.auto_screen_black_delay as u32
+                } else {
+                    0
+                };
+
+                let _ = self.settings.session.set_uint("idle-delay", value);
+            }
+
+            GeneralPowerPageViewMsg::SetAutoScreenBlackDelay(d) => {
+                self.auto_screen_black_delay = d;
+
+                if self.auto_screen_black {
+                    let _ = self.settings.session.set_uint("idle-delay", d as u32);
+                }
             }
         }
     }
@@ -610,21 +653,14 @@ fn change_battery_threshold(_start: u8, end: u8) {
     }
 }
 
-fn get_power_button_action_enum() -> u32 {
-    match dconf_rs::get_string("/org/gnome/settings-daemon/plugins/power/power-button-action")
-        .unwrap()
-        .trim()
-    {
+fn get_power_button_action_enum(action: String) -> u32 {
+    match action.as_str() {
         "Nothing" => 3,
         "Hibernate" => 1,
         "Suspend" => 2,
         // Expected Interactive or Power Off
         _ => 0,
     }
-}
-
-fn get_show_battery_percentage() -> bool {
-    dconf_rs::get_boolean("/org/gnome/desktop/interface/show-battery-percentage").unwrap()
 }
 
 fn decide_charging_mode() -> ChargingMode {
