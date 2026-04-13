@@ -73,7 +73,7 @@ pub enum AppearanceStyle {
 #[derive(Debug)]
 pub struct AppearanceModel {
     style: AppearanceStyle,
-    color_buttons: FactoryVecDeque<MyColorButton>,
+    // color_buttons: FactoryVecDeque<MyColorButton>,
 }
 
 #[derive(Debug)]
@@ -119,7 +119,6 @@ impl SimpleComponent for AppearanceModel {
                                 set_spacing: 18,
 
                                 #[name = "left" ]
-                                // #[wrap(Some)]
                                 append = &gtk::ToggleButton{
                                     set_group: Some(&right),
                                     set_overflow: gtk::Overflow::Hidden,
@@ -185,11 +184,160 @@ impl SimpleComponent for AppearanceModel {
                             set_margin_start: 86,
                             set_margin_end: 86,
 
-                            #[local_ref]
-                            color_button_box -> gtk::Box {
-                              set_orientation: gtk::Orientation::Horizontal,
-                              set_spacing: 5,
+                            // #[local_ref]
+                            // color_button_box -> gtk::Box {
+                            //   set_orientation: gtk::Orientation::Horizontal,
+                            //   set_spacing: 5,
+                            // },
+                            #[name = "accent_color" ]
+                            gtk::ToggleButton {
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Blue.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
                             },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
+                            },
+                          },
+
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Teal.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
+                            },
+                          },
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Green.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
+                            },
+                          },
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Yellow.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
+                            },
+                          },
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Orange.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
+                            },
+                          },
+
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Red.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
+                            },
+                          },
+
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Pink.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
+                            },
+                          },  
+
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Purple.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
+                            },
+                          },
+
+                          gtk::ToggleButton {
+                            set_group: Some(&accent_color),
+                            add_css_class: "style-toggle",
+
+                            #[wrap(Some)]
+                            set_child = &gtk::ColorDialogButton{
+                                add_css_class: "accent-color-button",
+                                set_rgba: &AccentColor::Slate.to_rgba(),
+                                set_width_request: 20,
+                                set_height_request: 20,
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
+                            },
+                          },
                         },
                     },
                 },
@@ -204,25 +352,25 @@ impl SimpleComponent for AppearanceModel {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let style = AppearanceStyle::Default;
-        let color_buttons = FactoryVecDeque::builder()
-            .launch(gtk::Box::default())
-            .forward(sender.input_sender(), |output| match output {
-                MyColorButtonOutput::SendPick(value) => AppearanceMsg::SendPick(value),
-            });
+        // let color_buttons = FactoryVecDeque::builder()
+        //     .launch(gtk::Box::default())
+        //     .forward(sender.input_sender(), |output| match output {
+        //         MyColorButtonOutput::SendPick(value) => AppearanceMsg::SendPick(value),
+        //     });
 
         let mut model = AppearanceModel {
             style,
-            color_buttons,
+            // color_buttons,
         };
 
-        for color in AccentColorWrapped::iterator() {
-            model
-                .color_buttons
-                .guard()
-                .push_back(AccentColorWrapped(color));
-        }
+        // for color in AccentColorWrapped::iterator() {
+        //     model
+        //         // .color_buttons
+        //         .guard()
+        //         .push_back(AccentColorWrapped(color));
+        // }
 
-        let color_button_box = model.color_buttons.widget();
+        // let color_button_box = model.color_buttons.widget();
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
