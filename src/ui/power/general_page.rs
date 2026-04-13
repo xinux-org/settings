@@ -309,6 +309,8 @@ impl Component for GeneralPowerPageView {
 
             // Dim Screen
             adw::PreferencesGroup {
+                set_title: "Power Saving",
+
                 #[watch]
                 set_visible: !model.show_batteries,
 

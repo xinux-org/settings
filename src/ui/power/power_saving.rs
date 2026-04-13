@@ -74,26 +74,28 @@ impl Component for SavingPowerPageView {
 
                 // Dim Screen
                 adw::PreferencesGroup {
+                    set_title: "Power Saving",
+
                     model.dim_screen_controller.widget(),
                 },
 
-                adw::ActionRow {
-                    set_title: "Dim Screen",
-                    set_subtitle: "Reduce screen brightness when the device is inactive",
+                // adw::ActionRow {
+                //     set_title: "Dim Screen",
+                //     set_subtitle: "Reduce screen brightness when the device is inactive",
+                //
+                //     add_suffix = &gtk::Switch {
+                //         set_valign: gtk::Align::Center,
+                //         #[watch]
+                //         set_active: model.idle_dim,
+                //         connect_state_set[sender] => move |_, state| {
+                //             sender.input(PowerSavingMsg::SetIdleDim(state));
+                //             gtk::glib::Propagation::Proceed
+                //         },
+                //     },
+                // },
 
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.idle_dim,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PowerSavingMsg::SetIdleDim(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
                 adw::ActionRow {
-                    set_title: "Automic Power Saver",
+                    set_title: "Automatic Power Saver",
                     set_subtitle: "Turn on power saver made when battery power is low",
 
                     add_suffix = &gtk::Switch {
