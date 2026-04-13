@@ -29,41 +29,6 @@ enum MyColorButtonOutput {
     SendPick(AccentColorWrapped),
 }
 
-#[relm4::factory(pub)]
-impl FactoryComponent for MyColorButton {
-    type Init = AccentColorWrapped;
-    type Input = ();
-    type Output = MyColorButtonOutput;
-    type CommandOutput = ();
-    type ParentWidget = gtk::Box;
-
-    view! {
-        #[root]
-            #[name = "accent_color" ]
-            gtk::ToggleButton{
-              set_group: Some(&accent_color),
-              // set_overflow: gtk::Overflow::Hidden,
-              add_css_class: "style-toggle",
-
-              #[wrap(Some)]
-              set_child = &gtk::ColorDialogButton{
-                  add_css_class: "accent-color-button",
-                  set_rgba: &self.value.0.to_rgba(),
-                  set_width_request: 20,
-                  set_height_request: 20,
-              },
-
-              connect_clicked[sender, index, value = self.value.0.to_owned()] => move |_| {
-                  sender.output(MyColorButtonOutput::SendPick(AccentColorWrapped(value.to_owned()))).unwrap();
-              },
-            },
-    }
-
-    fn init_model(value: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
-        Self { value }
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum AppearanceStyle {
     Default,
@@ -108,7 +73,7 @@ impl SimpleComponent for AppearanceModel {
                             set_orientation: gtk::Orientation::Horizontal,
                             set_spacing: 24,
                             set_homogeneous: true,
-                            set_hexpand: true,
+
                             set_margin_top: 18,
                             set_margin_bottom: 18,
                             set_margin_start: 86,
@@ -175,169 +140,127 @@ impl SimpleComponent for AppearanceModel {
 
                     adw::ActionRow {
                         add_suffix = &gtk::Box {
+                            add_css_class: "accent_button_row",
                             set_orientation: gtk::Orientation::Horizontal,
                             set_spacing: 24,
-                            set_homogeneous: true,
-                            set_hexpand: true,
                             set_margin_top: 18,
                             set_margin_bottom: 18,
                             set_margin_start: 86,
                             set_margin_end: 86,
 
-                            // #[local_ref]
-                            // color_button_box -> gtk::Box {
-                            //   set_orientation: gtk::Orientation::Horizontal,
-                            //   set_spacing: 5,
-                            // },
+
                             #[name = "accent_color" ]
                             gtk::ToggleButton {
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Blue.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-blue);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
+                              },
                             },
 
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-teal);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
+                              },
                             },
-                          },
-
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Teal.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-green);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
+                              },
                             },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
-                            },
-                          },
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Green.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
-                            },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
-                            },
-                          },
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Yellow.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-yellow);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
+                              },
                             },
 
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-orange);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
+                              },
                             },
-                          },
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Orange.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-red);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
+                              },
                             },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-pink);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
+                              },
                             },
-                          },
-
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Red.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-purple);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
+                              },
                             },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-purple);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
+                              },
                             },
-                          },
-
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Pink.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
+                            gtk::ToggleButton {
+                              set_group: Some(&accent_color),
+                              add_css_class: "ring",
+                              add_css_class: "circular",
+                              inline_css:"
+                                  background-color: var(--accent-slate);
+                              ",
+                              connect_clicked[sender] => move |_| {
+                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
+                              },
                             },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
-                            },
-                          },  
-
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Purple.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
-                            },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
-                            },
-                          },
-
-                          gtk::ToggleButton {
-                            set_group: Some(&accent_color),
-                            add_css_class: "style-toggle",
-
-                            #[wrap(Some)]
-                            set_child = &gtk::ColorDialogButton{
-                                add_css_class: "accent-color-button",
-                                set_rgba: &AccentColor::Slate.to_rgba(),
-                                set_width_request: 20,
-                                set_height_request: 20,
-                            },
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
-                            },
-                          },
                         },
                     },
                 },

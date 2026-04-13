@@ -33,7 +33,7 @@ adw = { version = "0.8", package = "libadwaita", features = ["v1_8"] }
 vte = { package = "vte4", version = "0.9" }
 libgweather = "4.7"
 pango = "0.21.5"
-gnome-desktop = { package = "gnome-desktop-xinux", version = "0.21.5" } 
+gnome-desktop = { package = "gnome-desktop-xinux", version = "0.21.5" }
 
 nix-data = "0.0.3"
 nixpkgs-fmt = "1.3"
