@@ -141,41 +141,6 @@ impl Component for SavingPowerPageView {
 
             adw::PreferencesGroup {
                 adw::ActionRow {
-                    set_title: "When plugged",
-
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.sleep_inactive_ac_type,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PowerSavingMsg::SetSleepInactiveACType(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
-                adw::ComboRow {
-                    #[watch]
-                    set_sensitive: model.sleep_inactive_ac_type,
-
-                    set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&[
-                        "15 minute",
-                        "20 minute",
-                        "25 minute",
-                        "30 minute",
-                        "45 minute",
-                        "1 hour",
-                        "1 hour 20 minute",
-                        "1 hour 30 minute",
-                        "1 hour 40 minute",
-                        "2 hours",
-                    ])),
-                }
-            },
-
-            adw::PreferencesGroup {
-                adw::ActionRow {
                     set_title: "Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled.",
 
                     #[watch]
