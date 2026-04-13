@@ -71,13 +71,8 @@ impl Component for SavingPowerPageView {
     view! {
         adw::PreferencesPage {
             adw::PreferencesGroup {
-
                 // Dim Screen
-                adw::PreferencesGroup {
-                    set_title: "Power Saving",
-
-                    model.dim_screen_controller.widget(),
-                },
+                model.dim_screen_controller.widget(),
 
                 // adw::ActionRow {
                 //     set_title: "Dim Screen",
