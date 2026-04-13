@@ -4,7 +4,7 @@ use relm4::{
     prelude::*,
 };
 
-use crate::ui::power::general_page::SCREEN_BLACK_DELAY_TIMEOUT;
+use crate::ui::power::general_page::{SCREEN_BLACK_DELAY_TIMEOUT, SUSPEND_DELAY_TIMEOUT};
 
 #[derive(Debug)]
 pub struct DimScreen {
@@ -154,6 +154,96 @@ impl Component for AutoScreenBlack {
                 sender
                     .output(AutoScreenBlackOutput::Delay(seconds))
                     .unwrap();
+            }
+        }
+    }
+}
+
+// Automatic Suspend / When Plugged In
+#[derive(Debug)]
+pub struct AutomaticSuspend {
+    suspend_text: String,
+    enabled: bool,
+    delay: u16,
+}
+
+#[derive(Debug)]
+pub enum AutomaticSuspendMsg {
+    Toggle(bool),
+    Delay(u16),
+}
+
+#[derive(Debug)]
+pub enum AutomaticSuspendOutput {
+    Toggled(bool),
+    Delay(u16),
+}
+
+#[relm4::component(pub)]
+impl Component for AutomaticSuspend {
+    type Init = (String, bool, u16);
+    type Input = AutomaticSuspendMsg;
+    type Output = AutomaticSuspendOutput;
+    type CommandOutput = ();
+
+    view! {
+        adw::PreferencesGroup {
+            adw::ActionRow {
+                set_title: "When plugged",
+
+                add_suffix = &gtk::Switch {
+                    set_valign: gtk::Align::Center,
+                    #[watch]
+                    set_active: model.enabled,
+                    connect_state_set[sender] => move |_, state| {
+                        sender.input(AutomaticSuspendMsg::Toggle(state));
+                        gtk::glib::Propagation::Proceed
+                    },
+                },
+            },
+
+
+            adw::ComboRow {
+                #[watch]
+                set_sensitive: model.enabled,
+
+                set_title: "Delay",
+                set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
+            }
+        }
+    }
+
+    fn init(
+        init: Self::Init,
+        root: Self::Root,
+        sender: ComponentSender<Self>,
+    ) -> ComponentParts<Self> {
+        let model = Self {
+            suspend_text: init.0,
+            enabled: init.1,
+            delay: init.2,
+        };
+
+        let widgets = view_output!();
+
+        ComponentParts { model, widgets }
+    }
+
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+        match message {
+            AutomaticSuspendMsg::Toggle(state) => {
+                self.enabled = state;
+
+                sender
+                    .output(AutomaticSuspendOutput::Toggled(state))
+                    .unwrap()
+            }
+            AutomaticSuspendMsg::Delay(seconds) => {
+                self.delay = seconds;
+
+                sender
+                    .output(AutomaticSuspendOutput::Delay(seconds))
+                    .unwrap()
             }
         }
     }

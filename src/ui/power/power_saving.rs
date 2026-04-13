@@ -6,6 +6,7 @@ use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
 
 use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
+use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
 #[derive(Debug)]
@@ -34,6 +35,7 @@ pub struct SavingPowerPageView {
     pub sleep_inactive_battery_timeout: u16,
     /// Suspend on AC timeout
     pub sleep_inactive_ac_timeout: u16,
+    pub automatic_suspend_controller: Controller<AutomaticSuspend>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -74,20 +76,6 @@ impl Component for SavingPowerPageView {
                 // Dim Screen
                 model.dim_screen_controller.widget(),
 
-                // adw::ActionRow {
-                //     set_title: "Dim Screen",
-                //     set_subtitle: "Reduce screen brightness when the device is inactive",
-                //
-                //     add_suffix = &gtk::Switch {
-                //         set_valign: gtk::Align::Center,
-                //         #[watch]
-                //         set_active: model.idle_dim,
-                //         connect_state_set[sender] => move |_, state| {
-                //             sender.input(PowerSavingMsg::SetIdleDim(state));
-                //             gtk::glib::Propagation::Proceed
-                //         },
-                //     },
-                // },
 
                 adw::ActionRow {
                     set_title: "Automatic Power Saver",
@@ -147,6 +135,9 @@ impl Component for SavingPowerPageView {
                     ])),
                 }
             },
+
+            // When Plugged In
+            model.automatic_suspend_controller.widget(),
 
             adw::PreferencesGroup {
                 adw::ActionRow {
@@ -241,6 +232,17 @@ impl Component for SavingPowerPageView {
 
         let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-battery-timeout") as u16;
 
+        let automatic_suspend_controller = AutomaticSuspend::builder()
+            .launch(("When Plugged In".to_string(), sleep_inactive_ac_type, 0))
+            .forward(sender.input_sender(), |out| match out {
+                AutomaticSuspendOutput::Toggled(state) => {
+                    PowerSavingMsg::SetAutoScreenBlackEnabled(state)
+                }
+                AutomaticSuspendOutput::Delay(seconds) => {
+                    PowerSavingMsg::SetAutoScreenBlackDelay(seconds)
+                }
+            });
+
         let dim_screen_controller =
             DimScreen::builder()
                 .launch(idle_dim)
@@ -265,6 +267,7 @@ impl Component for SavingPowerPageView {
 
             sleep_inactive_ac_type,
             sleep_inactive_ac_timeout,
+            automatic_suspend_controller,
         };
 
         let widgets = view_output!();
