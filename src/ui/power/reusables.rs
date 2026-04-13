@@ -29,19 +29,17 @@ impl Component for DimScreen {
     type CommandOutput = ();
 
     view! {
-        adw::PreferencesGroup {
-            adw::ActionRow {
-                set_title: "Dim Screen",
-                set_subtitle: "Reduce screen brightness when the device is inactive",
+        adw::ActionRow {
+            set_title: "Dim Screen",
+            set_subtitle: "Reduce screen brightness when the device is inactive",
 
-                add_suffix = &gtk::Switch {
-                    set_valign: gtk::Align::Center,
-                    #[watch]
-                    set_active: model.idle_dim,
-                    connect_state_set[sender] => move |_, state| {
-                        sender.input(DimScreenMsg::Toggle(state));
-                        gtk::glib::Propagation::Proceed
-                    },
+            add_suffix = &gtk::Switch {
+                set_valign: gtk::Align::Center,
+                #[watch]
+                set_active: model.idle_dim,
+                connect_state_set[sender] => move |_, state| {
+                    sender.input(DimScreenMsg::Toggle(state));
+                    gtk::glib::Propagation::Proceed
                 },
             },
         },
