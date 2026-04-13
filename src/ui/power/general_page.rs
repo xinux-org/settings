@@ -14,7 +14,6 @@ use zbus::blocking::Connection;
 use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 use gtk::gio::Settings;
-use gtk::gio::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct PowerSettings {
@@ -100,18 +99,15 @@ pub struct GeneralPowerPageView {
 
     // Power Saving Options
     /// Dim screen
-    idle_dim: bool,
+    pub idle_dim: bool,
     #[tracker::do_not_track]
-    dim_screen_controller: Controller<DimScreen>,
+    pub dim_screen_controller: Controller<DimScreen>,
     /// Automatic Screen Black (uint32 0)
     /// Custom for ComboRow
     pub auto_screen_black: bool,
     pub auto_screen_black_delay: u16,
     #[tracker::do_not_track]
-    auto_screen_black_controller: Controller<AutoScreenBlack>,
-
-    /// Automatic Screen Black (uint32 0)
-    pub idle_delay: String,
+    pub auto_screen_black_controller: Controller<AutoScreenBlack>,
 
     // Automatic Suspend
     /// While plugged in (ac => Alternating Current)
@@ -319,6 +315,7 @@ impl Component for GeneralPowerPageView {
                 model.dim_screen_controller.widget(),
             },
 
+            // Automatic Screen Black
             adw::PreferencesGroup {
                 #[watch]
                 set_visible: !model.show_batteries,
@@ -473,8 +470,6 @@ impl Component for GeneralPowerPageView {
             auto_screen_black: enabled,
             auto_screen_black_delay: delay,
             auto_screen_black_controller,
-
-            idle_delay,
 
             sleep_inactive_ac_type,
             sleep_inactive_ac_timeout,

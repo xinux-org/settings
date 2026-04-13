@@ -2,19 +2,27 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
+use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
+
+use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
+use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
 #[derive(Debug)]
 pub struct SavingPowerPageView {
+    pub settings: PowerSettings,
+
     /// Automatic Power Saver
     pub auto_power_saver: bool,
     /// Dim screen
     pub idle_dim: bool,
+    dim_screen_controller: Controller<DimScreen>,
     /// Automatic Screen Black (uint32 0)
     /// Custom for ComboRow
     pub auto_screen_black: bool,
     /// Automatic Screen Black (uint32 0)
-    pub idle_delay: String,
+    pub auto_screen_black_delay: u16,
+    pub auto_screen_black_controller: Controller<AutoScreenBlack>,
 
     // Automatic Suspend
     /// On Battery Power
@@ -49,7 +57,8 @@ pub enum PowerSavingMsg {
     SetIdleDim(bool),
     SetSleepInactiveBatteryType(bool),
     SetSleepInactiveACType(bool),
-    SetAutoScreenBlack(bool),
+    SetAutoScreenBlackEnabled(bool),
+    SetAutoScreenBlackDelay(u16),
 }
 
 #[relm4::component(pub)]
@@ -62,6 +71,12 @@ impl Component for SavingPowerPageView {
     view! {
         adw::PreferencesPage {
             adw::PreferencesGroup {
+
+                // Dim Screen
+                adw::PreferencesGroup {
+                    model.dim_screen_controller.widget(),
+                },
+
                 adw::ActionRow {
                     set_title: "Dim Screen",
                     set_subtitle: "Reduce screen brightness when the device is inactive",
@@ -93,39 +108,10 @@ impl Component for SavingPowerPageView {
                 }
             },
 
+            // Automatic Screen Black
             adw::PreferencesGroup {
-                adw::ActionRow {
-                    set_title: "Automatic Screen Blank",
-                    set_subtitle: "Turn the screen off after a period of inactivity",
 
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.auto_screen_black,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PowerSavingMsg::SetAutoScreenBlack(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
-                adw::ComboRow {
-                    #[watch]
-                    set_sensitive: model.auto_screen_black,
-
-                    set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&[
-                        "1 minute",
-                        "2 minute",
-                        "3 minute",
-                        "4 minute",
-                        "5 minute",
-                        "8 minute",
-                        "10 minute",
-                        "12 minute",
-                        "15 minute",
-                    ])),
-                }
+                model.auto_screen_black_controller.widget(),
             },
 
             adw::PreferencesGroup {
@@ -221,45 +207,67 @@ impl Component for SavingPowerPageView {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let settings = PowerSettings::new();
+
+        let idle_dim = settings.power.boolean("idle-dim");
+        let auto_power_saver = settings.power.boolean("power-saver-profile-on-low-battery");
+
+        let current_delay = settings.session.uint("idle-delay");
+        let enabled = current_delay != 0;
+        let delay = current_delay as u16;
+
+        let auto_screen_black_controller = AutoScreenBlack::builder()
+            .launch((enabled, delay))
+            .forward(sender.input_sender(), |out| match out {
+                AutoScreenBlackOutput::Toggled(state) => {
+                    PowerSavingMsg::SetAutoScreenBlackEnabled(state)
+                }
+                AutoScreenBlackOutput::Delay(seconds) => {
+                    PowerSavingMsg::SetAutoScreenBlackDelay(seconds)
+                }
+            });
+
+        let sleep_inactive_battery_type = matches!(
+            (settings
+                .power
+                .string("sleep-inactive-battery-type")
+                .as_str(),),
+            ("suspend",)
+        );
+        let sleep_inactive_battery_timeout =
+            settings.power.int("sleep-inactive-battery-timeout") as u16;
+
+        let sleep_inactive_ac_type = matches!(
+            (settings.power.string("sleep-inactive-ac-type").as_str(),),
+            ("suspend",)
+        );
+
+        let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-battery-timeout") as u16;
+
+        let dim_screen_controller =
+            DimScreen::builder()
+                .launch(idle_dim)
+                .forward(sender.input_sender(), |out| match out {
+                    DimScreenOutput::Toggled(state) => PowerSavingMsg::SetIdleDim(state),
+                });
+
         let model = Self {
-            auto_power_saver: dconf_rs::get_boolean(
-                "/org/gnome/settings-daemon/plugins/power/power-saver-profile-on-low-battery",
-            )
-            .unwrap(),
+            settings,
 
-            idle_dim: dconf_rs::get_boolean("/org/gnome/settings-daemon/plugins/power/idle-dim")
-                .unwrap(),
+            auto_power_saver,
 
-            auto_screen_black: true,
-            idle_delay: dconf_rs::get_string("/org/gnome/desktop/session/idle-delay").unwrap(),
+            idle_dim,
+            dim_screen_controller,
 
-            sleep_inactive_battery_type: matches!(
-                (dconf_rs::get_string(
-                    "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type",
-                )
-                .unwrap()
-                .as_str(),),
-                ("suspend",)
-            ),
+            auto_screen_black: enabled,
+            auto_screen_black_delay: delay,
+            auto_screen_black_controller,
 
-            sleep_inactive_battery_timeout: dconf_rs::get_int(
-                "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout",
-            )
-            .unwrap_or(0) as u16,
+            sleep_inactive_battery_type,
+            sleep_inactive_battery_timeout,
 
-            sleep_inactive_ac_type: matches!(
-                (dconf_rs::get_string(
-                    "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                )
-                .unwrap()
-                .as_str(),),
-                ("suspend",)
-            ),
-
-            sleep_inactive_ac_timeout: dconf_rs::get_int(
-                "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout",
-            )
-            .unwrap_or(0) as u16,
+            sleep_inactive_ac_type,
+            sleep_inactive_ac_timeout,
         };
 
         let widgets = view_output!();
@@ -272,36 +280,33 @@ impl Component for SavingPowerPageView {
             PowerSavingMsg::SetAutoPowerSaver(state) => {
                 self.auto_power_saver = state;
 
-                let _ = dconf_rs::set_boolean(
-                    "/org/gnome/settings-daemon/plugins/power/power-saver-profile-on-low-battery",
-                    state,
-                );
+                let _ = self
+                    .settings
+                    .power
+                    .set_boolean("power-saver-profile-on-low-battery", state);
             }
+
             PowerSavingMsg::SetIdleDim(state) => {
                 self.idle_dim = state;
 
-                let _ = dconf_rs::set_boolean(
-                    "/org/gnome/settings-daemon/plugins/power/idle-dim",
-                    state,
-                );
+                let _ = self.settings.power.set_boolean("idle-dim", state);
             }
 
             PowerSavingMsg::SetSleepInactiveBatteryType(state) => match state {
                 true => {
                     self.sleep_inactive_battery_type = state;
 
-                    let _ = dconf_rs::set_string(
-                        "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type",
-                        "suspend",
-                    );
+                    let _ = self
+                        .settings
+                        .power
+                        .set_string("sleep-inactive-battery-type", "suspend");
                 }
                 false => {
                     self.sleep_inactive_battery_type = state;
-
-                    let _ = dconf_rs::set_string(
-                        "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type",
-                        "nothing",
-                    );
+                    let _ = self
+                        .settings
+                        .power
+                        .set_string("sleep-inactive-battery-type", "nothing");
                 }
             },
 
@@ -309,22 +314,38 @@ impl Component for SavingPowerPageView {
                 true => {
                     self.sleep_inactive_ac_type = state;
 
-                    let _ = dconf_rs::set_string(
-                        "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                        "suspend",
-                    );
+                    let _ = self
+                        .settings
+                        .power
+                        .set_string("sleep-inactive-ac-type", "suspend");
                 }
                 false => {
                     self.sleep_inactive_ac_type = state;
 
-                    let _ = dconf_rs::set_string(
-                        "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                        "nothing",
-                    );
+                    let _ = self
+                        .settings
+                        .power
+                        .set_string("sleep-inactive-ac-type", "nothing");
                 }
             },
-            PowerSavingMsg::SetAutoScreenBlack(state) => {
+            PowerSavingMsg::SetAutoScreenBlackEnabled(state) => {
                 self.auto_screen_black = state;
+
+                let value = if state {
+                    self.auto_screen_black_delay as u32
+                } else {
+                    0
+                };
+
+                let _ = self.settings.session.set_uint("idle-delay", value);
+            }
+
+            PowerSavingMsg::SetAutoScreenBlackDelay(d) => {
+                self.auto_screen_black_delay = d;
+
+                if self.auto_screen_black {
+                    let _ = self.settings.session.set_uint("idle-delay", d as u32);
+                }
             }
         }
     }

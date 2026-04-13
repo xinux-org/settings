@@ -1,4 +1,3 @@
-use dconf_rs;
 use relm4::{
     adw::prelude::*,
     gtk::{self},
