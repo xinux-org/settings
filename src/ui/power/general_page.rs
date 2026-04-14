@@ -50,16 +50,17 @@ pub const SUSPEND_DELAY_TIMEOUT: [&str; 10] = [
     "1 hour 40 minute",
     "2 hours",
 ];
-pub const SCREEN_BLACK_DELAY_TIMEOUT: [&str; 9] = [
+pub const SCREEN_BLACK_DELAY_VALUES: [u16; 9] = [60, 120, 180, 240, 300, 480, 600, 720, 900];
+pub const SCREEN_BLACK_DELAY_LABELS: [&str; 9] = [
     "1 minute",
-    "2 minute",
-    "3 minute",
-    "4 minute",
-    "5 minute",
-    "8 minute",
-    "10 minute",
-    "12 minute",
-    "15 minute",
+    "2 minutes",
+    "3 minutes",
+    "4 minutes",
+    "5 minutes",
+    "8 minutes",
+    "10 minutes",
+    "12 minutes",
+    "15 minutes",
 ];
 
 impl fmt::Display for PowerMode {

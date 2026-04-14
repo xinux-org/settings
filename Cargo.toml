@@ -53,7 +53,6 @@ enquote = "1"
 # system infos
 sysinfo = "0.38.3"
 wgpu = "27.0.1"
-dconf_rs = "0.3.0"
 
 # power page
 ppd = "0.1.0"

@@ -4,7 +4,9 @@ use relm4::{
     prelude::*,
 };
 
-use crate::ui::power::general_page::{SCREEN_BLACK_DELAY_TIMEOUT, SUSPEND_DELAY_TIMEOUT};
+use crate::ui::power::general_page::{
+    SCREEN_BLACK_DELAY_LABELS, SCREEN_BLACK_DELAY_VALUES, SUSPEND_DELAY_TIMEOUT,
+};
 
 #[derive(Debug)]
 pub struct DimScreen {
@@ -120,7 +122,7 @@ impl Component for AutoScreenBlack {
                     set_sensitive: model.enabled,
 
                     set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&SCREEN_BLACK_DELAY_TIMEOUT)),
+                    set_model: Some(&gtk::StringList::new(&SCREEN_BLACK_DELAY_LABELS)),
                 }
             },
     }
@@ -144,6 +146,7 @@ impl Component for AutoScreenBlack {
         match message {
             AutoScreenBlackMsg::Toggle(state) => {
                 self.enabled = state;
+
                 sender
                     .output(AutoScreenBlackOutput::Toggled(state))
                     .unwrap()
@@ -151,6 +154,7 @@ impl Component for AutoScreenBlack {
 
             AutoScreenBlackMsg::Delay(seconds) => {
                 self.delay = seconds;
+
                 sender
                     .output(AutoScreenBlackOutput::Delay(seconds))
                     .unwrap();
@@ -189,7 +193,7 @@ impl Component for AutomaticSuspend {
     view! {
         adw::PreferencesGroup {
             adw::ActionRow {
-                set_title: "When plugged",
+                set_title: model.suspend_text.as_str(),
 
                 add_suffix = &gtk::Switch {
                     set_valign: gtk::Align::Center,

@@ -846,12 +846,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dconf_rs"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7046468a81e6a002061c01e6a7c83139daf91b11c30e66795b13217c2d885c8b"
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3538,7 +3532,6 @@ name = "settings"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "dconf_rs",
  "enquote",
  "gettext-rs",
  "gnome-desktop-xinux",

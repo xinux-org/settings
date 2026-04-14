@@ -9,6 +9,8 @@ use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
 use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
+use crate::ui::power::general_page::SUSPEND_DELAY_TIMEOUT;
+
 #[derive(Debug)]
 pub struct SavingPowerPageView {
     pub settings: PowerSettings,
@@ -38,27 +40,13 @@ pub struct SavingPowerPageView {
     pub automatic_suspend_controller: Controller<AutomaticSuspend>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-/// ### Currently Unused
-/// Used for Automatic Suspend
-/// Values: suspend | nothing
-pub enum SleepInactiveType {
-    Suspend,
-    Nothing,
-    // Keep other options commented because it's Automatic *Suspend*
-    // Blank,
-    // Interactive,
-    // Hibernate,
-    // Logout,
-    // Shutdown,
-}
-
 #[derive(Debug)]
 pub enum PowerSavingMsg {
     SetAutoPowerSaver(bool),
     SetIdleDim(bool),
     SetSleepInactiveBatteryType(bool),
     SetSleepInactiveACType(bool),
+    SetSleepInactiveACTimeout(u16),
     SetAutoScreenBlackEnabled(bool),
     SetAutoScreenBlackDelay(u16),
 }
@@ -121,18 +109,7 @@ impl Component for SavingPowerPageView {
                     set_sensitive: model.sleep_inactive_battery_type,
 
                     set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&[
-                        "15 minute",
-                        "20 minute",
-                        "25 minute",
-                        "30 minute",
-                        "45 minute",
-                        "1 hour",
-                        "1 hour 20 minute",
-                        "1 hour 30 minute",
-                        "1 hour 40 minute",
-                        "2 hours",
-                    ])),
+                    set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
                 }
             },
 
@@ -167,7 +144,8 @@ impl Component for SavingPowerPageView {
 
         let current_delay = settings.session.uint("idle-delay");
         let enabled = current_delay != 0;
-        let delay = current_delay as u16;
+        let delay = 300;
+        // let delay = current_delay as u16;
 
         let auto_screen_black_controller = AutoScreenBlack::builder()
             .launch((enabled, delay))
@@ -198,13 +176,13 @@ impl Component for SavingPowerPageView {
         let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-battery-timeout") as u16;
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
-            .launch(("When Plugged In".to_string(), sleep_inactive_ac_type, 0))
+            .launch(("When Plugged In".to_string(), sleep_inactive_ac_type, 300))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Toggled(state) => {
-                    PowerSavingMsg::SetAutoScreenBlackEnabled(state)
+                    PowerSavingMsg::SetSleepInactiveACType(state)
                 }
                 AutomaticSuspendOutput::Delay(seconds) => {
-                    PowerSavingMsg::SetAutoScreenBlackDelay(seconds)
+                    PowerSavingMsg::SetSleepInactiveACTimeout(seconds)
                 }
             });
 
@@ -293,16 +271,18 @@ impl Component for SavingPowerPageView {
                         .set_string("sleep-inactive-ac-type", "nothing");
                 }
             },
+            PowerSavingMsg::SetSleepInactiveACTimeout(seconds) => {}
             PowerSavingMsg::SetAutoScreenBlackEnabled(state) => {
                 self.auto_screen_black = state;
 
-                let value = if state {
-                    self.auto_screen_black_delay as u32
+                if state {
+                    let _ = self
+                        .settings
+                        .session
+                        .set_uint("idle-delay", self.auto_screen_black_delay as u32);
                 } else {
-                    0
-                };
-
-                let _ = self.settings.session.set_uint("idle-delay", value);
+                    let _ = self.settings.session.set_uint("idle-delay", 0);
+                }
             }
 
             PowerSavingMsg::SetAutoScreenBlackDelay(d) => {
