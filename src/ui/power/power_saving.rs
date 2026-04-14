@@ -1,3 +1,5 @@
+use std::convert::identity;
+
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
@@ -20,11 +22,6 @@ pub struct SavingPowerPageView {
     /// Dim screen
     pub idle_dim: bool,
     dim_screen_controller: Controller<DimScreen>,
-    /// Automatic Screen Black (uint32 0)
-    /// Custom for ComboRow
-    pub auto_screen_black: bool,
-    /// Automatic Screen Black (uint32 0)
-    pub auto_screen_black_delay: u16,
     pub auto_screen_black_controller: Controller<AutoScreenBlack>,
 
     // Automatic Suspend
@@ -47,8 +44,7 @@ pub enum PowerSavingMsg {
     SetSleepInactiveBatteryType(bool),
     SetSleepInactiveACType(bool),
     SetSleepInactiveACTimeout(u16),
-    SetAutoScreenBlackEnabled(bool),
-    SetAutoScreenBlackDelay(u16),
+    Noop,
 }
 
 #[relm4::component(pub)]
@@ -83,8 +79,7 @@ impl Component for SavingPowerPageView {
 
             // Automatic Screen Black
             adw::PreferencesGroup {
-
-                model.auto_screen_black_controller.widget(),
+                add: model.auto_screen_black_controller.widget(),
             },
 
             adw::PreferencesGroup {
@@ -113,8 +108,10 @@ impl Component for SavingPowerPageView {
                 }
             },
 
-            // When Plugged In
-            model.automatic_suspend_controller.widget(),
+            adw::PreferencesGroup {
+                // When Plugged In
+                add: model.automatic_suspend_controller.widget(),
+            },
 
             adw::PreferencesGroup {
                 adw::ActionRow {
@@ -142,20 +139,11 @@ impl Component for SavingPowerPageView {
         let idle_dim = settings.power.boolean("idle-dim");
         let auto_power_saver = settings.power.boolean("power-saver-profile-on-low-battery");
 
-        let current_delay = settings.session.uint("idle-delay");
-        let enabled = current_delay != 0;
-        let delay = 300;
-        // let delay = current_delay as u16;
-
         let auto_screen_black_controller = AutoScreenBlack::builder()
-            .launch((enabled, delay))
+            .launch((settings.to_owned()))
             .forward(sender.input_sender(), |out| match out {
-                AutoScreenBlackOutput::Toggled(state) => {
-                    PowerSavingMsg::SetAutoScreenBlackEnabled(state)
-                }
-                AutoScreenBlackOutput::Delay(seconds) => {
-                    PowerSavingMsg::SetAutoScreenBlackDelay(seconds)
-                }
+                // we do not need child and parent relationship in this case
+                AutoScreenBlackOutput::Noop => PowerSavingMsg::Noop,
             });
 
         let sleep_inactive_battery_type = matches!(
@@ -200,9 +188,6 @@ impl Component for SavingPowerPageView {
 
             idle_dim,
             dim_screen_controller,
-
-            auto_screen_black: enabled,
-            auto_screen_black_delay: delay,
             auto_screen_black_controller,
 
             sleep_inactive_battery_type,
@@ -271,27 +256,8 @@ impl Component for SavingPowerPageView {
                         .set_string("sleep-inactive-ac-type", "nothing");
                 }
             },
-            PowerSavingMsg::SetSleepInactiveACTimeout(seconds) => {}
-            PowerSavingMsg::SetAutoScreenBlackEnabled(state) => {
-                self.auto_screen_black = state;
-
-                if state {
-                    let _ = self
-                        .settings
-                        .session
-                        .set_uint("idle-delay", self.auto_screen_black_delay as u32);
-                } else {
-                    let _ = self.settings.session.set_uint("idle-delay", 0);
-                }
-            }
-
-            PowerSavingMsg::SetAutoScreenBlackDelay(d) => {
-                self.auto_screen_black_delay = d;
-
-                if self.auto_screen_black {
-                    let _ = self.settings.session.set_uint("idle-delay", d as u32);
-                }
-            }
+            PowerSavingMsg::SetSleepInactiveACTimeout(_seconds) => {}
+            PowerSavingMsg::Noop => {}
         }
     }
 }

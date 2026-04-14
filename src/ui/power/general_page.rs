@@ -103,10 +103,6 @@ pub struct GeneralPowerPageView {
     pub idle_dim: bool,
     #[tracker::do_not_track]
     pub dim_screen_controller: Controller<DimScreen>,
-    /// Automatic Screen Black (uint32 0)
-    /// Custom for ComboRow
-    pub auto_screen_black: bool,
-    pub auto_screen_black_delay: u16,
     #[tracker::do_not_track]
     pub auto_screen_black_controller: Controller<AutoScreenBlack>,
 
@@ -128,8 +124,10 @@ pub enum GeneralPowerPageViewMsg {
     SetIdleDim(bool),
     SetSleepInactiveACType(bool),
 
-    SetAutoScreenBlackEnabled(bool),
-    SetAutoScreenBlackDelay(u16),
+    // no operation needed.
+    // we do it just to avoit type Output
+    // in child component handling
+    Noop,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -311,19 +309,16 @@ impl Component for GeneralPowerPageView {
             // Dim Screen
             adw::PreferencesGroup {
                 set_title: "Power Saving",
-
                 #[watch]
                 set_visible: !model.show_batteries,
-
-                model.dim_screen_controller.widget(),
+                add: model.dim_screen_controller.widget(),
             },
 
             // Automatic Screen Black
             adw::PreferencesGroup {
                 #[watch]
                 set_visible: !model.show_batteries,
-
-                model.auto_screen_black_controller.widget(),
+                add: model.auto_screen_black_controller.widget(),
             },
 
             adw::PreferencesGroup {
@@ -425,8 +420,6 @@ impl Component for GeneralPowerPageView {
                 GeneralPowerPageViewMsg::SelectPowerButtonAction,
             );
 
-        let idle_dim = settings.power.boolean("idle-dim");
-
         let dim_screen_controller =
             DimScreen::builder()
                 .launch(idle_dim)
@@ -434,20 +427,11 @@ impl Component for GeneralPowerPageView {
                     DimScreenOutput::Toggled(state) => GeneralPowerPageViewMsg::SetIdleDim(state),
                 });
 
-        let current_delay = settings.session.uint("idle-delay");
-
-        let enabled = current_delay != 0;
-        let delay = current_delay as u16;
-
         let auto_screen_black_controller = AutoScreenBlack::builder()
-            .launch((enabled, delay))
+            .launch(settings.to_owned())
             .forward(sender.input_sender(), |out| match out {
-                AutoScreenBlackOutput::Toggled(state) => {
-                    GeneralPowerPageViewMsg::SetAutoScreenBlackEnabled(state)
-                }
-                AutoScreenBlackOutput::Delay(seconds) => {
-                    GeneralPowerPageViewMsg::SetAutoScreenBlackDelay(seconds)
-                }
+                // we do not need child and parent relationship in this case
+                AutoScreenBlackOutput::Noop => GeneralPowerPageViewMsg::Noop,
             });
 
         let model = Self {
@@ -470,8 +454,8 @@ impl Component for GeneralPowerPageView {
             idle_dim,
             dim_screen_controller,
 
-            auto_screen_black: enabled,
-            auto_screen_black_delay: delay,
+            // auto_screen_black: enabled,
+            // auto_screen_black_delay: delay,
             auto_screen_black_controller,
 
             sleep_inactive_ac_type,
@@ -550,26 +534,7 @@ impl Component for GeneralPowerPageView {
                         .set_string("sleep-inactive-ac-type", "nothing");
                 }
             },
-
-            GeneralPowerPageViewMsg::SetAutoScreenBlackEnabled(state) => {
-                self.auto_screen_black = state;
-
-                let value = if state {
-                    self.auto_screen_black_delay as u32
-                } else {
-                    0
-                };
-
-                let _ = self.settings.session.set_uint("idle-delay", value);
-            }
-
-            GeneralPowerPageViewMsg::SetAutoScreenBlackDelay(d) => {
-                self.auto_screen_black_delay = d;
-
-                if self.auto_screen_black {
-                    let _ = self.settings.session.set_uint("idle-delay", d as u32);
-                }
-            }
+            GeneralPowerPageViewMsg::Noop => {}
         }
     }
 }

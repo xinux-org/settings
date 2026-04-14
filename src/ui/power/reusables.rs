@@ -5,7 +5,7 @@ use relm4::{
 };
 
 use crate::ui::power::general_page::{
-    SCREEN_BLACK_DELAY_LABELS, SCREEN_BLACK_DELAY_VALUES, SUSPEND_DELAY_TIMEOUT,
+    PowerSettings, SCREEN_BLACK_DELAY_LABELS, SCREEN_BLACK_DELAY_VALUES, SUSPEND_DELAY_TIMEOUT,
 };
 
 #[derive(Debug)]
@@ -76,55 +76,59 @@ impl Component for DimScreen {
 // Automatic Screen Black
 #[derive(Debug)]
 pub struct AutoScreenBlack {
+    session_settings: gtk::gio::Settings,
     enabled: bool,
-    delay: u16,
+    delay: u32,
 }
 
 #[derive(Debug)]
 pub enum AutoScreenBlackMsg {
     Toggle(bool),
-    Delay(u16),
+    Delay(u32),
 }
 
 #[derive(Debug)]
 pub enum AutoScreenBlackOutput {
-    Toggled(bool),
-    Delay(u16),
+    Noop,
 }
+
+const BLANK_SCREEN_DEFAULT: u32 = 300;
 
 #[relm4::component(pub)]
 impl Component for AutoScreenBlack {
-    type Init = (bool, u16);
+    type Init = PowerSettings;
     type Input = AutoScreenBlackMsg;
     type Output = AutoScreenBlackOutput;
     type CommandOutput = ();
 
     view! {
-            adw::PreferencesGroup {
+        #[name(blank_screen_group)]
+        adw::PreferencesGroup {
+            #[name(blank_screen_switch_row)]
+            adw::SwitchRow {
+                set_title: "Automatic Screen Blank",
+                set_subtitle: "Turn the screen off after a period of inactivity",
+                #[watch]
+                set_active: model.enabled,
 
-                adw::ActionRow {
-                    set_title: "Automatic Screen Blank",
-                    set_subtitle: "Turn the screen off after a period of inactivity",
-
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.enabled,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(AutoScreenBlackMsg::Toggle(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
-                adw::ComboRow {
-                    #[watch]
-                    set_sensitive: model.enabled,
-
-                    set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&SCREEN_BLACK_DELAY_LABELS)),
+                connect_active_notify[sender] => move |row| {
+                    sender.input(AutoScreenBlackMsg::Toggle(row.is_active()));
                 }
             },
+
+            #[name(blank_screen_delay_row)]
+            adw::ComboRow {
+                set_title: "Delay",
+                #[watch]
+                set_sensitive: model.enabled,
+                set_model: Some(&gtk::StringList::new(&SCREEN_BLACK_DELAY_LABELS)),
+
+                // example: https://github.com/blissd/fotema/blob/main/src/app/components/preferences.rs#L127-L130
+                connect_selected_item_notify[sender] => move |row| {
+                    sender.input(AutoScreenBlackMsg::Delay(row.selected()));
+                }
+            }
+        }
     }
 
     fn init(
@@ -132,32 +136,43 @@ impl Component for AutoScreenBlack {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let session_settings = init.session;
+        let current_delay = session_settings.uint("idle-delay");
+
+        let (enabled, delay) = current_delay
+            .eq(&0)
+            .then(|| (false, BLANK_SCREEN_DEFAULT))
+            .unwrap_or((true, current_delay));
+
         let model = Self {
-            enabled: init.0,
-            delay: init.1,
+            session_settings,
+            enabled,
+            delay,
         };
 
-        let widgets = view_output!();
+        sender.input(AutoScreenBlackMsg::Toggle(model.enabled));
+        // sender.input(AutoScreenBlackMsg::Delay(delay));
 
+        let widgets = view_output!();
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             AutoScreenBlackMsg::Toggle(state) => {
+                // FIXME: https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/power/cc-power-panel.c?ref_type=heads#L740
+                if state {
+                    if self.delay == 0 {
+                        sender.input(AutoScreenBlackMsg::Delay(3600));
+                    }
+                } else {
+                    sender.input(AutoScreenBlackMsg::Delay(0));
+                }
                 self.enabled = state;
-
-                sender
-                    .output(AutoScreenBlackOutput::Toggled(state))
-                    .unwrap()
             }
-
             AutoScreenBlackMsg::Delay(seconds) => {
                 self.delay = seconds;
-
-                sender
-                    .output(AutoScreenBlackOutput::Delay(seconds))
-                    .unwrap();
+                let _ = self.session_settings.set_uint("idle-delay", self.delay);
             }
         }
     }
@@ -191,30 +206,30 @@ impl Component for AutomaticSuspend {
     type CommandOutput = ();
 
     view! {
-        adw::PreferencesGroup {
-            adw::ActionRow {
-                set_title: model.suspend_text.as_str(),
+        #[root]
+        adw::ActionRow {
+            set_title: model.suspend_text.as_str(),
 
-                add_suffix = &gtk::Switch {
-                    set_valign: gtk::Align::Center,
-                    #[watch]
-                    set_active: model.enabled,
-                    connect_state_set[sender] => move |_, state| {
-                        sender.input(AutomaticSuspendMsg::Toggle(state));
-                        gtk::glib::Propagation::Proceed
-                    },
+            add_suffix = &gtk::Switch {
+                set_valign: gtk::Align::Center,
+                #[watch]
+                set_active: model.enabled,
+                connect_state_set[sender] => move |_, state| {
+                    sender.input(AutomaticSuspendMsg::Toggle(state));
+                    gtk::glib::Propagation::Proceed
                 },
             },
+        },
 
 
-            adw::ComboRow {
-                #[watch]
-                set_sensitive: model.enabled,
+        adw::ComboRow {
+            #[watch]
+            set_sensitive: model.enabled,
 
-                set_title: "Delay",
-                set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
-            }
+            set_title: "Delay",
+            set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
         }
+
     }
 
     fn init(
