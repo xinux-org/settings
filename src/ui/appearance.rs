@@ -227,16 +227,6 @@ impl SimpleComponent for AppearanceModel {
                                   background-color: var(--accent-purple);
                               ",
                               connect_clicked[sender] => move |_| {
-                                  sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
-                              },
-                            },
-                            gtk::ToggleButton {
-                              set_group: Some(&accent_color),
-                              add_css_class: "accent-button",
-                              inline_css:"
-                                  background-color: var(--accent-purple);
-                              ",
-                              connect_clicked[sender] => move |_| {
                                   sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
                               },
                             },
