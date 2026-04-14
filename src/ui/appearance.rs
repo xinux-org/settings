@@ -140,7 +140,6 @@ impl SimpleComponent for AppearanceModel {
 
                     adw::ActionRow {
                         add_suffix = &gtk::Box {
-                            add_css_class: "accent_button_row",
                             set_orientation: gtk::Orientation::Horizontal,
                             set_spacing: 24,
                             set_margin_top: 18,
@@ -151,8 +150,7 @@ impl SimpleComponent for AppearanceModel {
 
                             #[name = "accent_color" ]
                             gtk::ToggleButton {
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-blue);
                               ",
@@ -163,8 +161,7 @@ impl SimpleComponent for AppearanceModel {
 
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-teal);
                               ",
@@ -174,8 +171,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-green);
                               ",
@@ -185,8 +181,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-yellow);
                               ",
@@ -197,8 +192,7 @@ impl SimpleComponent for AppearanceModel {
 
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-orange);
                               ",
@@ -208,8 +202,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-red);
                               ",
@@ -219,8 +212,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-pink);
                               ",
@@ -230,8 +222,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-purple);
                               ",
@@ -241,8 +232,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-purple);
                               ",
@@ -252,8 +242,7 @@ impl SimpleComponent for AppearanceModel {
                             },
                             gtk::ToggleButton {
                               set_group: Some(&accent_color),
-                              add_css_class: "ring",
-                              add_css_class: "circular",
+                              add_css_class: "accent-button",
                               inline_css:"
                                   background-color: var(--accent-slate);
                               ",

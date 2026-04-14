@@ -7,22 +7,8 @@
 }
 
 .style-toggle:checked {
-    outline-color: var(--accent-color);
+    outline-color: var(--accent-bg-color);
     transition: all 1s;
-}
-
-.ring {
-    outline: rgba(0, 0, 0, 0) solid 2px;
-}
-
-.ring:checked {
-    outline-color: var(--accent-color);
-    transition: all 1s;
-}
-
-.accent_button_row .toggle {
-    min-height: 24px;
-    min-width: 24px;
 }
 
 /* below copied from: gnome-control-center/shell/style.css */
