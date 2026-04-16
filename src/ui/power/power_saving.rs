@@ -7,7 +7,7 @@ use relm4::prelude::*;
 use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
 
-use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
+use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
 use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
@@ -22,7 +22,7 @@ pub struct SavingPowerPageView {
     /// Dim screen
     pub idle_dim: bool,
     dim_screen_controller: Controller<DimScreen>,
-    pub auto_screen_black_controller: Controller<AutoScreenBlack>,
+    pub auto_screen_black_controller: Controller<AutoScreenBlank>,
 
     // Automatic Suspend
     /// On Battery Power
@@ -139,11 +139,11 @@ impl Component for SavingPowerPageView {
         let idle_dim = settings.power.boolean("idle-dim");
         let auto_power_saver = settings.power.boolean("power-saver-profile-on-low-battery");
 
-        let auto_screen_black_controller = AutoScreenBlack::builder()
+        let auto_screen_black_controller = AutoScreenBlank::builder()
             .launch((settings.to_owned()))
             .forward(sender.input_sender(), |out| match out {
                 // we do not need child and parent relationship in this case
-                AutoScreenBlackOutput::Noop => PowerSavingMsg::Noop,
+                AutoScreenBlankOutput::Noop => PowerSavingMsg::Noop,
             });
 
         let sleep_inactive_battery_type = matches!(

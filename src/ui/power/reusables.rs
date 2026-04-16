@@ -5,7 +5,7 @@ use relm4::{
 };
 
 use crate::ui::power::general_page::{
-    PowerSettings, SCREEN_BLACK_DELAY_LABELS, SCREEN_BLACK_DELAY_VALUES, SUSPEND_DELAY_TIMEOUT,
+    PowerSettings, SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_TIMEOUT,
 };
 
 #[derive(Debug)]
@@ -75,30 +75,30 @@ impl Component for DimScreen {
 
 // Automatic Screen Black
 #[derive(Debug)]
-pub struct AutoScreenBlack {
+pub struct AutoScreenBlank {
     session_settings: gtk::gio::Settings,
     enabled: bool,
     delay: u32,
 }
 
 #[derive(Debug)]
-pub enum AutoScreenBlackMsg {
-    Toggle(bool),
+pub enum AutoScreenBlankMsg {
+    Toggle(bool, u32),
     Delay(u32),
 }
 
 #[derive(Debug)]
-pub enum AutoScreenBlackOutput {
+pub enum AutoScreenBlankOutput {
     Noop,
 }
 
 const BLANK_SCREEN_DEFAULT: u32 = 300;
 
 #[relm4::component(pub)]
-impl Component for AutoScreenBlack {
+impl Component for AutoScreenBlank {
     type Init = PowerSettings;
-    type Input = AutoScreenBlackMsg;
-    type Output = AutoScreenBlackOutput;
+    type Input = AutoScreenBlankMsg;
+    type Output = AutoScreenBlankOutput;
     type CommandOutput = ();
 
     view! {
@@ -111,8 +111,8 @@ impl Component for AutoScreenBlack {
                 #[watch]
                 set_active: model.enabled,
 
-                connect_active_notify[sender] => move |row| {
-                    sender.input(AutoScreenBlackMsg::Toggle(row.is_active()));
+                connect_active_notify[sender, blank_screen_delay_row] => move |row| {
+                    sender.input(AutoScreenBlankMsg::Toggle(row.is_active(), blank_screen_delay_row.selected()));
                 }
             },
 
@@ -121,11 +121,11 @@ impl Component for AutoScreenBlack {
                 set_title: "Delay",
                 #[watch]
                 set_sensitive: model.enabled,
-                set_model: Some(&gtk::StringList::new(&SCREEN_BLACK_DELAY_LABELS)),
+                set_model: Some(&gtk::StringList::new(&SCREEN_BLANK_DELAY_LABELS)),
 
                 // example: https://github.com/blissd/fotema/blob/main/src/app/components/preferences.rs#L127-L130
                 connect_selected_item_notify[sender] => move |row| {
-                    sender.input(AutoScreenBlackMsg::Delay(row.selected()));
+                    sender.input(AutoScreenBlankMsg::Delay(row.selected()));
                 }
             }
         }
@@ -150,8 +150,8 @@ impl Component for AutoScreenBlack {
             delay,
         };
 
-        sender.input(AutoScreenBlackMsg::Toggle(model.enabled));
-        // sender.input(AutoScreenBlackMsg::Delay(delay));
+        // sender.input(AutoScreenBlankMsg::Toggle(model.enabled, 0));
+        // sender.input(AutoScreenBlankMsg::Delay(delay));
 
         let widgets = view_output!();
         ComponentParts { model, widgets }
@@ -159,20 +159,29 @@ impl Component for AutoScreenBlack {
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
-            AutoScreenBlackMsg::Toggle(state) => {
+            AutoScreenBlankMsg::Toggle(state, index) => {
                 // FIXME: https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/power/cc-power-panel.c?ref_type=heads#L740
+                // true
                 if state {
-                    if self.delay == 0 {
-                        sender.input(AutoScreenBlackMsg::Delay(3600));
-                    }
+                    sender.input(AutoScreenBlankMsg::Delay(index));
+
+                    // unwrap is used here because index is always in range, this should NOT fail
+                    self.delay = *SCREEN_BLANK_DELAY_VALUES.get(index as usize).unwrap();
+                // false
                 } else {
-                    sender.input(AutoScreenBlackMsg::Delay(0));
+                    sender.input(AutoScreenBlankMsg::Delay(
+                        SCREEN_BLANK_DELAY_VALUES.len() as u32
+                    ));
                 }
                 self.enabled = state;
             }
-            AutoScreenBlackMsg::Delay(seconds) => {
-                self.delay = seconds;
-                let _ = self.session_settings.set_uint("idle-delay", self.delay);
+            AutoScreenBlankMsg::Delay(index) => {
+                let seconds = match SCREEN_BLANK_DELAY_VALUES.get(index as usize) {
+                    Some(val) => *val,
+                    None => 0,
+                };
+
+                let _ = self.session_settings.set_uint("idle-delay", seconds);
             }
         }
     }

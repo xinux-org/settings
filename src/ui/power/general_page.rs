@@ -11,7 +11,7 @@ use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
-use crate::ui::power::reusables::{AutoScreenBlack, AutoScreenBlackOutput};
+use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 use gtk::gio::Settings;
 
@@ -50,8 +50,8 @@ pub const SUSPEND_DELAY_TIMEOUT: [&str; 10] = [
     "1 hour 40 minute",
     "2 hours",
 ];
-pub const SCREEN_BLACK_DELAY_VALUES: [u16; 9] = [60, 120, 180, 240, 300, 480, 600, 720, 900];
-pub const SCREEN_BLACK_DELAY_LABELS: [&str; 9] = [
+pub const SCREEN_BLANK_DELAY_VALUES: [u32; 9] = [60, 120, 180, 240, 300, 480, 600, 720, 900];
+pub const SCREEN_BLANK_DELAY_LABELS: [&str; 9] = [
     "1 minute",
     "2 minutes",
     "3 minutes",
@@ -104,7 +104,7 @@ pub struct GeneralPowerPageView {
     #[tracker::do_not_track]
     pub dim_screen_controller: Controller<DimScreen>,
     #[tracker::do_not_track]
-    pub auto_screen_black_controller: Controller<AutoScreenBlack>,
+    pub auto_screen_black_controller: Controller<AutoScreenBlank>,
 
     // Automatic Suspend
     /// While plugged in (ac => Alternating Current)
@@ -427,11 +427,11 @@ impl Component for GeneralPowerPageView {
                     DimScreenOutput::Toggled(state) => GeneralPowerPageViewMsg::SetIdleDim(state),
                 });
 
-        let auto_screen_black_controller = AutoScreenBlack::builder()
+        let auto_screen_black_controller = AutoScreenBlank::builder()
             .launch(settings.to_owned())
             .forward(sender.input_sender(), |out| match out {
                 // we do not need child and parent relationship in this case
-                AutoScreenBlackOutput::Noop => GeneralPowerPageViewMsg::Noop,
+                AutoScreenBlankOutput::Noop => GeneralPowerPageViewMsg::Noop,
             });
 
         let model = Self {
