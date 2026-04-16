@@ -55,7 +55,38 @@ impl SimpleComponent for AppearanceModel {
 
     view! {
         #[root]
-        adw::ToolbarView {
+        adw::BreakpointBin {
+            set_width_request: 346,
+            set_height_request: 200,
+
+            add_breakpoint = adw::Breakpoint::new(
+                adw::BreakpointCondition::new_length(
+                    adw::BreakpointConditionLengthType::MaxWidth,
+                    420.0,
+                    adw::LengthUnit::Sp,
+                )
+            ) {
+                add_setters: &[
+                    (
+                        &accent_box,
+                        "spacing",
+                        &6
+                    ),
+                    (
+                        &accent_box,
+                        "margin-top",
+                        &6
+                    ),
+                    (
+                        &accent_box,
+                        "margin-bottom",
+                        &6
+                    ),
+                ]
+            },
+
+            #[wrap(Some)]
+            set_child = &adw::ToolbarView {
             set_top_bar_style: adw::ToolbarStyle::Flat,
 
             add_top_bar = &adw::HeaderBar {
@@ -64,28 +95,33 @@ impl SimpleComponent for AppearanceModel {
                     set_title: "Appearance",
                 }
             },
-            adw::PreferencesPage {
+            adw::ToastOverlay {
+                adw::PreferencesPage {
                 adw::PreferencesGroup {
                     set_title: "Style",
 
-                    adw::ActionRow {
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 24,
-                            set_homogeneous: true,
+                    adw::PreferencesRow {
+                        #[wrap(Some)]
+                        set_child = &adw::Clamp {
+                            set_maximum_size: 400,
+                            set_tightening_threshold: 300,
 
-                            set_margin_top: 18,
-                            set_margin_bottom: 18,
-                            set_margin_start: 86,
-                            set_margin_end: 86,
+                            gtk::Grid {
+                                set_focusable: false,
+                                set_orientation: gtk::Orientation::Horizontal,
+                                set_column_spacing: 24,
+                                set_row_spacing: 12,
+                                set_column_homogeneous: true,
+                                set_hexpand: true,
 
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 18,
+                                set_margin_top: 18,
+                                set_margin_bottom: 12,
+                                set_margin_start: 12,
+                                set_margin_end: 12,
 
-                                #[name = "left" ]
-                                append = &gtk::ToggleButton{
-                                    set_group: Some(&right),
+                                #[name = "default_style" ]
+                                attach[0,0,1,1] = &gtk::ToggleButton{
+                                    set_group: Some(&dark_style),
                                     set_overflow: gtk::Overflow::Hidden,
                                     add_css_class: "style-toggle",
 
@@ -99,20 +135,15 @@ impl SimpleComponent for AppearanceModel {
                                     connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
                                 },
 
-                                append = &gtk::Label {
-                                   set_label: "Default",
-                                   set_halign: gtk::Align::Center,
-                                   set_hexpand: true,
+                                attach[0,1,1,1] = &gtk::Label {
+                                    set_label: "Default",
+                                    set_halign: gtk::Align::Center,
+                                    set_hexpand: true,
                                 },
-                            },
 
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 18,
-
-                                #[name = "right" ]
+                                #[name = "dark_style" ]
                                 // #[wrap(Some)]
-                                append = &gtk::ToggleButton{
+                                attach[1,0,1,1] = &gtk::ToggleButton{
                                     add_css_class: "style-toggle",
                                     set_overflow: gtk::Overflow::Hidden,
 
@@ -126,7 +157,7 @@ impl SimpleComponent for AppearanceModel {
                                     connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
                                 },
 
-                                append = &gtk::Label {
+                                attach[1,1,1,1] = &gtk::Label {
                                   set_label: "Dark",
                                   set_halign: gtk::Align::Center,
                                 },
@@ -139,14 +170,15 @@ impl SimpleComponent for AppearanceModel {
                     set_title: "Accent Color",
 
                     adw::ActionRow {
+                        set_halign: gtk::Align::Center,
+                        set_hexpand: true,
+
+                        #[name = "accent_box"]
                         add_suffix = &gtk::Box {
                             set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 24,
-                            set_margin_top: 18,
-                            set_margin_bottom: 18,
-                            set_margin_start: 86,
-                            set_margin_end: 86,
-
+                            set_spacing: 12,
+                            set_margin_top: 12,
+                            set_margin_bottom: 12,
 
                             #[name = "accent_color" ]
                             gtk::ToggleButton {
@@ -244,6 +276,8 @@ impl SimpleComponent for AppearanceModel {
                     },
                 },
 
+               }
+                }
             }
         }
     }
