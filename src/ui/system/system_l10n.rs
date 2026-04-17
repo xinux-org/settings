@@ -886,19 +886,11 @@ impl SimpleComponent for RegionModel {
                 }
                 self.set_showall(!self.showall);
             }
-            RegionModelMsg::SetSelected(x) => {
-                info!("Selected language: {:?}", x);
-                self.selectiongroup.set_active(x.is_none());
-                self.set_rebuild_sensitive(x.is_some());
-                self.set_selected(x);
-
-                if let Some(selected) = &self.selected {
-                    let _ = Command::new("timedatectl")
-                        .arg("--no-ask-password")
-                        .arg("set-timezone")
-                        .arg(selected)
-                        .spawn();
-                }
+            RegionModelMsg::SetSelected(region) => {
+                info!("Selected language: {:?}", region);
+                self.selectiongroup.set_active(region.is_none());
+                self.set_rebuild_sensitive(region.is_some());
+                self.set_selected(region);
             }
             RegionModelMsg::CheckSelected => {
                 trace!("RegionModelMsg::CheckSelected {}", self.selected.is_some());
