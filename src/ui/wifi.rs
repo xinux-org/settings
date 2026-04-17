@@ -45,7 +45,12 @@ impl FactoryComponent for WifiNetwork {
             set_activatable: true,
 
             add_prefix = &gtk::Image {
-                set_icon_name: Some("network-wireless-symbolic"),
+                set_icon_name: match self.strength {
+                    80..100 => Some("network-wireless-signal-excellent-secure-symbolic"),
+                    50..80 => Some("network-wireless-signal-good-secure-symbolic"),
+                    25..50 => Some("network-wireless-signal-weak-secure-symbolic"),
+                    _ => Some("network-wireless-connected-00-symbolic"),
+                },
                 set_pixel_size: 16,
             },
 
@@ -163,6 +168,7 @@ impl SimpleComponent for WifiModel {
                 },
 
                 adw::PreferencesGroup {
+                    // FIXME: only in laptop!
                     adw::SwitchRow {
                         set_title: "Airplane Mode",
                         set_subtitle: "Disables Wi-Fi, Bluetooth and mobile broadband",
@@ -220,14 +226,15 @@ impl SimpleComponent for WifiModel {
 
             WifiInput::NetworksLoaded(nets) => {
                 self.loading = false;
-
                 let mut guard = self.networks.guard();
                 guard.clear();
-                for net in nets {
-                    guard.push_back(net);
-                }
-            }
 
+                let _: Vec<_> = nets
+                    .into_iter()
+                    .filter(|net| net.ssid.ne("<Hidden Network>"))
+                    .map(|n| guard.push_back(n))
+                    .collect();
+            }
             WifiInput::ToggleWifi(on) => {
                 self.wifi_enabled = on;
 
