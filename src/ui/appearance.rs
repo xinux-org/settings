@@ -1,12 +1,10 @@
-use std::process::Command;
-
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
-use relm4::adw::{AccentColor, prelude::*};
-use relm4::gtk;
-use relm4::prelude::*;
-
-use gtk::gio::Settings;
+use relm4::{
+    adw::{AccentColor, prelude::*},
+    gtk::{self, gio::Settings},
+    prelude::*,
+};
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
@@ -50,16 +48,6 @@ impl From<String> for AccentColorWrapped {
             _ => AccentColorWrapped(AccentColor::Blue),
         }
     }
-}
-
-#[derive(Debug)]
-struct MyColorButton {
-    value: AccentColorWrapped,
-}
-
-#[derive(Debug)]
-enum MyColorButtonOutput {
-    SendPick(AccentColorWrapped),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
