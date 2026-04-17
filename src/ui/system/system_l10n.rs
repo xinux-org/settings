@@ -551,7 +551,6 @@ pub struct RegionModel {
 pub enum RegionModelMsg {
     ToggleShowall,
     SetSelected(Option<String>),
-    SetTime(String),
     CheckSelected,
     Rebuild(String, String, String), // single line nix path, argument and value
 }
@@ -734,19 +733,6 @@ impl SimpleComponent for RegionModel {
             tracker: 0,
         };
 
-        let asyncsender = sender.clone();
-        relm4::spawn(async move {
-            loop {
-                let time = glib::DateTime::now(&glib::TimeZone::utc())
-                    .unwrap()
-                    .format("%H:%M")
-                    .unwrap()
-                    .to_string();
-                asyncsender.input(RegionModelMsg::SetTime(time));
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            }
-        });
-
         let tzbox = gtk::ListBox::new();
         let shorttzbox = gtk::ListBox::new();
 
@@ -912,21 +898,6 @@ impl SimpleComponent for RegionModel {
                         .arg("set-timezone")
                         .arg(selected)
                         .spawn();
-                }
-            }
-            RegionModelMsg::SetTime(time) => {
-                if time != self.time {
-                    self.set_time(time);
-                    self.timelist.clone().iter_mut().for_each(|(tz, label)| {
-                        let timestr = if let Ok(time) = glib::DateTime::now(tz) {
-                            time.format("%H:%M")
-                                .unwrap_or_else(|_| glib::GString::from("??"))
-                                .to_string()
-                        } else {
-                            "??".to_string()
-                        };
-                        label.set_label(&timestr);
-                    });
                 }
             }
             RegionModelMsg::CheckSelected => {
