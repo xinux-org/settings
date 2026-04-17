@@ -11,7 +11,7 @@ use relm4::{
 };
 use tracing::debug;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct WifiNetwork {
     pub ssid: String,
     pub strength: u8,
@@ -19,14 +19,19 @@ pub struct WifiNetwork {
 }
 
 #[derive(Debug)]
-pub enum NetworkRowOutput {
+pub enum NetworkRowMsg {
     Connect(String),
+}
+
+#[derive(Debug)]
+pub enum NetworkRowOutput {
+    ConnectResult(Result<(), String>),
 }
 
 #[relm4::factory(pub)]
 impl FactoryComponent for WifiNetwork {
     type Init = WifiNetwork;
-    type Input = ();
+    type Input = NetworkRowMsg;
     type Output = NetworkRowOutput;
     type CommandOutput = ();
     type ParentWidget = adw::PreferencesGroup;
@@ -63,7 +68,7 @@ impl FactoryComponent for WifiNetwork {
             },
 
             connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_| {
-                let _ = sender.output(NetworkRowOutput::Connect(
+                let _ = sender.input(NetworkRowMsg::Connect(
                     ssid.to_string()
                 ));
             }
@@ -73,6 +78,17 @@ impl FactoryComponent for WifiNetwork {
     fn init_model(init: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
         init
     }
+
+    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
+        match message {
+            NetworkRowMsg::Connect(ssid) => {
+                relm4::spawn_local(async move {
+                    let result = connect_network(&ssid).await.map_err(|e| e.to_string());
+                    let _ = sender.output(NetworkRowOutput::ConnectResult(result));
+                });
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -80,7 +96,6 @@ pub enum WifiInput {
     LoadNetworks,
     NetworksLoaded(Vec<WifiNetwork>),
     ToggleWifi(bool),
-    Connect(String),
     ConnectResult(Result<(), String>),
 }
 
@@ -172,7 +187,7 @@ impl SimpleComponent for WifiModel {
         let networks = FactoryVecDeque::builder()
             .launch(adw::PreferencesGroup::new())
             .forward(sender.input_sender(), |msg| match msg {
-                NetworkRowOutput::Connect(ssid) => WifiInput::Connect(ssid),
+                NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
         let model = Self {
@@ -230,14 +245,6 @@ impl SimpleComponent for WifiModel {
                     sender.input(WifiInput::LoadNetworks);
                 });
             }
-
-            WifiInput::Connect(ssid) => {
-                relm4::spawn_local(async move {
-                    let result = connect_network(&ssid).await.map_err(|e| e.to_string());
-                    sender.input(WifiInput::ConnectResult(result));
-                });
-            }
-
             WifiInput::ConnectResult(res) => match res {
                 Ok(_) => {
                     debug!("Connected successfully");
