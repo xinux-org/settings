@@ -44,155 +44,120 @@ impl SimpleComponent for SystemAboutPage {
 
             adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
-
                 add_top_bar = &adw::HeaderBar {},
 
-                gtk::Box {
+                #[wrap(Some)]
+                set_content = &gtk::Box {
                     set_orientation: gtk::Orientation::Vertical,
-                    set_hexpand: true,
-                    set_vexpand: true,
-                    set_halign: gtk::Align::Center,
-                    set_valign: gtk::Align::Center,
-                    set_spacing: 5,
-                    set_margin_all: 5,
+                    set_spacing: 12,
+                    set_margin_top: 12,
+                    set_margin_bottom: 12,
+                    set_margin_start: 12,
+                    set_margin_end: 12,
 
-                    gtk::Image {
-                        set_pixel_size: 220,
-                        set_paintable: Some(&embedded_logo()),
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        set_halign: gtk::Align::Center,
+                        set_spacing: 5,
+
+                        gtk::Image {
+                            set_pixel_size: 220,
+                            set_paintable: Some(&embedded_logo()),
+                        },
                     },
-                },
 
-                adw::PreferencesPage {
-                    adw::PreferencesGroup {
-                        adw::ActionRow {
-                            set_title: "Support GNOME",
+                    adw::PreferencesPage {
+                        adw::PreferencesGroup {
+                            adw::ActionRow {
+                                set_title: "Support GNOME",
 
-                            add_suffix = &gtk::Button {
-                                set_label: "Donate",
+                                add_suffix = &gtk::Button {
+                                    set_label: "Donate",
+                                    set_use_underline: true,
+                                    set_valign: gtk::Align::Center,
+                                    add_css_class: "suggested-action",
+                                }
+                            },
+                        },
+
+                        adw::PreferencesGroup {
+                            adw::EntryRow {
+                                set_title: "Device Name",
                                 set_use_underline: true,
-                                set_valign: gtk::Align::Center,
-                                add_css_class: "suggested-action",
-
-                                // clicked => $on_donate_button_clicked_cb(template);
-                            }
+                                set_text: &model.device_name,
+                            },
                         },
-                    },
 
-                    adw::PreferencesGroup {
-                        adw::EntryRow {
-                            set_title: "Device Name",
-                            set_use_underline: true,
+                        adw::PreferencesGroup {
+                            set_title: "Hardware",
+
+                            adw::ActionRow {
+                                set_title: "Hardware model",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.hardware_model,
+                            },
+                            adw::ActionRow {
+                                set_title: "Processor",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.processor,
+                            },
+                            adw::ActionRow {
+                                set_title: "Graphics",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.graphics.join(", "),
+                            },
+                            adw::ActionRow {
+                                set_title: "Memory",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.memory,
+                            },
+                            adw::ActionRow {
+                                set_title: "Disk capacity",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.disk_capacity,
+                            },
                         },
-                    },
 
-                    adw::PreferencesGroup {
-                      set_title: "Hardware",
+                        adw::PreferencesGroup {
+                            set_title: "Software",
 
-                        adw::ActionRow {
-                            set_title: "Hardware model",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.hardware_model,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.hardware_model
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Processor",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.processor,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.processor
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Graphics",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: "&model.operating_system",
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: "&model.graphics"
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Memory",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.memory,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.memory
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Disk capacity",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.disk_capacity,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.disk_capacity
-                            // }
-                        },
-                    },
-
-                    adw::PreferencesGroup {
-                      set_title: "Software",
-
-                        adw::ActionRow {
-                            set_title: "Operating System",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.operating_system,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.operating_system
-                            // }
-                      },
-                        adw::ActionRow {
-                            set_title: "Operating System architecture",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.os_architecture,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.os_architecture
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Karnel version",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.kernel_version,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.kernel_version
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Desktop environment",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.desktop_environment,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.desktop_environment
-                            // }
-                        },
-                        adw::ActionRow {
-                            set_title: "Windowing system",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.windowing_system,
-
-                            // add_suffix = &gtk::Label {
-                            //     set_label: &model.windowing_system
-                            // }
-                        },
+                            adw::ActionRow {
+                                set_title: "Operating System",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.operating_system,
+                            },
+                            adw::ActionRow {
+                                set_title: "Operating System architecture",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.os_architecture,
+                            },
+                            adw::ActionRow {
+                                set_title: "Kernel version",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.kernel_version,
+                            },
+                            adw::ActionRow {
+                                set_title: "Desktop environment",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.desktop_environment,
+                            },
+                            adw::ActionRow {
+                                set_title: "Windowing system",
+                                add_css_class: "property",
+                                set_subtitle_selectable: true,
+                                set_subtitle: &model.windowing_system,
+                            },
+                        }
                     }
                 }
             }
@@ -298,8 +263,7 @@ fn hardware_model() -> String {
         .unwrap_or_default();
 
     if sys_vendor.is_empty() {
-        // Fallback to sysinfo if DMI information is not available
-        return sysinfo::Product::name().unwrap_or_default();
+        return sysinfo::System::name().unwrap_or_default();
     }
 
     let mut model = sys_vendor.clone();
@@ -363,6 +327,7 @@ fn processor_name() -> String {
     let sys = sysinfo::System::new_with_specifics(
         sysinfo::RefreshKind::nothing().with_cpu(sysinfo::CpuRefreshKind::everything()),
     );
+
     sys.cpus()
         .first()
         .map(|cpu| cpu.brand().to_string())
@@ -436,7 +401,6 @@ fn get_all_lspci_gpus() -> Vec<(u32, u32, String)> {
                         if let Some(bracket_end) = full_name.find(']') {
                             let vendor_part = full_name[..bracket_start].trim();
                             let marketing_name = full_name[bracket_start + 1..bracket_end].trim();
-
                             let vendor =
                                 vendor_part.split_whitespace().next().unwrap_or(vendor_part);
 
@@ -515,6 +479,7 @@ fn get_lspci_gpu_names() -> HashMap<u32, String> {
     gpu_map
 }
 
+#[cfg(feature = "wgpu")]
 fn wgpu_graphics() -> Vec<String> {
     let mut graphics = Vec::new();
 

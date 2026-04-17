@@ -1,20 +1,5 @@
 {
   "nodes": {
-    "crane": {
-      "locked": {
-        "lastModified": 1774313767,
-        "narHash": "sha256-hy0XTQND6avzGEUFrJtYBBpFa/POiiaGBr2vpU6Y9tY=",
-        "owner": "ipetkov",
-        "repo": "crane",
-        "rev": "3d9df76e29656c679c744968b17fbaf28f0e923d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ipetkov",
-        "repo": "crane",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -149,18 +134,19 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1774868798,
-        "narHash": "sha256-t5dttnVsfRSm7+0WLjLn4JFDwErF3TCE+R5YIVqpBLE=",
-        "owner": "xinux-org",
-        "repo": "nixpkgs",
-        "rev": "5464c97106ce348581b4d93bfea95ea71e2dd5ea",
-        "type": "github"
+        "lastModified": 1775304724,
+        "narHash": "sha256-sZDgYX03KH+uvwhNNqzBU6bdRrr4yShc0FStrCZucV0=",
+        "ref": "nixos-unstable",
+        "rev": "107f1d736613b25f457b1d57d46fc423c5078d15",
+        "shallow": true,
+        "type": "git",
+        "url": "https://git.oss.uzinfocom.uz/xinux/nixpkgs"
       },
       "original": {
-        "owner": "xinux-org",
         "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
+        "shallow": true,
+        "type": "git",
+        "url": "https://git.oss.uzinfocom.uz/xinux/nixpkgs"
       }
     },
     "nixpkgs-lib": {
@@ -180,7 +166,6 @@
     },
     "root": {
       "inputs": {
-        "crane": "crane",
         "nixpkgs": "nixpkgs",
         "xinux-lib": "xinux-lib"
       }
@@ -235,16 +220,17 @@
       "locked": {
         "lastModified": 1773736097,
         "narHash": "sha256-vrnTlpJqQZg/hlct3dyvp2cBwj4cIsTrv3ylqjQNByM=",
-        "owner": "xinux-org",
-        "repo": "lib",
+        "ref": "main",
         "rev": "d0ebe6137d95d53c4e060517108a7902b0920535",
-        "type": "github"
+        "shallow": true,
+        "type": "git",
+        "url": "https://git.oss.uzinfocom.uz/xinux/lib"
       },
       "original": {
-        "owner": "xinux-org",
         "ref": "main",
-        "repo": "lib",
-        "type": "github"
+        "shallow": true,
+        "type": "git",
+        "url": "https://git.oss.uzinfocom.uz/xinux/lib"
       }
     }
   },

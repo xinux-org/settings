@@ -14,7 +14,7 @@ let
   # Manifest via Cargo.toml
   manifest = (pkgs.lib.importTOML ../../Cargo.toml).package;
 in
-pkgs.stdenv.mkDerivation {
+pkgs.mkShell {
   name = "${manifest.name}";
 
   # Compile time dependencies
@@ -33,9 +33,12 @@ pkgs.stdenv.mkDerivation {
     rust-analyzer
     cargo-watch
     openssl
+    just
+    just-lsp
     # Gnome related
     gtk4
     meson
+    mesonlsp
     ninja
     pango
     polkit

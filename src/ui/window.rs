@@ -220,9 +220,7 @@ impl SimpleComponent for App {
         let apps = AppModal::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
-        let notifications = NotificationsModel::builder()
-            .launch(())
-            .forward(sender.input_sender(), identity);
+        let notifications = NotificationsModel::builder().launch(()).detach();
         let search = SearchModal::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
@@ -346,6 +344,7 @@ impl SimpleComponent for App {
                     full_config_path.into_os_string().into_string().unwrap(),
                 ))
             }
+
             AppMsg::Reload => {}
 
             AppMsg::Quit => main_application().quit(),

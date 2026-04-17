@@ -4,12 +4,10 @@
   inputs = {
     # Stable for keeping thins clean
     # # Fresh and new for testing
-    nixpkgs.url = "github:xinux-org/nixpkgs/nixos-unstable";
-
-    crane.url = "github:ipetkov/crane";
+    nixpkgs.url = "git+https://git.oss.uzinfocom.uz/xinux/nixpkgs?ref=nixos-unstable&shallow=1";
 
     xinux-lib = {
-      url = "github:xinux-org/lib/main";
+      url = "git+https://git.oss.uzinfocom.uz/xinux/lib?ref=main&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
