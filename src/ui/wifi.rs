@@ -1,11 +1,17 @@
 use crate::ui::window::AppMsg;
 use nmrs::{NetworkManager, WifiSecurity};
-use relm4::adw::prelude::*;
-use relm4::factory::FactoryVecDeque;
-use relm4::gtk::{self, glib::{self}};
-use relm4::prelude::*;
+use relm4::{
+    adw::{self, prelude::*},
+    factory::FactoryVecDeque,
+    gtk::{
+        self,
+        glib::{self},
+    },
+    prelude::*,
+};
+use tracing::debug;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct WifiNetwork {
     pub ssid: String,
     pub strength: u8,
@@ -13,14 +19,19 @@ pub struct WifiNetwork {
 }
 
 #[derive(Debug)]
-pub enum NetworkRowOutput {
+pub enum NetworkRowMsg {
     Connect(String),
+}
+
+#[derive(Debug)]
+pub enum NetworkRowOutput {
+    ConnectResult(Result<(), String>),
 }
 
 #[relm4::factory(pub)]
 impl FactoryComponent for WifiNetwork {
     type Init = WifiNetwork;
-    type Input = ();
+    type Input = NetworkRowMsg;
     type Output = NetworkRowOutput;
     type CommandOutput = ();
     type ParentWidget = adw::PreferencesGroup;
@@ -34,7 +45,12 @@ impl FactoryComponent for WifiNetwork {
             set_activatable: true,
 
             add_prefix = &gtk::Image {
-                set_icon_name: Some("network-wireless-symbolic"),
+                set_icon_name: match self.strength {
+                    80..100 => Some("network-wireless-signal-excellent-secure-symbolic"),
+                    50..80 => Some("network-wireless-signal-good-secure-symbolic"),
+                    25..50 => Some("network-wireless-signal-weak-secure-symbolic"),
+                    _ => Some("network-wireless-connected-00-symbolic"),
+                },
                 set_pixel_size: 16,
             },
 
@@ -56,16 +72,27 @@ impl FactoryComponent for WifiNetwork {
                 }
             },
 
-            connect_activated[sender, index] => move |_| {
-                sender.output(NetworkRowOutput::Connect(
-                    index.current_index().to_string()
-                )).ok();
+            connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_| {
+                let _ = sender.input(NetworkRowMsg::Connect(
+                    ssid.to_string()
+                ));
             }
         }
     }
 
     fn init_model(init: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
         init
+    }
+
+    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
+        match message {
+            NetworkRowMsg::Connect(ssid) => {
+                relm4::spawn_local(async move {
+                    let result = connect_network(&ssid).await.map_err(|e| e.to_string());
+                    let _ = sender.output(NetworkRowOutput::ConnectResult(result));
+                });
+            }
+        }
     }
 }
 
@@ -74,7 +101,6 @@ pub enum WifiInput {
     LoadNetworks,
     NetworksLoaded(Vec<WifiNetwork>),
     ToggleWifi(bool),
-    Connect(String),
     ConnectResult(Result<(), String>),
 }
 
@@ -142,6 +168,7 @@ impl SimpleComponent for WifiModel {
                 },
 
                 adw::PreferencesGroup {
+                    // FIXME: only in laptop!
                     adw::SwitchRow {
                         set_title: "Airplane Mode",
                         set_subtitle: "Disables Wi-Fi, Bluetooth and mobile broadband",
@@ -166,7 +193,7 @@ impl SimpleComponent for WifiModel {
         let networks = FactoryVecDeque::builder()
             .launch(adw::PreferencesGroup::new())
             .forward(sender.input_sender(), |msg| match msg {
-                NetworkRowOutput::Connect(ssid) => WifiInput::Connect(ssid),
+                NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
         let model = Self {
@@ -186,13 +213,12 @@ impl SimpleComponent for WifiModel {
         match message {
             WifiInput::LoadNetworks => {
                 self.loading = true;
-                let sender2 = sender.clone();
                 relm4::spawn_local(async move {
                     match load_networks().await {
-                        Ok(nets) => sender2.input(WifiInput::NetworksLoaded(nets)),
+                        Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
                         Err(e) => {
                             eprintln!("nmrs error: {e}");
-                            sender2.input(WifiInput::NetworksLoaded(vec![]));
+                            sender.input(WifiInput::NetworksLoaded(vec![]));
                         }
                     }
                 });
@@ -200,44 +226,35 @@ impl SimpleComponent for WifiModel {
 
             WifiInput::NetworksLoaded(nets) => {
                 self.loading = false;
-
                 let mut guard = self.networks.guard();
                 guard.clear();
-                for net in nets {
-                    guard.push_back(net);
-                }
-            }
 
+                let _: Vec<_> = nets
+                    .into_iter()
+                    .filter(|net| net.ssid.ne("<Hidden Network>"))
+                    .map(|n| guard.push_back(n))
+                    .collect();
+            }
             WifiInput::ToggleWifi(on) => {
                 self.wifi_enabled = on;
-                
+
                 if !on {
                     let mut guard = self.networks.guard();
                     guard.clear();
                 }
-                let sender2 = sender.clone();
                 relm4::spawn_local(async move {
                     if let Err(e) = set_wifi_enabled(on).await {
-                        eprintln!("Could not toggle Wi-Fi: {e}");
+                        debug!("Could not toggle Wi-Fi: {e}");
                     }
                     if on {
                         glib::timeout_future(std::time::Duration::from_secs(3)).await;
                     }
-                    sender2.input(WifiInput::LoadNetworks);
+                    sender.input(WifiInput::LoadNetworks);
                 });
             }
-
-            WifiInput::Connect(ssid) => {
-                let sender2 = sender.clone();
-                relm4::spawn_local(async move {
-                    let result = connect_network(&ssid).await.map_err(|e| e.to_string());
-                    sender2.input(WifiInput::ConnectResult(result));
-                });
-            }
-
             WifiInput::ConnectResult(res) => match res {
                 Ok(_) => {
-                    println!("Connected successfully");
+                    debug!("Connected successfully");
                     sender.input(WifiInput::LoadNetworks);
                 }
                 Err(e) => eprintln!("Connection failed: {e}"),
