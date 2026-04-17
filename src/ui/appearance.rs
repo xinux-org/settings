@@ -2,13 +2,29 @@ use std::process::Command;
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
-use relm4::adw::AccentColor;
-use relm4::adw::prelude::*;
+use relm4::adw::{AccentColor, prelude::*};
 use relm4::gtk;
 use relm4::prelude::*;
 
+use gtk::gio::Settings;
+
 #[derive(Debug, Clone)]
-struct AccentColorWrapped(AccentColor);
+pub struct AppearanceSettings {
+    pub background: Settings,
+    pub interface: Settings,
+}
+
+impl AppearanceSettings {
+    pub fn new() -> Self {
+        Self {
+            background: Settings::new("org.gnome.desktop.background"),
+            interface: Settings::new("org.gnome.desktop.interface"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AccentColorWrapped(AccentColor);
 
 impl AccentColorWrapped {
     pub fn iterator() -> impl Iterator<Item = AccentColor> {
@@ -16,6 +32,23 @@ impl AccentColorWrapped {
         [Blue, Teal, Green, Yellow, Orange, Red, Pink, Purple, Slate]
             .iter()
             .copied()
+    }
+}
+
+impl From<String> for AccentColorWrapped {
+    fn from(value: String) -> Self {
+        match value.to_lowercase().as_str() {
+            "blue" => AccentColorWrapped(AccentColor::Blue),
+            "teal" => AccentColorWrapped(AccentColor::Teal),
+            "green" => AccentColorWrapped(AccentColor::Green),
+            "yellow" => AccentColorWrapped(AccentColor::Yellow),
+            "orange" => AccentColorWrapped(AccentColor::Orange),
+            "red" => AccentColorWrapped(AccentColor::Red),
+            "pink" => AccentColorWrapped(AccentColor::Pink),
+            "purple" => AccentColorWrapped(AccentColor::Purple),
+            "slate" => AccentColorWrapped(AccentColor::Slate),
+            _ => AccentColorWrapped(AccentColor::Blue),
+        }
     }
 }
 
@@ -29,7 +62,7 @@ enum MyColorButtonOutput {
     SendPick(AccentColorWrapped),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AppearanceStyle {
     Default,
     Dark,
@@ -38,6 +71,8 @@ pub enum AppearanceStyle {
 #[derive(Debug)]
 pub struct AppearanceModel {
     style: AppearanceStyle,
+    wallpaper: String,
+    accent_color: AccentColorWrapped,
 }
 
 #[derive(Debug)]
@@ -147,12 +182,12 @@ impl SimpleComponent for AppearanceModel {
                                         set_group: Some(&dark_style),
                                         set_overflow: gtk::Overflow::Hidden,
                                         add_css_class: "style-toggle",
+                                        set_active: model.style == AppearanceStyle::Default,
 
                                         #[wrap(Some)]
                                         set_child = &gtk::Picture{
                                             set_content_fit: gtk::ContentFit::Cover,
-                                            set_filename:
-                                                Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
+                                            set_filename: Some(&model.wallpaper)
                                         },
 
                                         connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -168,12 +203,12 @@ impl SimpleComponent for AppearanceModel {
                                     attach[1,0,1,1] = &gtk::ToggleButton{
                                         add_css_class: "style-toggle",
                                         set_overflow: gtk::Overflow::Hidden,
+                                        set_active: model.style == AppearanceStyle::Dark,
 
                                         #[wrap(Some)]
                                         set_child = &gtk::Picture{
                                             set_content_fit: gtk::ContentFit::Fill,
-                                            set_filename:
-                                                Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
+                                            set_filename: Some(&model.wallpaper)
                                         },
 
                                         connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
@@ -205,97 +240,95 @@ impl SimpleComponent for AppearanceModel {
                                 set_margin_top: 12,
                                 set_margin_bottom: 12,
 
-                                #[name = "accent_color" ]
+                                #[name = "accent_color"]
                                 gtk::ToggleButton {
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-blue);
-                                        ",
+                                    add_css_class: "blue",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Blue)
                                 },
-
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-teal);
-                                        ",
+                                    add_css_class: "teal",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Teal)
                                 },
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-green);
-                                        ",
+                                    add_css_class: "green",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Green)
                                 },
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-yellow);
-                                        ",
+                                    add_css_class: "yellow",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Yellow)
                                 },
-
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-orange);
-                                        ",
+                                    add_css_class: "orange",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Orange)
                                 },
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-red);
-                                        ",
+                                    add_css_class: "red",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Red)
                                 },
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-pink);
-                                        ",
+                                    add_css_class: "pink",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Pink)
                                 },
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-purple);
-                                        ",
+                                    add_css_class: "purple",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Purple)
                                 },
                                 gtk::ToggleButton {
                                     set_group: Some(&accent_color),
                                     add_css_class: "accent-button",
-                                    inline_css:"
-                                            background-color: var(--accent-slate);
-                                        ",
+                                    add_css_class: "slate",
+
                                     connect_clicked[sender] => move |_| {
                                         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
                                     },
+                                    set_active: model.accent_color == AccentColorWrapped(AccentColor::Slate)
                                 },
                             },
                         },
@@ -310,56 +343,52 @@ impl SimpleComponent for AppearanceModel {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let style = AppearanceStyle::Default;
-        let model = AppearanceModel { style };
+        let settings = AppearanceSettings::new();
+
+        let style = match settings.interface.get::<String>("color-scheme").as_str() {
+            "prefer-dark" => AppearanceStyle::Dark,
+            _ => AppearanceStyle::Default,
+        };
+
+        let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
+        let accent_color =
+            AccentColorWrapped::from(settings.interface.get::<String>("accent-color"));
+
+        let model = AppearanceModel {
+            style,
+            wallpaper,
+            accent_color,
+        };
 
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+        let settings = AppearanceSettings::new();
+
         match msg {
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
 
                 match style {
                     AppearanceStyle::Dark => {
-                        let _ = Command::new("gsettings")
-                            .args(&[
-                                "set",
-                                "org.gnome.desktop.interface",
-                                "color-scheme",
-                                "prefer-dark",
-                            ])
-                            .output()
-                            .expect("Failed to set appearance style");
+                        settings
+                            .interface
+                            .set("color-scheme", "prefer-dark")
+                            .unwrap();
                     }
 
                     AppearanceStyle::Default => {
-                        let _ = Command::new("gsettings")
-                            .args(&[
-                                "set",
-                                "org.gnome.desktop.interface",
-                                "color-scheme",
-                                "prefer-light",
-                            ])
-                            .output()
-                            .expect("Failed to set appearance style");
+                        settings.interface.set("color-scheme", "default").unwrap();
                     }
                 }
             }
             AppearanceMsg::SendPick(color) => {
-                let _ = Command::new("gsettings")
-                    .args(&[
-                        "set",
-                        "org.gnome.desktop.interface",
-                        "accent-color",
-                        &format!("{:?}", color.0).to_lowercase(),
-                    ])
-                    .output()
-                    .expect("Failed to set appearance style");
-
-                println!("ACTIVE ACCENT: {}", format!("{:?}", color.0).to_lowercase())
+                settings
+                    .interface
+                    .set("accent-color", &format!("{:?}", color.0).to_lowercase())
+                    .unwrap();
             }
         }
     }
