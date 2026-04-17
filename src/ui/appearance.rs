@@ -63,7 +63,7 @@ impl SimpleComponent for AppearanceModel {
                 adw::BreakpointCondition::new_length(
                     adw::BreakpointConditionLengthType::MaxWidth,
                     420.0,
-                    adw::LengthUnit::Sp,
+                    adw::LengthUnit::Px,
                 )
             ) {
                 add_setters: &[
@@ -85,6 +85,31 @@ impl SimpleComponent for AppearanceModel {
                 ]
             },
 
+            add_breakpoint = adw::Breakpoint::new(
+                adw::BreakpointCondition::new_length(
+                    adw::BreakpointConditionLengthType::MinWidth,
+                    421.0,
+                    adw::LengthUnit::Px,
+                )
+            ) {
+                add_setters: &[
+                    (
+                        &accent_box,
+                        "spacing",
+                        &12
+                    ),
+                    (
+                        &accent_box,
+                        "margin-top",
+                        &12
+                    ),
+                    (
+                        &accent_box,
+                        "margin-bottom",
+                        &12
+                    ),
+                ]
+            },
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
             set_top_bar_style: adw::ToolbarStyle::Flat,
@@ -113,7 +138,6 @@ impl SimpleComponent for AppearanceModel {
                                 set_row_spacing: 12,
                                 set_column_homogeneous: true,
                                 set_hexpand: true,
-
                                 set_margin_top: 18,
                                 set_margin_bottom: 12,
                                 set_margin_start: 12,
@@ -127,7 +151,7 @@ impl SimpleComponent for AppearanceModel {
 
                                     #[wrap(Some)]
                                     set_child = &gtk::Picture{
-                                        set_content_fit: gtk::ContentFit::Fill,
+                                        set_content_fit: gtk::ContentFit::Cover,
                                         set_filename:
                                             Some(parse_dconf("gsettings",&["get", "org.gnome.desktop.background", "picture-uri"]).unwrap_or_default())
                                     },
@@ -169,12 +193,17 @@ impl SimpleComponent for AppearanceModel {
                 adw::PreferencesGroup {
                     set_title: "Accent Color",
 
-                    adw::ActionRow {
+                    adw::PreferencesRow {
                         set_halign: gtk::Align::Center,
-                        set_hexpand: true,
+                        // set_hexpand: true,
+
+                       set_accessible_role: gtk::AccessibleRole::Group,
+                       set_activatable: false,
+                       set_focusable: false,
 
                         #[name = "accent_box"]
-                        add_suffix = &gtk::Box {
+                        #[wrap(Some)]
+                        set_child = &gtk::Box {
                             set_orientation: gtk::Orientation::Horizontal,
                             set_spacing: 12,
                             set_margin_top: 12,
