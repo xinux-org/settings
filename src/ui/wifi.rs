@@ -1,9 +1,15 @@
 use crate::ui::window::AppMsg;
 use nmrs::{NetworkManager, WifiSecurity};
-use relm4::adw::prelude::*;
-use relm4::factory::FactoryVecDeque;
-use relm4::gtk::{self, glib::{self}};
-use relm4::prelude::*;
+use relm4::{
+    adw::{self, prelude::*},
+    factory::FactoryVecDeque,
+    gtk::{
+        self,
+        glib::{self},
+    },
+    prelude::*,
+};
+use tracing::debug;
 
 #[derive(Debug, Clone)]
 pub struct WifiNetwork {
@@ -56,10 +62,10 @@ impl FactoryComponent for WifiNetwork {
                 }
             },
 
-            connect_activated[sender, index] => move |_| {
-                sender.output(NetworkRowOutput::Connect(
-                    index.current_index().to_string()
-                )).ok();
+            connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_| {
+                let _ = sender.output(NetworkRowOutput::Connect(
+                    ssid.to_string()
+                ));
             }
         }
     }
@@ -186,13 +192,12 @@ impl SimpleComponent for WifiModel {
         match message {
             WifiInput::LoadNetworks => {
                 self.loading = true;
-                let sender2 = sender.clone();
                 relm4::spawn_local(async move {
                     match load_networks().await {
-                        Ok(nets) => sender2.input(WifiInput::NetworksLoaded(nets)),
+                        Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
                         Err(e) => {
                             eprintln!("nmrs error: {e}");
-                            sender2.input(WifiInput::NetworksLoaded(vec![]));
+                            sender.input(WifiInput::NetworksLoaded(vec![]));
                         }
                     }
                 });
@@ -210,34 +215,32 @@ impl SimpleComponent for WifiModel {
 
             WifiInput::ToggleWifi(on) => {
                 self.wifi_enabled = on;
-                
+
                 if !on {
                     let mut guard = self.networks.guard();
                     guard.clear();
                 }
-                let sender2 = sender.clone();
                 relm4::spawn_local(async move {
                     if let Err(e) = set_wifi_enabled(on).await {
-                        eprintln!("Could not toggle Wi-Fi: {e}");
+                        debug!("Could not toggle Wi-Fi: {e}");
                     }
                     if on {
                         glib::timeout_future(std::time::Duration::from_secs(3)).await;
                     }
-                    sender2.input(WifiInput::LoadNetworks);
+                    sender.input(WifiInput::LoadNetworks);
                 });
             }
 
             WifiInput::Connect(ssid) => {
-                let sender2 = sender.clone();
                 relm4::spawn_local(async move {
                     let result = connect_network(&ssid).await.map_err(|e| e.to_string());
-                    sender2.input(WifiInput::ConnectResult(result));
+                    sender.input(WifiInput::ConnectResult(result));
                 });
             }
 
             WifiInput::ConnectResult(res) => match res {
                 Ok(_) => {
-                    println!("Connected successfully");
+                    debug!("Connected successfully");
                     sender.input(WifiInput::LoadNetworks);
                 }
                 Err(e) => eprintln!("Connection failed: {e}"),
