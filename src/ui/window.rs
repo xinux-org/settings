@@ -26,24 +26,42 @@ use crate::{
 use std::{convert::identity, fs, path::Path};
 
 pub struct App {
-    _wifi: Controller<WifiModel>,
-    _network: Controller<NetworkModel>,
-    _bluetooth: Controller<BluetoothModel>,
-    _display: Controller<DisplayModel>,
-    _appearance: Controller<AppearanceModel>,
-    _sound: Controller<SoundModel>,
-    _power: Controller<PowerModel>,
-    _multitasking: Controller<MultitaskingModel>,
-    _apps: Controller<AppModal>,
-    _notifications: Controller<NotificationsModel>,
-    _search: Controller<SearchModal>,
-    _accounts: Controller<AccountsModel>,
-    _sharing: Controller<SharingModel>,
-    _wellbeing: Controller<WellbeingModel>,
-    _mouse: Controller<MouseAndTouchpad>,
-    _accessibility: Controller<AccessibilityModel>,
-    _privacyandsecurity: Controller<PrivacyAndSecurityModel>,
-    _system: Controller<SystemPageModel>,
+    #[allow(dead_code)]
+    wifi: Controller<WifiModel>,
+    #[allow(dead_code)]
+    network: Controller<NetworkModel>,
+    #[allow(dead_code)]
+    bluetooth: Controller<BluetoothModel>,
+    #[allow(dead_code)]
+    display: Controller<DisplayModel>,
+    #[allow(dead_code)]
+    appearance: Controller<AppearanceModel>,
+    #[allow(dead_code)]
+    sound: Controller<SoundModel>,
+    #[allow(dead_code)]
+    power: Controller<PowerModel>,
+    #[allow(dead_code)]
+    multitasking: Controller<MultitaskingModel>,
+    #[allow(dead_code)]
+    apps: Controller<AppModal>,
+    #[allow(dead_code)]
+    notifications: Controller<NotificationsModel>,
+    #[allow(dead_code)]
+    search: Controller<SearchModal>,
+    #[allow(dead_code)]
+    accounts: Controller<AccountsModel>,
+    #[allow(dead_code)]
+    sharing: Controller<SharingModel>,
+    #[allow(dead_code)]
+    wellbeing: Controller<WellbeingModel>,
+    #[allow(dead_code)]
+    mouse: Controller<MouseAndTouchpad>,
+    #[allow(dead_code)]
+    accessibility: Controller<AccessibilityModel>,
+    #[allow(dead_code)]
+    privacyandsecurity: Controller<PrivacyAndSecurityModel>,
+    #[allow(dead_code)]
+    system: Controller<SystemPageModel>,
 
     config: NixDataConfig,
     rebuild_dialog: Controller<RebuildModel>,
@@ -65,11 +83,6 @@ pub enum AppMsg {
     Quit,
 }
 
-relm4::new_action_group!(pub(super) WindowActionGroup, "win");
-relm4::new_stateless_action!(PreferencesAction, WindowActionGroup, "preferences");
-relm4::new_stateless_action!(pub(super) ShortcutsAction, WindowActionGroup, "show-help-overlay");
-relm4::new_stateless_action!(AboutAction, WindowActionGroup, "about");
-
 #[relm4::component(pub)]
 impl SimpleComponent for App {
     type Init = AppInit;
@@ -86,7 +99,6 @@ impl SimpleComponent for App {
             }
         }
     }
-
     view! {
     #[root]
         main_window = adw::ApplicationWindow::new(&main_application()) {
@@ -116,11 +128,9 @@ impl SimpleComponent for App {
             #[name(split_view)]
             adw::NavigationSplitView {
                 // set_min_sidebar_width: 180.0,
-
                 #[wrap(Some)]
                 set_sidebar = &adw::NavigationPage {
                     set_title: "Settings",
-
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
                         add_top_bar = &adw::HeaderBar {
@@ -129,7 +139,6 @@ impl SimpleComponent for App {
                                 set_menu_model: Some(&primary_menu),
                             }
                         },
-
                         #[wrap(Some)]
                         set_content = &gtk::StackSidebar {
                             set_stack: &stack,
@@ -140,27 +149,25 @@ impl SimpleComponent for App {
                 #[wrap(Some)]
                 set_content = &adw::NavigationPage {
                     // set_title: "Content",
-
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
                         // add_top_bar = &adw::HeaderBar {},
                         set_content: Some(&stack),
                     }
                 },
-                },
-                add_breakpoint = bp_with_setters(
-                    adw::Breakpoint::new(
-                        adw::BreakpointCondition::new_length(
-                            adw::BreakpointConditionLengthType::MaxWidth,
-                            400.0,
-                            adw::LengthUnit::Sp,
-                        )
-                    ),
-                    &[
-                    (&split_view, "collapsed", true),
-                    // (&model.welcome_page.widget(), "reveal", Some(&true.into()))
-                    ]
+            },
+            add_breakpoint = bp_with_setters(
+                adw::Breakpoint::new(
+                    adw::BreakpointCondition::new_length(
+                        adw::BreakpointConditionLengthType::MaxWidth,
+                        400.0,
+                        adw::LengthUnit::Sp,
+                    )
                 ),
+                &[
+                (&split_view, "collapsed", true),
+                ]
+            ),
         },
         stack = &gtk::Stack {
             add_titled: (wifi.widget(), Some("wifi"), "Wi-Fi"),
@@ -258,24 +265,24 @@ impl SimpleComponent for App {
         let widgets = view_output!();
 
         let model = App {
-            _wifi: wifi,
-            _network: network,
-            _bluetooth: bluetooth,
-            _display: display,
-            _appearance: appearance,
-            _sound: sound,
-            _power: power,
-            _multitasking: multitasking,
-            _apps: apps,
-            _notifications: notifications,
-            _search: search,
-            _accounts: accounts,
-            _sharing: sharing,
-            _wellbeing: wellbeing,
-            _mouse: mouse,
-            _accessibility: accessibility,
-            _privacyandsecurity: privacyandsecurity,
-            _system: system,
+            wifi,
+            network,
+            bluetooth,
+            display,
+            appearance,
+            sound,
+            power,
+            multitasking,
+            apps,
+            notifications,
+            search,
+            accounts,
+            sharing,
+            wellbeing,
+            mouse,
+            accessibility,
+            privacyandsecurity,
+            system,
 
             config,
             rebuild_dialog,
@@ -344,15 +351,14 @@ impl SimpleComponent for App {
                     full_config_path.into_os_string().into_string().unwrap(),
                 ))
             }
-
             AppMsg::Reload => {}
-
             AppMsg::Quit => main_application().quit(),
         }
     }
-
     fn shutdown(&mut self, widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
-        widgets.save_window_size().unwrap();
+        widgets
+            .save_window_size()
+            .expect("can not save window size.............");
     }
 }
 
@@ -391,3 +397,8 @@ impl AppWidgets {
         }
     }
 }
+
+relm4::new_action_group!(pub(super) WindowActionGroup, "win");
+relm4::new_stateless_action!(PreferencesAction, WindowActionGroup, "preferences");
+relm4::new_stateless_action!(pub(super) ShortcutsAction, WindowActionGroup, "show-help-overlay");
+relm4::new_stateless_action!(AboutAction, WindowActionGroup, "about");
