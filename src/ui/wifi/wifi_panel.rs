@@ -1,5 +1,8 @@
-use crate::ui::window::AppMsg;
-use nmrs::{NetworkManager, WifiSecurity};
+use crate::ui::{
+    wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
+    window::AppMsg,
+};
+use nmrs::NetworkManager;
 use relm4::{
     adw::{self, prelude::*},
     factory::FactoryVecDeque,
@@ -10,107 +13,54 @@ use relm4::{
     prelude::*,
 };
 use tracing::debug;
-
-#[derive(Debug)]
-pub struct WifiNetwork {
-    pub ssid: String,
-    pub strength: u8,
-    pub connected: bool,
-}
-
-#[derive(Debug)]
-pub enum NetworkRowMsg {
-    Connect(String),
-}
-
-#[derive(Debug)]
-pub enum NetworkRowOutput {
-    ConnectResult(Result<(), String>),
-}
-
-#[relm4::factory(pub)]
-impl FactoryComponent for WifiNetwork {
-    type Init = WifiNetwork;
-    type Input = NetworkRowMsg;
-    type Output = NetworkRowOutput;
-    type CommandOutput = ();
-    type ParentWidget = adw::PreferencesGroup;
-
-    view! {
-        adw::ActionRow {
-            #[watch]
-            set_title: &self.ssid,
-            #[watch]
-            set_subtitle: if self.connected { "Connected" } else { "" },
-            set_activatable: true,
-
-            add_prefix = &gtk::Image {
-                set_icon_name: match self.strength {
-                    80..100 => Some("network-wireless-signal-excellent-secure-symbolic"),
-                    50..80 => Some("network-wireless-signal-good-secure-symbolic"),
-                    25..50 => Some("network-wireless-signal-weak-secure-symbolic"),
-                    _ => Some("network-wireless-connected-00-symbolic"),
-                },
-                set_pixel_size: 16,
-            },
-
-            add_suffix = &gtk::Box {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_spacing: 6,
-                #[watch]
-                set_visible: self.connected,
-
-                gtk::Button {
-                    set_icon_name: "qr-code-symbolic",
-                    add_css_class: "flat",
-                    set_valign: gtk::Align::Center,
-                },
-
-                gtk::Button {
-                    set_icon_name: "emblem-system-symbolic",
-                    add_css_class: "flat",
-                    set_valign: gtk::Align::Center,
-                }
-            },
-
-            connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_| {
-                let _ = sender.input(NetworkRowMsg::Connect(
-                    ssid.to_string()
-                ));
-            }
-        }
-    }
-
-    fn init_model(init: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
-        init
-    }
-
-    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
-        match message {
-            NetworkRowMsg::Connect(ssid) => {
-                relm4::spawn_local(async move {
-                    let result = connect_network(&ssid).await.map_err(|e| e.to_string());
-                    let _ = sender.output(NetworkRowOutput::ConnectResult(result));
-                });
-            }
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum WifiInput {
-    LoadNetworks,
-    NetworksLoaded(Vec<WifiNetwork>),
-    ToggleWifi(bool),
-    ConnectResult(Result<(), String>),
-    ClearNetworksList,
-}
+use zbus::{Connection, proxy};
 
 pub struct WifiModel {
     wifi_enabled: bool,
     networks: FactoryVecDeque<WifiNetwork>,
     loading: bool,
     many: gtk::Stack,
+    wifi_stack: WifiStack,
+    airplane_mode: bool,
+    // Store the proxy to call methods later
+    // proxy: Option<RfkillProxy<'static>>,
+}
+
+// use zbus::proxy;
+
+// #[proxy(
+//     interface = "org.gnome.SettingsDaemon.Rfkill",
+//     default_service = "org.gnome.SettingsDaemon.Rfkill",
+//     default_path = "/org/gnome/SettingsDaemon/Rfkill"
+// )]
+// trait Rfkill {
+//     /// Read the AirplaneMode property
+//     #[zbus(property)]
+//     fn airplane_mode(&self) -> zbus::Result<bool>;
+
+//     /// Set the AirplaneMode property
+//     #[zbus(property)]
+//     fn set_airplane_mode(&self, value: bool) -> zbus::Result<()>;
+// }
+
+#[derive(Debug)]
+pub enum WifiInput {
+    NetworksLoaded(Vec<WifiNetwork>),
+    ConnectResult(Result<(), String>),
+    ClearNetworksList,
+    LoadNetworks,
+    ToggleWifi(bool),
+    ToggleAirplaneMode(bool),
+    // Received update from System D-Bus
+    // AirplaneModeChanged(bool),
+    // ProxyInitialized(RfkillProxy<'static>),
+}
+
+#[derive(Debug)]
+enum WifiStack {
+    WifiOn,
+    WifiOff,
+    Airplane,
 }
 
 #[relm4::component(pub)]
@@ -174,6 +124,13 @@ impl SimpleComponent for WifiModel {
                     adw::SwitchRow {
                         set_title: "Airplane Mode",
                         set_subtitle: "Disables Wi-Fi, Bluetooth and mobile broadband",
+                        set_use_underline: true,
+                        // #[watch]
+                        // set_active: model.airplane_mode,
+                        // connect_active_notify[sender] => move |row| {
+                        //     let is_active = row.is_active();
+                        //     sender.input(WifiInput::ToggleAirplaneMode(is_active));
+                        // }
                     }
                 },
 
@@ -182,30 +139,58 @@ impl SimpleComponent for WifiModel {
                 adw::PreferencesGroup {
                     #[name(many)]
                     gtk::Stack {
+                        set_transition_type: gtk::StackTransitionType::Crossfade,
+                        set_hhomogeneous: false,
+                        set_vhomogeneous: false,
+                        #[watch]
+                        set_visible_child_name: match model.wifi_stack {
+                          // donʻt translate
+                          WifiStack::WifiOn => "wifi-connections",
+                          WifiStack::WifiOff => "wifi-off",
+                          WifiStack::Airplane => "airplane-mode",
+                        },
+                        // donʻt translate
                         add_named: (&wifi_off, Some("wifi-off")),
                         add_named: (&wifi_connections, Some("wifi-connections")),
+                        add_named: (&wifi_connections, Some("airplane-mode")),
                     },
                 }
             }
         },
+        wifi_connections = adw::PreferencesGroup {
+          #[local_ref]
+          networks_group -> adw::PreferencesGroup {
+              #[watch]
+              set_title: if !model.loading { "Visible Networks" } else { "" },
+              gtk::Box {
+                  set_hexpand: true,
+                  set_halign: gtk::Align::Start,
+                  set_spacing: 6,
+                  set_margin_bottom: 12,
+                  #[watch]
+                  set_visible: model.loading,
+
+                  #[name(list_label)]
+                  gtk::Label {
+                    set_label: "Visible Networks",
+                    set_xalign: 0.0,
+                    add_css_class: "heading",
+                  },
+                  #[name(spinner)]
+                  adw::Spinner {},
+              }
+          }
+      },
         wifi_off = &adw::StatusPage {
             set_icon_name: Some("network-wireless-disabled-symbolic"),
             set_title: "Wi-Fi Off",
             set_description: Some("Turn on to use Wi-Fi"),
         },
-        wifi_connections = adw::PreferencesGroup {
-          #[local_ref]
-          networks_group -> adw::PreferencesGroup {
-              set_title: "Visible Networks",
-              #[watch]
-              set_description: if model.loading { Some("Scanning...") } else { None },
-              adw::ActionRow {
-                  set_title: "Looking for networks",
-                  #[watch]
-                  set_visible: model.loading,
-              },
-          }
-      }
+        airplane = &adw::StatusPage {
+            set_icon_name: Some("airplane-mode-symbolic"),
+            set_title: "Airplane Mode On",
+            set_description: Some("Turn off to use Wi-Fi"),
+        },
     }
 
     fn init(
@@ -225,6 +210,9 @@ impl SimpleComponent for WifiModel {
             networks,
             loading: true,
             many: gtk::Stack::new(),
+            wifi_stack: WifiStack::WifiOn, // fixme
+            airplane_mode: false,
+            // proxy: None,
         };
 
         let networks_group = model.networks.widget();
@@ -238,13 +226,33 @@ impl SimpleComponent for WifiModel {
         many.set_visible_child_name("wifi-connections");
         model.many = many;
 
+        // let sender_clone = sender.clone();
+        // relm4::spawn_local(async move {
+        //     let connection = zbus::Connection::session().await.unwrap();
+        //     let proxy = RfkillProxy::new(&connection).await.unwrap();
+        //     sender_clone.input(WifiInput::ProxyInitialized(proxy.clone()));
+
+        //     // initial state
+        //     if let Ok(on) = proxy.airplane_mode().await {
+        //         sender_clone.input(WifiInput::AirplaneModeChanged(on));
+        //     }
+
+        //     // zbus generates 'receive_<prop>_changed' automatically
+        //     let mut stream = proxy.receive_airplane_mode_changed().await;
+        //     while let Some(update) = futures_util::StreamExt::next(&mut stream).await {
+        //         if let Ok(on) = update.get().await {
+        //             sender_clone.input(WifiInput::AirplaneModeChanged(on));
+        //         }
+        //     }
+        // });
+
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             WifiInput::LoadNetworks => {
-                if self.wifi_enabled {
+                if self.wifi_enabled && !self.airplane_mode {
                     sender.input(WifiInput::ClearNetworksList);
                     relm4::spawn_local(async move {
                         match load_networks().await {
@@ -272,10 +280,10 @@ impl SimpleComponent for WifiModel {
                 // Immediate UI cleanup
                 if !on {
                     sender.input(WifiInput::ClearNetworksList);
-                    self.many.set_visible_child_name("wifi-off");
+                    self.wifi_stack = WifiStack::WifiOff;
                 } else {
                     self.loading = true;
-                    self.many.set_visible_child_name("wifi-connections");
+                    self.wifi_stack = WifiStack::WifiOn;
                 }
                 // Returns itʻs status when finished on backgroud without
                 // depending WifiInput::ToggleWifi
@@ -298,14 +306,28 @@ impl SimpleComponent for WifiModel {
                 Err(e) => eprintln!("Connection failed: {e}"),
             },
             WifiInput::ClearNetworksList => self.networks.guard().clear(),
+            WifiInput::ToggleAirplaneMode(on) => {
+                // if let Some(ref proxy) = self.proxy {
+                //     // we let the D-Bus stream (above) tell us when it's done.
+                //     let p = proxy.clone();
+                //     relm4::spawn_local(async move {
+                //         let _ = p.set_airplane_mode(on).await;
+                //     });
+                // }
+            } // WifiInput::AirplaneModeChanged(on) => {
+              //     self.airplane_mode = on;
+              //     if !on {
+              //         self.wifi_stack = WifiStack::Airplane;
+              //     }
+              // }
+              // WifiInput::ProxyInitialized(proxy) => {
+              //     self.proxy = Some(proxy);
+              // }
         }
     }
 }
 
 async fn is_wifi_enabled() -> bool {
-    use zbus::Connection;
-    use zbus::proxy;
-
     #[proxy(
         interface = "org.freedesktop.NetworkManager",
         default_service = "org.freedesktop.NetworkManager",
@@ -354,9 +376,6 @@ async fn load_networks() -> nmrs::Result<Vec<WifiNetwork>> {
 }
 
 async fn set_wifi_enabled(enabled: bool) -> Result<(), Box<dyn std::error::Error>> {
-    use zbus::Connection;
-    use zbus::proxy;
-
     #[proxy(
         interface = "org.freedesktop.NetworkManager",
         default_service = "org.freedesktop.NetworkManager",
@@ -371,9 +390,4 @@ async fn set_wifi_enabled(enabled: bool) -> Result<(), Box<dyn std::error::Error
     let proxy = NetworkManagerDBusProxy::new(&conn).await?;
     proxy.set_wireless_enabled(enabled).await?;
     Ok(())
-}
-
-async fn connect_network(ssid: &str) -> nmrs::Result<()> {
-    let nm = NetworkManager::new().await?;
-    nm.connect(ssid, WifiSecurity::Open).await
 }
