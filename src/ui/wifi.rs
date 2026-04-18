@@ -57,6 +57,7 @@ impl FactoryComponent for WifiNetwork {
             add_suffix = &gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 6,
+                #[watch]
                 set_visible: self.connected,
 
                 gtk::Button {
@@ -102,12 +103,14 @@ pub enum WifiInput {
     NetworksLoaded(Vec<WifiNetwork>),
     ToggleWifi(bool),
     ConnectResult(Result<(), String>),
+    ClearNetworksList,
 }
 
 pub struct WifiModel {
     wifi_enabled: bool,
     networks: FactoryVecDeque<WifiNetwork>,
     loading: bool,
+    many: gtk::Stack,
 }
 
 #[relm4::component(pub)]
@@ -117,16 +120,17 @@ impl SimpleComponent for WifiModel {
     type Output = AppMsg;
 
     view! {
+      // FIXME: if PC has no wifi interface, hide this section from windows.rs
+        #[root]
         adw::ToolbarView {
             set_top_bar_style: adw::ToolbarStyle::Flat,
-
             add_top_bar = &adw::HeaderBar {
                 #[wrap(Some)]
                 set_title_widget = &adw::WindowTitle {
                     set_title: "Wi-Fi",
+                    set_subtitle: "this is subtit",
                 }
             },
-
             adw::PreferencesPage {
                 adw::PreferencesGroup {
                     adw::SwitchRow {
@@ -139,7 +143,6 @@ impl SimpleComponent for WifiModel {
                         }
                     }
                 },
-
                 adw::PreferencesGroup {
                     adw::ActionRow {
                         set_title: "Saved Networks",
@@ -166,7 +169,6 @@ impl SimpleComponent for WifiModel {
                         }
                     }
                 },
-
                 adw::PreferencesGroup {
                     // FIXME: only in laptop!
                     adw::SwitchRow {
@@ -175,14 +177,35 @@ impl SimpleComponent for WifiModel {
                     }
                 },
 
-                #[local_ref]
-                networks_group -> adw::PreferencesGroup {
-                    set_title: "Visible Networks",
-                    #[watch]
-                    set_description: if model.loading { Some("Scanning...") } else { None },
+                // FIXME: use StackPage use display multiple modes
+                // source: https://github.com/GNOME/gnome-control-center/blob/main/panels/network/cc-wifi-panel.blp#L42-L167
+                adw::PreferencesGroup {
+                    #[name(many)]
+                    gtk::Stack {
+                        add_named: (&wifi_off, Some("wifi-off")),
+                        add_named: (&wifi_connections, Some("wifi-connections")),
+                    },
                 }
             }
-        }
+        },
+        wifi_off = &adw::StatusPage {
+            set_icon_name: Some("network-wireless-disabled-symbolic"),
+            set_title: "Wi-Fi Off",
+            set_description: Some("Turn on to use Wi-Fi"),
+        },
+        wifi_connections = adw::PreferencesGroup {
+          #[local_ref]
+          networks_group -> adw::PreferencesGroup {
+              set_title: "Visible Networks",
+              #[watch]
+              set_description: if model.loading { Some("Scanning...") } else { None },
+              adw::ActionRow {
+                  set_title: "Looking for networks",
+                  #[watch]
+                  set_visible: model.loading,
+              },
+          }
+      }
     }
 
     fn init(
@@ -196,60 +219,75 @@ impl SimpleComponent for WifiModel {
                 NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
-        let model = Self {
+        // FIXME: get initial values instead of hardcode
+        let mut model = Self {
             wifi_enabled: true,
             networks,
             loading: true,
+            many: gtk::Stack::new(),
         };
 
         let networks_group = model.networks.widget();
         let widgets = view_output!();
 
+        // FIXME: change it to toggle wifi
         sender.input(WifiInput::LoadNetworks);
+
+        // please improve logic
+        let many = widgets.many.clone();
+        many.set_visible_child_name("wifi-connections");
+        model.many = many;
+
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             WifiInput::LoadNetworks => {
-                self.loading = true;
-                relm4::spawn_local(async move {
-                    match load_networks().await {
-                        Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
-                        Err(e) => {
-                            eprintln!("nmrs error: {e}");
-                            sender.input(WifiInput::NetworksLoaded(vec![]));
+                if self.wifi_enabled {
+                    sender.input(WifiInput::ClearNetworksList);
+                    relm4::spawn_local(async move {
+                        match load_networks().await {
+                            Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
+                            Err(e) => {
+                                eprintln!("nmrs error: {e}");
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
-
             WifiInput::NetworksLoaded(nets) => {
                 self.loading = false;
-                let mut guard = self.networks.guard();
-                guard.clear();
-
                 let _: Vec<_> = nets
                     .into_iter()
                     .filter(|net| net.ssid.ne("<Hidden Network>"))
-                    .map(|n| guard.push_back(n))
+                    .map(|n| self.networks.guard().push_back(n))
                     .collect();
             }
             WifiInput::ToggleWifi(on) => {
+                // Currently if you turn of/on wifi toggle so many times,
+                // It also loads network many times giving not good experience
                 self.wifi_enabled = on;
 
+                // Immediate UI cleanup
                 if !on {
-                    let mut guard = self.networks.guard();
-                    guard.clear();
+                    sender.input(WifiInput::ClearNetworksList);
+                    self.many.set_visible_child_name("wifi-off");
+                } else {
+                    self.loading = true;
+                    self.many.set_visible_child_name("wifi-connections");
                 }
+                // Returns itʻs status when finished on backgroud without
+                // depending WifiInput::ToggleWifi
                 relm4::spawn_local(async move {
                     if let Err(e) = set_wifi_enabled(on).await {
                         debug!("Could not toggle Wi-Fi: {e}");
+                        return;
                     }
                     if on {
-                        glib::timeout_future(std::time::Duration::from_secs(3)).await;
+                        glib::timeout_future(std::time::Duration::from_secs(5)).await;
+                        sender.input(WifiInput::LoadNetworks);
                     }
-                    sender.input(WifiInput::LoadNetworks);
                 });
             }
             WifiInput::ConnectResult(res) => match res {
@@ -259,6 +297,7 @@ impl SimpleComponent for WifiModel {
                 }
                 Err(e) => eprintln!("Connection failed: {e}"),
             },
+            WifiInput::ClearNetworksList => self.networks.guard().clear(),
         }
     }
 }
