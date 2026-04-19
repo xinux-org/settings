@@ -196,6 +196,8 @@ pub struct AutomaticSuspend {
     suspend_text: String,
     enabled: bool,
     delay: u32,
+
+    key: String,
 }
 
 #[derive(Debug)]
@@ -211,7 +213,8 @@ pub enum AutomaticSuspendOutput {
 
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
-    type Init = (String, PowerSettings);
+    // Label Text, Key, Setting
+    type Init = (String, String, PowerSettings);
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
     type CommandOutput = ();
@@ -252,17 +255,21 @@ impl Component for AutomaticSuspend {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let power_settings = init.1.power;
+        let power_settings = init.2.power;
+        let key = init.1;
 
-        let sleep_inactive_ac_type = power_settings.string("sleep-inactive-ac-type");
-        let enabled = sleep_inactive_ac_type.as_str() == "suspend";
-        let delay = power_settings.int("sleep-inactive-ac-timeout") as u32;
+        let sleep_inactive_type =
+            power_settings.string(format!("sleep-inactive-{}-type", key).as_str());
+        let enabled = sleep_inactive_type.as_str() == "suspend";
+        let delay = power_settings.int(format!("sleep-inactive-{}-timeout", key).as_str()) as u32;
 
         let model = Self {
             suspend_text: init.0,
             power_settings,
             enabled,
             delay,
+
+            key,
         };
 
         // sender.input(AutoScreenBlankMsg::Toggle(model.enabled, 0));
@@ -281,7 +288,7 @@ impl Component for AutomaticSuspend {
 
                 let _ = self
                     .power_settings
-                    .set_string("sleep-inactive-ac-type", status);
+                    .set_string(format!("sleep-inactive-{}-type", self.key).as_str(), status);
             }
 
             AutomaticSuspendMsg::Delay(index) => {
@@ -291,9 +298,10 @@ impl Component for AutomaticSuspend {
                 };
 
                 println!("Seconds: {:?}\nIndex: {:?}\n\n\n\n\n", seconds, index);
-                let _ = self
-                    .power_settings
-                    .set_int("sleep-inactive-ac-timeout", seconds as i32);
+                let _ = self.power_settings.set_int(
+                    format!("sleep-inactive-{}-timeout", self.key).as_str(),
+                    seconds as i32,
+                );
             }
         }
     }

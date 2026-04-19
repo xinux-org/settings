@@ -33,6 +33,7 @@ pub struct SavingPowerPageView {
     /// Suspend on AC timeout
     pub sleep_inactive_ac_timeout: u16,
     pub automatic_suspend_controller: Controller<AutomaticSuspend>,
+    pub automatic_suspend_controller_battery: Controller<AutomaticSuspend>,
 }
 
 #[derive(Debug)]
@@ -81,6 +82,8 @@ impl Component for SavingPowerPageView {
             },
 
             adw::PreferencesGroup {
+                add: model.automatic_suspend_controller.widget(),
+
                 set_title: "Automatic Suspend",
 
                 adw::ActionRow {
@@ -162,7 +165,21 @@ impl Component for SavingPowerPageView {
         let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-battery-timeout") as u16;
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
-            .launch(("When Plugged In".to_string(), settings.to_owned()))
+            .launch((
+                "When Plugged In".to_string(),
+                "ac".to_string(),
+                settings.to_owned(),
+            ))
+            .forward(sender.input_sender(), |out| match out {
+                AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
+            });
+
+        let automatic_suspend_controller_battery = AutomaticSuspend::builder()
+            .launch((
+                "On Battery Power".to_string(),
+                "ac".to_string(),
+                settings.to_owned(),
+            ))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
             });
@@ -189,6 +206,7 @@ impl Component for SavingPowerPageView {
             sleep_inactive_ac_type,
             sleep_inactive_ac_timeout,
             automatic_suspend_controller,
+            automatic_suspend_controller_battery,
         };
 
         let widgets = view_output!();

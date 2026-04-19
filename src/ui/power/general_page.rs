@@ -397,7 +397,11 @@ impl Component for GeneralPowerPageView {
             });
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
-            .launch(("Automatic Suspend".to_string(), settings.to_owned()))
+            .launch((
+                "Automatic Suspend".to_string(),
+                "ac".to_string(),
+                settings.to_owned(),
+            ))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,
             });
