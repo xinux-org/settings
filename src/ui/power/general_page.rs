@@ -17,7 +17,7 @@ use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
 use gtk::gio::Settings;
 
-use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_LABELS};
+use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_LABELS, SUSPEND_DELAY_VALUES};
 
 #[derive(Debug, Clone)]
 pub struct PowerSettings {
@@ -401,6 +401,11 @@ impl Component for GeneralPowerPageView {
                 "Automatic Suspend".to_string(),
                 "ac".to_string(),
                 settings.to_owned(),
+                SUSPEND_DELAY_LABELS
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect(),
+                SUSPEND_DELAY_VALUES.to_vec(),
             ))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,

@@ -5,10 +5,8 @@ use relm4::{
 };
 
 use crate::ui::power::general_page::PowerSettings;
-use crate::utils::power::{
-    SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_LABELS,
-    SUSPEND_DELAY_VALUES,
-};
+use crate::utils::power::{SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES};
+use relm4::gtk::StringList;
 
 #[derive(Debug)]
 pub struct DimScreen {
@@ -197,6 +195,8 @@ pub struct AutomaticSuspend {
     enabled: bool,
 
     key: String,
+    labels: StringList,
+    values: Vec<u32>,
 }
 
 #[derive(Debug)]
@@ -212,8 +212,8 @@ pub enum AutomaticSuspendOutput {
 
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
-    // Label Text, Key, Setting
-    type Init = (String, String, PowerSettings);
+    // Label Text, Key, Settings, Labels, Values
+    type Init = (String, String, PowerSettings, Vec<String>, Vec<u32>);
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
     type CommandOutput = ();
@@ -240,7 +240,7 @@ impl Component for AutomaticSuspend {
                 set_sensitive: model.enabled,
 
                 set_title: "Delay",
-                set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_LABELS)),
+                set_model: Some(&model.labels),
 
                 connect_selected_item_notify[sender] => move |row| {
                     sender.input(AutomaticSuspendMsg::Delay(row.selected()));
@@ -257,10 +257,12 @@ impl Component for AutomaticSuspend {
         let power_settings = init.2.power;
         let key = init.1;
 
+        let labels: StringList = init.3.iter().map(gettextrs::gettext).collect();
+        let values = init.4;
+
         let sleep_inactive_type =
             power_settings.string(format!("sleep-inactive-{}-type", key).as_str());
         let enabled = sleep_inactive_type.as_str() == "suspend";
-        let delay = power_settings.int(format!("sleep-inactive-{}-timeout", key).as_str()) as u32;
 
         let model = Self {
             suspend_text: init.0,
@@ -268,6 +270,8 @@ impl Component for AutomaticSuspend {
             enabled,
 
             key,
+            labels,
+            values,
         };
 
         // sender.input(AutoScreenBlankMsg::Toggle(model.enabled, 0));
@@ -290,7 +294,7 @@ impl Component for AutomaticSuspend {
             }
 
             AutomaticSuspendMsg::Delay(index) => {
-                let seconds = match SUSPEND_DELAY_VALUES.get(index as usize) {
+                let seconds = match self.values.get(index as usize) {
                     Some(val) => *val,
                     None => 0,
                 };
