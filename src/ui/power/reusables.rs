@@ -195,7 +195,6 @@ pub struct AutomaticSuspend {
     power_settings: gtk::gio::Settings,
     suspend_text: String,
     enabled: bool,
-    delay: u32,
 
     key: String,
 }
@@ -267,7 +266,6 @@ impl Component for AutomaticSuspend {
             suspend_text: init.0,
             power_settings,
             enabled,
-            delay,
 
             key,
         };

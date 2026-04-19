@@ -82,31 +82,10 @@ impl Component for SavingPowerPageView {
             },
 
             adw::PreferencesGroup {
-                add: model.automatic_suspend_controller.widget(),
-
                 set_title: "Automatic Suspend",
 
-                adw::ActionRow {
-                    set_title: "On Battery Power",
-
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.sleep_inactive_battery_type,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PowerSavingMsg::SetSleepInactiveBatteryType(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
-                adw::ComboRow {
-                    #[watch]
-                    set_sensitive: model.sleep_inactive_battery_type,
-
-                    set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_LABELS)),
-                }
+                // On Battery Power
+                add: model.automatic_suspend_controller_battery.widget(),
             },
 
             adw::PreferencesGroup {
