@@ -1,0 +1,91 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-19 21:42+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: data/uz.xinux.Settings.desktop.in.in:2
+#: data/uz.xinux.Settings.metainfo.xml.in.in:7
+msgid "Xinux Settings"
+msgstr ""
+
+#: data/uz.xinux.Settings.desktop.in.in:3
+#: data/uz.xinux.Settings.metainfo.xml.in.in:10
+msgid "Xinux GTK/libadwaita settings app"
+msgstr ""
+
+#: data/uz.xinux.Settings.desktop.in.in:11
+msgid "Preferences;Settings;"
+msgstr ""
+
+#: data/uz.xinux.Settings.gschema.xml.in:6
+msgid "Window width"
+msgstr ""
+
+#: data/uz.xinux.Settings.gschema.xml.in:10
+msgid "Window height"
+msgstr ""
+
+#: data/uz.xinux.Settings.gschema.xml.in:14
+msgid "Window maximized state"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:8
+msgid "Settings app compatible with NixOS"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:15
+msgid "Main window"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:27
+msgid "bemeritus"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:28
+msgid "ae5259"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:29
+msgid "bahrom04"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:30
+msgid "rafanochi"
+msgstr ""
+
+#: data/uz.xinux.Settings.metainfo.xml.in.in:31
+msgid "Xinux Developers"
+msgstr ""
+
+#: data/resources/ui/shortcuts.ui:11
+msgctxt "shortcut window"
+msgid "General"
+msgstr ""
+
+#: data/resources/ui/shortcuts.ui:14
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr ""
+
+#: data/resources/ui/shortcuts.ui:20
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr ""
+
+#: src/main.rs:35
+msgid "Xinux settings"
+msgstr ""
