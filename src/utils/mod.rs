@@ -1,11 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
+pub mod error;
 pub mod language;
 pub mod modules;
-pub mod error;
+pub mod power;
 
 // type Result<T, E = Error> = std::result::Result<T, E>;
-
 
 // #[derive(Debug, Error)]
 // #[non_exhaustive]
@@ -28,7 +28,6 @@ pub fn get_stdout(command: &str, args: &[&str]) -> Result<String> {
         Err(anyhow!("asjkldas;ldkfja;slkdjf"))
     }
 }
-
 
 pub fn parse_dconf(command: &str, args: &[&str]) -> Result<String> {
     let mut stdout = enquote::unquote(&get_stdout(command, args)?)?;

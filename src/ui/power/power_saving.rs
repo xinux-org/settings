@@ -1,5 +1,3 @@
-use std::convert::identity;
-
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
@@ -11,7 +9,7 @@ use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
 use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
-use crate::ui::power::general_page::SUSPEND_DELAY_TIMEOUT;
+use crate::utils::power::SUSPEND_DELAY_LABELS;
 
 #[derive(Debug)]
 pub struct SavingPowerPageView {
@@ -104,7 +102,7 @@ impl Component for SavingPowerPageView {
                     set_sensitive: model.sleep_inactive_battery_type,
 
                     set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
+                    set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_LABELS)),
                 }
             },
 
@@ -140,7 +138,7 @@ impl Component for SavingPowerPageView {
         let auto_power_saver = settings.power.boolean("power-saver-profile-on-low-battery");
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
-            .launch((settings.to_owned()))
+            .launch(settings.to_owned())
             .forward(sender.input_sender(), |out| match out {
                 // we do not need child and parent relationship in this case
                 AutoScreenBlankOutput::Noop => PowerSavingMsg::Noop,
@@ -164,14 +162,9 @@ impl Component for SavingPowerPageView {
         let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-battery-timeout") as u16;
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
-            .launch(("When Plugged In".to_string(), sleep_inactive_ac_type, 300))
+            .launch(("When Plugged In".to_string(), settings.to_owned()))
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Toggled(state) => {
-                    PowerSavingMsg::SetSleepInactiveACType(state)
-                }
-                AutomaticSuspendOutput::Delay(seconds) => {
-                    PowerSavingMsg::SetSleepInactiveACTimeout(seconds)
-                }
+                AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
             });
 
         let dim_screen_controller =

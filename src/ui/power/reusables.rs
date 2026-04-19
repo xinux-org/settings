@@ -4,8 +4,10 @@ use relm4::{
     prelude::*,
 };
 
-use crate::ui::power::general_page::{
-    PowerSettings, SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_TIMEOUT,
+use crate::ui::power::general_page::PowerSettings;
+use crate::utils::power::{
+    SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_LABELS,
+    SUSPEND_DELAY_VALUES,
 };
 
 #[derive(Debug)]
@@ -190,55 +192,59 @@ impl Component for AutoScreenBlank {
 // Automatic Suspend / When Plugged In
 #[derive(Debug)]
 pub struct AutomaticSuspend {
+    power_settings: gtk::gio::Settings,
     suspend_text: String,
     enabled: bool,
-    delay: u16,
+    delay: u32,
 }
 
 #[derive(Debug)]
 pub enum AutomaticSuspendMsg {
     Toggle(bool),
-    Delay(u16),
+    Delay(u32),
 }
 
 #[derive(Debug)]
 pub enum AutomaticSuspendOutput {
-    Toggled(bool),
-    Delay(u16),
+    Noop,
 }
 
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
-    type Init = (String, bool, u16);
+    type Init = (String, PowerSettings);
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
     type CommandOutput = ();
 
     view! {
         #[root]
-        adw::ActionRow {
-            set_title: model.suspend_text.as_str(),
+        adw::PreferencesGroup {
+            adw::ActionRow {
+                set_title: model.suspend_text.as_str(),
 
-            add_suffix = &gtk::Switch {
-                set_valign: gtk::Align::Center,
-                #[watch]
-                set_active: model.enabled,
-                connect_state_set[sender] => move |_, state| {
-                    sender.input(AutomaticSuspendMsg::Toggle(state));
-                    gtk::glib::Propagation::Proceed
+                add_suffix = &gtk::Switch {
+                    set_valign: gtk::Align::Center,
+                    #[watch]
+                    set_active: model.enabled,
+                    connect_state_set[sender] => move |_, state| {
+                        sender.input(AutomaticSuspendMsg::Toggle(state));
+                        gtk::glib::Propagation::Proceed
+                    },
                 },
             },
-        },
 
+            adw::ComboRow {
+                #[watch]
+                set_sensitive: model.enabled,
 
-        adw::ComboRow {
-            #[watch]
-            set_sensitive: model.enabled,
+                set_title: "Delay",
+                set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_LABELS)),
 
-            set_title: "Delay",
-            set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
+                connect_selected_item_notify[sender] => move |row| {
+                    sender.input(AutomaticSuspendMsg::Delay(row.selected()));
+                }
+            }
         }
-
     }
 
     fn init(
@@ -246,32 +252,48 @@ impl Component for AutomaticSuspend {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let power_settings = init.1.power;
+
+        let sleep_inactive_ac_type = power_settings.string("sleep-inactive-ac-type");
+        let enabled = sleep_inactive_ac_type.as_str() == "suspend";
+        let delay = power_settings.int("sleep-inactive-ac-timeout") as u32;
+
         let model = Self {
             suspend_text: init.0,
-            enabled: init.1,
-            delay: init.2,
+            power_settings,
+            enabled,
+            delay,
         };
 
-        let widgets = view_output!();
+        // sender.input(AutoScreenBlankMsg::Toggle(model.enabled, 0));
+        // sender.input(AutoScreenBlankMsg::Delay(delay));
 
+        let widgets = view_output!();
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             AutomaticSuspendMsg::Toggle(state) => {
                 self.enabled = state;
 
-                sender
-                    .output(AutomaticSuspendOutput::Toggled(state))
-                    .unwrap()
-            }
-            AutomaticSuspendMsg::Delay(seconds) => {
-                self.delay = seconds;
+                let status = if state { "suspend" } else { "nothing" };
 
-                sender
-                    .output(AutomaticSuspendOutput::Delay(seconds))
-                    .unwrap()
+                let _ = self
+                    .power_settings
+                    .set_string("sleep-inactive-ac-type", status);
+            }
+
+            AutomaticSuspendMsg::Delay(index) => {
+                let seconds = match SUSPEND_DELAY_VALUES.get(index as usize) {
+                    Some(val) => *val,
+                    None => 0,
+                };
+
+                println!("Seconds: {:?}\nIndex: {:?}\n\n\n\n\n", seconds, index);
+                let _ = self
+                    .power_settings
+                    .set_int("sleep-inactive-ac-timeout", seconds as i32);
             }
         }
     }

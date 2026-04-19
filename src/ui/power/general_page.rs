@@ -12,8 +12,12 @@ use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
 use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
+use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
+
 use gtk::gio::Settings;
+
+use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_LABELS};
 
 #[derive(Debug, Clone)]
 pub struct PowerSettings {
@@ -37,31 +41,6 @@ impl PowerSettings {
 /// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
 /// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or low power consumption mode keeping the applications open and running.
 /// - Nothing - the name is self explanatory.
-pub const POWER_BUTTON_ACTIONS: [&str; 4] = ["Power Off", "Hibernate", "Suspend", "Nothing"];
-pub const SUSPEND_DELAY_TIMEOUT: [&str; 10] = [
-    "15 minute",
-    "20 minute",
-    "25 minute",
-    "30 minute",
-    "45 minute",
-    "1 hour",
-    "1 hour 20 minute",
-    "1 hour 30 minute",
-    "1 hour 40 minute",
-    "2 hours",
-];
-pub const SCREEN_BLANK_DELAY_VALUES: [u32; 9] = [60, 120, 180, 240, 300, 480, 600, 720, 900];
-pub const SCREEN_BLANK_DELAY_LABELS: [&str; 9] = [
-    "1 minute",
-    "2 minutes",
-    "3 minutes",
-    "4 minutes",
-    "5 minutes",
-    "8 minutes",
-    "10 minutes",
-    "12 minutes",
-    "15 minutes",
-];
 
 impl fmt::Display for PowerMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -105,6 +84,8 @@ pub struct GeneralPowerPageView {
     pub dim_screen_controller: Controller<DimScreen>,
     #[tracker::do_not_track]
     pub auto_screen_black_controller: Controller<AutoScreenBlank>,
+    #[tracker::do_not_track]
+    pub automatic_suspend_controller: Controller<AutomaticSuspend>,
 
     // Automatic Suspend
     /// While plugged in (ac => Alternating Current)
@@ -321,30 +302,11 @@ impl Component for GeneralPowerPageView {
                 add: model.auto_screen_black_controller.widget(),
             },
 
+            // Automatic Suspend
             adw::PreferencesGroup {
+                #[watch]
                 set_visible: !model.show_batteries,
-
-                adw::ActionRow {
-                    set_title: "Automatic Suspend",
-
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.sleep_inactive_ac_type,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(GeneralPowerPageViewMsg::SetSleepInactiveACType(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
-                },
-
-                adw::ComboRow {
-                    #[watch]
-                    set_sensitive: model.sleep_inactive_ac_type,
-
-                    set_title: "Delay",
-                    set_model: Some(&gtk::StringList::new(&SUSPEND_DELAY_TIMEOUT)),
-                }
+                add: model.automatic_suspend_controller.widget(),
             },
 
             adw::PreferencesGroup {
@@ -434,6 +396,12 @@ impl Component for GeneralPowerPageView {
                 AutoScreenBlankOutput::Noop => GeneralPowerPageViewMsg::Noop,
             });
 
+        let automatic_suspend_controller = AutomaticSuspend::builder()
+            .launch(("Automatic Suspend".to_string(), settings.to_owned()))
+            .forward(sender.input_sender(), |out| match out {
+                AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,
+            });
+
         let model = Self {
             settings,
             batteries,
@@ -458,6 +426,7 @@ impl Component for GeneralPowerPageView {
             // auto_screen_black_delay: delay,
             auto_screen_black_controller,
 
+            automatic_suspend_controller,
             sleep_inactive_ac_type,
             sleep_inactive_ac_timeout,
         };
