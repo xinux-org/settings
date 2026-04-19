@@ -33,7 +33,7 @@ adw = { version = "0.8", package = "libadwaita", features = ["v1_8"] }
 vte = { package = "vte4", version = "0.9" }
 libgweather = "4.7"
 pango = "0.21.5"
-gnome-desktop = { package = "gnome-desktop-xinux", version = "0.21.5" } 
+gnome-desktop = { package = "gnome-desktop-xinux", version = "0.21.5" }
 
 nix-data = "0.0.3"
 nixpkgs-fmt = "1.3"
@@ -60,3 +60,4 @@ zbus = { version = "5.13", default-features = false }
 notify = { version = "8.1.0", features = ["serde"] }
 regex = "1.12.3"
 nmrs = "2.0.1"
+futures-util = "0.3.32"

@@ -3533,6 +3533,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "enquote",
+ "futures-util",
  "gettext-rs",
  "gnome-desktop-xinux",
  "libadwaita",

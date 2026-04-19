@@ -4,7 +4,6 @@ Comment=Xinux GTK/libadwaita settings app
 Type=Application
 Exec=settings
 Terminal=false
-DBusActivatable=true
 Categories=GNOME;GTK;Settings;
 # See also is_supported_desktop() in main.c
 OnlyShowIn=GNOME;
