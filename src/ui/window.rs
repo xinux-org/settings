@@ -1,4 +1,5 @@
 use anyhow::Context;
+use gettextrs::gettext;
 use nix_data::config::configfile::NixDataConfig;
 use relm4::{
     actions::{RelmAction, RelmActionGroup},
@@ -130,7 +131,7 @@ impl SimpleComponent for App {
                 // set_min_sidebar_width: 180.0,
                 #[wrap(Some)]
                 set_sidebar = &adw::NavigationPage {
-                    set_title: "Settings",
+                    set_title: &gettext("Settings"),
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
                         add_top_bar = &adw::HeaderBar {
