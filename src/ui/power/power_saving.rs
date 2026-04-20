@@ -2,8 +2,6 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use gettextrs::gettext;
-
 use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
 
@@ -31,10 +29,6 @@ pub struct SavingPowerPageView {
     /// While plugged in (ac => Alternating Current)
     pub sleep_inactive_ac_type: bool,
 
-    /// Suspend on battery power timeout
-    pub sleep_inactive_battery_timeout: u16,
-    /// Suspend on AC timeout
-    pub sleep_inactive_ac_timeout: u16,
     pub automatic_suspend_controller: Controller<AutomaticSuspend>,
     pub automatic_suspend_controller_battery: Controller<AutomaticSuspend>,
 }
@@ -116,20 +110,6 @@ impl Component for SavingPowerPageView {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let suspend_delay_labels: Vec<String> = [
-            gettext("15 minute"),
-            gettext("20 minute"),
-            gettext("25 minute"),
-            gettext("30 minute"),
-            gettext("45 minute"),
-            gettext("1 hour"),
-            gettext("1 hour 20 minute"),
-            gettext("1 hour 30 minute"),
-            gettext("1 hour 40 minute"),
-            gettext("2 hours"),
-        ]
-        .to_vec();
-
         let settings = PowerSettings::new();
 
         let idle_dim = settings.power.boolean("idle-dim");
@@ -149,15 +129,11 @@ impl Component for SavingPowerPageView {
                 .as_str(),),
             ("suspend",)
         );
-        let sleep_inactive_battery_timeout =
-            settings.power.int("sleep-inactive-battery-timeout") as u16;
 
         let sleep_inactive_ac_type = matches!(
             (settings.power.string("sleep-inactive-ac-type").as_str(),),
             ("suspend",)
         );
-
-        let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-battery-timeout") as u16;
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
             .launch((
@@ -204,10 +180,8 @@ impl Component for SavingPowerPageView {
             auto_screen_black_controller,
 
             sleep_inactive_battery_type,
-            sleep_inactive_battery_timeout,
-
             sleep_inactive_ac_type,
-            sleep_inactive_ac_timeout,
+
             automatic_suspend_controller,
             automatic_suspend_controller_battery,
         };

@@ -39,12 +39,6 @@ impl PowerSettings {
     }
 }
 
-/// Possible actions for power button(usually turn on/off)
-/// - Power Off - which is sometimes stated as Interactive will prompt you to decide if you really to turn off your device.
-/// - Hibernate - turns of the device after copying the current state of running applications from RAM to SWAP(if configured)
-/// - Suspend - does NOT turn off the device, instead, it switches to sleep mode or low power consumption mode keeping the applications open and running.
-/// - Nothing - the name is self explanatory.
-
 impl fmt::Display for PowerMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
