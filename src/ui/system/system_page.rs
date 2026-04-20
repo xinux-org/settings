@@ -1,7 +1,10 @@
 use crate::ui::{
     system::{
-        system_about::SystemAboutPage, system_datetime::SystemDateTimePage,
-        system_l10n::SystemRegionLanguagePage, system_users::SystemUsersPage,
+        system_about::SystemAboutPage,
+        system_datetime::SystemDateTimePage,
+        system_l10n::SystemRegionLanguagePage,
+        system_user::{UserModel, UserModelInit, UserModelMsg, UserPageModel, UserPageMsg},
+        system_users::SystemUsersPage,
     },
     window::AppMsg,
 };
@@ -19,6 +22,7 @@ pub struct SystemPageModel {
     system_datetime: Controller<SystemDateTimePage>,
     system_users: Controller<SystemUsersPage>,
     system_about: Controller<SystemAboutPage>,
+    user_model: Controller<UserPageModel>,
 }
 
 #[derive(Debug)]
@@ -27,6 +31,7 @@ pub enum SystemPageMsg {
     OpenSystemDateTimePage,
     OpenSystemUsersPage,
     OpenSystemAboutPage,
+    OpenSystemUserPage(String),
     Rebuild(String, String, String), // single line nix path, argument and value
 }
 
@@ -163,12 +168,20 @@ impl SimpleComponent for SystemPageModel {
             .launch(())
             .forward(sender.input_sender(), identity);
 
+        let user_model = UserPageModel::builder()
+            .launch(UserModelInit {
+                name: String::new(),
+                username: String::new(),
+            })
+            .forward(sender.input_sender(), identity);
+
         let mut model = Self {
             navigation: adw::NavigationView::new(),
             system_l10n,
             system_datetime,
             system_users,
             system_about,
+            user_model,
         };
 
         let widgets = view_output!();
@@ -189,6 +202,11 @@ impl SimpleComponent for SystemPageModel {
             SystemPageMsg::OpenSystemUsersPage => {
                 let page = self.system_users.widget();
                 self.navigation.push(page);
+            }
+            SystemPageMsg::OpenSystemUserPage(username) => {
+                let page = self.user_model.widget();
+                self.navigation.push(page);
+                self.user_model.emit(UserPageMsg::Load(username.clone()));
             }
             SystemPageMsg::OpenSystemAboutPage => {
                 let page = self.system_about.widget();
