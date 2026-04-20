@@ -5,7 +5,6 @@ use relm4::{
 };
 
 use crate::ui::power::general_page::PowerSettings;
-use crate::utils::power::{SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES};
 use gettextrs::gettext;
 use relm4::gtk::StringList;
 
@@ -80,6 +79,8 @@ pub struct AutoScreenBlank {
     session_settings: gtk::gio::Settings,
     enabled: bool,
     delay: u32,
+    labels: StringList,
+    values: Vec<u32>,
 }
 
 #[derive(Debug)]
@@ -97,7 +98,7 @@ const BLANK_SCREEN_DEFAULT: u32 = 300;
 
 #[relm4::component(pub)]
 impl Component for AutoScreenBlank {
-    type Init = PowerSettings;
+    type Init = (PowerSettings, Vec<u32>);
     type Input = AutoScreenBlankMsg;
     type Output = AutoScreenBlankOutput;
     type CommandOutput = ();
@@ -122,11 +123,11 @@ impl Component for AutoScreenBlank {
                 set_title: "Delay",
                 #[watch]
                 set_sensitive: model.enabled,
-                set_model: Some(&gtk::StringList::new(&SCREEN_BLANK_DELAY_LABELS)),
+                set_model: Some(&model.labels),
 
                 // example: https://github.com/blissd/fotema/blob/main/src/app/components/preferences.rs#L127-L130
                 connect_selected_item_notify[sender] => move |row| {
-                    sender.input(AutoScreenBlankMsg::Delay(row.selected()));
+                   sender.input(AutoScreenBlankMsg::Delay(row.selected()));
                 }
             }
         }
@@ -137,8 +138,23 @@ impl Component for AutoScreenBlank {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let session_settings = init.session;
+        let session_settings = init.0.session;
+        let values = init.1;
         let current_delay = session_settings.uint("idle-delay");
+
+        let screen_blank_delay_labels = [
+            gettext("1 minute"),
+            gettext("2 minutes"),
+            gettext("3 minutes"),
+            gettext("4 minutes"),
+            gettext("5 minutes"),
+            gettext("8 minutes"),
+            gettext("10 minutes"),
+            gettext("12 minutes"),
+            gettext("15 minutes"),
+        ]
+        .to_vec();
+        let labels: StringList = screen_blank_delay_labels.iter().map(gettext).collect();
 
         let (enabled, delay) = current_delay
             .eq(&0)
@@ -149,6 +165,9 @@ impl Component for AutoScreenBlank {
             session_settings,
             enabled,
             delay,
+
+            labels,
+            values,
         };
 
         // sender.input(AutoScreenBlankMsg::Toggle(model.enabled, 0));
@@ -167,17 +186,15 @@ impl Component for AutoScreenBlank {
                     sender.input(AutoScreenBlankMsg::Delay(index));
 
                     // unwrap is used here because index is always in range, this should NOT fail
-                    self.delay = *SCREEN_BLANK_DELAY_VALUES.get(index as usize).unwrap();
+                    self.delay = *self.values.get(index as usize).unwrap();
                 // false
                 } else {
-                    sender.input(AutoScreenBlankMsg::Delay(
-                        SCREEN_BLANK_DELAY_VALUES.len() as u32
-                    ));
+                    sender.input(AutoScreenBlankMsg::Delay(self.values.len() as u32));
                 }
                 self.enabled = state;
             }
             AutoScreenBlankMsg::Delay(index) => {
-                let seconds = match SCREEN_BLANK_DELAY_VALUES.get(index as usize) {
+                let seconds = match self.values.get(index as usize) {
                     Some(val) => *val,
                     None => 0,
                 };
@@ -209,6 +226,7 @@ pub enum AutomaticSuspendMsg {
 #[derive(Debug)]
 pub enum AutomaticSuspendOutput {
     Noop,
+    Toggled(bool),
 }
 
 #[relm4::component(pub)]
@@ -297,7 +315,7 @@ impl Component for AutomaticSuspend {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             AutomaticSuspendMsg::Toggle(state) => {
                 self.enabled = state;
@@ -308,6 +326,10 @@ impl Component for AutomaticSuspend {
                 let _ = self
                     .power_settings
                     .set_string(format!("sleep-inactive-{}-type", self.key).as_str(), status);
+
+                sender
+                    .output_sender()
+                    .emit(AutomaticSuspendOutput::Toggled(state));
             }
 
             AutomaticSuspendMsg::Delay(index) => {

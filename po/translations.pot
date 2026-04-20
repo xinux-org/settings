@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-20 20:15+0500\n"
+"POT-Creation-Date: 2026-04-20 20:44+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -90,48 +90,80 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:120 src/ui/power/reusables.rs:262
+#: src/ui/power/power_saving.rs:121 src/ui/power/reusables.rs:279
 msgid "15 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:121 src/ui/power/reusables.rs:263
+#: src/ui/power/power_saving.rs:122 src/ui/power/reusables.rs:280
 msgid "20 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:122 src/ui/power/reusables.rs:264
+#: src/ui/power/power_saving.rs:123 src/ui/power/reusables.rs:281
 msgid "25 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:123 src/ui/power/reusables.rs:265
+#: src/ui/power/power_saving.rs:124 src/ui/power/reusables.rs:282
 msgid "30 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:124 src/ui/power/reusables.rs:266
+#: src/ui/power/power_saving.rs:125 src/ui/power/reusables.rs:283
 msgid "45 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:125 src/ui/power/reusables.rs:267
+#: src/ui/power/power_saving.rs:126 src/ui/power/reusables.rs:284
 msgid "1 hour"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:126 src/ui/power/reusables.rs:268
+#: src/ui/power/power_saving.rs:127 src/ui/power/reusables.rs:285
 msgid "1 hour 20 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:127 src/ui/power/reusables.rs:269
+#: src/ui/power/power_saving.rs:128 src/ui/power/reusables.rs:286
 msgid "1 hour 30 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:128 src/ui/power/reusables.rs:270
+#: src/ui/power/power_saving.rs:129 src/ui/power/reusables.rs:287
 msgid "1 hour 40 minute"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:129 src/ui/power/reusables.rs:271
+#: src/ui/power/power_saving.rs:130 src/ui/power/reusables.rs:288
 msgid "2 hours"
 msgstr ""
 
-#: src/ui/power/reusables.rs:305
+#: src/ui/power/reusables.rs:146 src/ui/power/reusables.rs:322
 msgid "1 minute"
+msgstr ""
+
+#: src/ui/power/reusables.rs:147
+msgid "2 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:148
+msgid "3 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:149
+msgid "4 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:150
+msgid "5 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:151
+msgid "8 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:152
+msgid "10 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:153
+msgid "12 minutes"
+msgstr ""
+
+#: src/ui/power/reusables.rs:154
+msgid "15 minutes"
 msgstr ""
 
 #: src/main.rs:35

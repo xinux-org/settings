@@ -11,6 +11,7 @@ use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
 use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
+use crate::utils::power::SCREEN_BLANK_DELAY_VALUES;
 use crate::utils::power::SUSPEND_DELAY_VALUES;
 
 #[derive(Debug)]
@@ -42,9 +43,8 @@ pub struct SavingPowerPageView {
 pub enum PowerSavingMsg {
     SetAutoPowerSaver(bool),
     SetIdleDim(bool),
-    SetSleepInactiveBatteryType(bool),
-    SetSleepInactiveACType(bool),
-    SetSleepInactiveACTimeout(u16),
+    AutomaticSuspendBattery(bool),
+    AutomaticSuspendAC(bool),
     Noop,
 }
 
@@ -136,7 +136,7 @@ impl Component for SavingPowerPageView {
         let auto_power_saver = settings.power.boolean("power-saver-profile-on-low-battery");
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
-            .launch(settings.to_owned())
+            .launch((settings.to_owned(), SCREEN_BLANK_DELAY_VALUES.to_vec()))
             .forward(sender.input_sender(), |out| match out {
                 // we do not need child and parent relationship in this case
                 AutoScreenBlankOutput::Noop => PowerSavingMsg::Noop,
@@ -169,6 +169,7 @@ impl Component for SavingPowerPageView {
             ))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
+                AutomaticSuspendOutput::Toggled(state) => PowerSavingMsg::AutomaticSuspendAC(state),
             });
 
         let automatic_suspend_controller_battery = AutomaticSuspend::builder()
@@ -181,6 +182,9 @@ impl Component for SavingPowerPageView {
             ))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
+                AutomaticSuspendOutput::Toggled(state) => {
+                    PowerSavingMsg::AutomaticSuspendBattery(state)
+                }
             });
 
         let dim_screen_controller =
@@ -230,43 +234,23 @@ impl Component for SavingPowerPageView {
                 let _ = self.settings.power.set_boolean("idle-dim", state);
             }
 
-            PowerSavingMsg::SetSleepInactiveBatteryType(state) => match state {
+            PowerSavingMsg::AutomaticSuspendBattery(state) => match state {
                 true => {
                     self.sleep_inactive_battery_type = state;
-
-                    let _ = self
-                        .settings
-                        .power
-                        .set_string("sleep-inactive-battery-type", "suspend");
                 }
                 false => {
                     self.sleep_inactive_battery_type = state;
-                    let _ = self
-                        .settings
-                        .power
-                        .set_string("sleep-inactive-battery-type", "nothing");
                 }
             },
 
-            PowerSavingMsg::SetSleepInactiveACType(state) => match state {
+            PowerSavingMsg::AutomaticSuspendAC(state) => match state {
                 true => {
                     self.sleep_inactive_ac_type = state;
-
-                    let _ = self
-                        .settings
-                        .power
-                        .set_string("sleep-inactive-ac-type", "suspend");
                 }
                 false => {
                     self.sleep_inactive_ac_type = state;
-
-                    let _ = self
-                        .settings
-                        .power
-                        .set_string("sleep-inactive-ac-type", "nothing");
                 }
             },
-            PowerSavingMsg::SetSleepInactiveACTimeout(_seconds) => {}
             PowerSavingMsg::Noop => {}
         }
     }

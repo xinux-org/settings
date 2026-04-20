@@ -1,4 +1,7 @@
-use crate::ui::power::{battery_row::BatteryModel, power_page::PowerMsg};
+use crate::{
+    ui::power::{battery_row::BatteryModel, power_page::PowerMsg},
+    utils::power::SCREEN_BLANK_DELAY_VALUES,
+};
 use ppd::PpdProxyBlocking;
 use regex::Regex;
 use relm4::{
@@ -103,6 +106,7 @@ pub enum GeneralPowerPageViewMsg {
 
     // Automatic Suspend
     SetIdleDim(bool),
+    AutomaticSuspendAC(bool),
 
     // no operation needed.
     // we do it just to avoit type Output
@@ -389,7 +393,7 @@ impl Component for GeneralPowerPageView {
                 });
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
-            .launch(settings.to_owned())
+            .launch((settings.to_owned(), SCREEN_BLANK_DELAY_VALUES.to_vec()))
             .forward(sender.input_sender(), |out| match out {
                 // we do not need child and parent relationship in this case
                 AutoScreenBlankOutput::Noop => GeneralPowerPageViewMsg::Noop,
@@ -408,6 +412,9 @@ impl Component for GeneralPowerPageView {
             ))
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,
+                AutomaticSuspendOutput::Toggled(state) => {
+                    GeneralPowerPageViewMsg::AutomaticSuspendAC(state)
+                }
             });
 
         let model = Self {
@@ -491,6 +498,9 @@ impl Component for GeneralPowerPageView {
                 self.idle_dim = state;
 
                 let _ = self.settings.power.set_boolean("idle-dim", state);
+            }
+            GeneralPowerPageViewMsg::AutomaticSuspendAC(state) => {
+                self.sleep_inactive_ac_type = state
             }
             GeneralPowerPageViewMsg::Noop => {}
         }
