@@ -75,7 +75,7 @@ msgstr "Xinux Dasturchilari"
 #: data/resources/ui/shortcuts.ui:11
 msgctxt "shortcut window"
 msgid "General"
-msgstr ""
+msgstr "Asosiy"
 
 #: data/resources/ui/shortcuts.ui:14
 msgctxt "shortcut window"
@@ -85,7 +85,7 @@ msgstr ""
 #: data/resources/ui/shortcuts.ui:20
 msgctxt "shortcut window"
 msgid "Quit"
-msgstr ""
+msgstr "Chiqish"
 
 #: src/ui/window.rs:134
 msgid "Settings"
@@ -97,43 +97,43 @@ msgstr "15 daqiqa"
 
 #: src/ui/power/power_saving.rs:121 src/ui/power/reusables.rs:263
 msgid "20 minute"
-msgstr ""
+msgstr "20 daqiqa"
 
 #: src/ui/power/power_saving.rs:122 src/ui/power/reusables.rs:264
 msgid "25 minute"
-msgstr ""
+msgstr "25 daqiqa"
 
 #: src/ui/power/power_saving.rs:123 src/ui/power/reusables.rs:265
 msgid "30 minute"
-msgstr ""
+msgstr "30 daqiqa"
 
 #: src/ui/power/power_saving.rs:124 src/ui/power/reusables.rs:266
 msgid "45 minute"
-msgstr ""
+msgstr "45 daqiqa"
 
 #: src/ui/power/power_saving.rs:125 src/ui/power/reusables.rs:267
 msgid "1 hour"
-msgstr ""
+msgstr "1 soat"
 
 #: src/ui/power/power_saving.rs:126 src/ui/power/reusables.rs:268
 msgid "1 hour 20 minute"
-msgstr ""
+msgstr "1 soat 20 daqiqa"
 
 #: src/ui/power/power_saving.rs:127 src/ui/power/reusables.rs:269
 msgid "1 hour 30 minute"
-msgstr ""
+msgstr "1 soat 30 daqiqa"
 
 #: src/ui/power/power_saving.rs:128 src/ui/power/reusables.rs:270
 msgid "1 hour 40 minute"
-msgstr ""
+msgstr "1 soat 40 daqiqa"
 
 #: src/ui/power/power_saving.rs:129 src/ui/power/reusables.rs:271
 msgid "2 hours"
-msgstr ""
+msgstr "2 soat"
 
 #: src/ui/power/reusables.rs:305
 msgid "1 minute"
-msgstr ""
+msgstr "1 daqiqa"
 
 #: src/main.rs:35
 msgid "Xinux settings"
