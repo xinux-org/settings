@@ -17,7 +17,7 @@ use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
 use gtk::gio::Settings;
 
-use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_LABELS, SUSPEND_DELAY_VALUES};
+use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_VALUES};
 
 #[derive(Debug, Clone)]
 pub struct PowerSettings {
@@ -103,7 +103,6 @@ pub enum GeneralPowerPageViewMsg {
 
     // Automatic Suspend
     SetIdleDim(bool),
-    SetSleepInactiveACType(bool),
 
     // no operation needed.
     // we do it just to avoit type Output
@@ -337,8 +336,8 @@ impl Component for GeneralPowerPageView {
         let settings = PowerSettings::new();
 
         let idle_dim = settings.power.boolean("idle-dim");
-        let idle_delay = settings.session.uint("idle-delay").to_string();
         let show_battery_percentage = settings.interface.boolean("show-battery-percentage");
+
         let sleep_inactive_ac_type = matches!(
             (settings.power.string("sleep-inactive-ac-type").as_str(),),
             ("suspend",)
@@ -401,10 +400,10 @@ impl Component for GeneralPowerPageView {
                 "Automatic Suspend".to_string(),
                 "ac".to_string(),
                 settings.to_owned(),
-                SUSPEND_DELAY_LABELS
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect(),
+                // SUSPEND_DELAY_LABELS
+                //     .iter()
+                //     .map(|label| gettextrs::gettext(*label).to_string())
+                //     .collect(),
                 SUSPEND_DELAY_VALUES.to_vec(),
             ))
             .forward(sender.input_sender(), |out| match out {
@@ -493,25 +492,6 @@ impl Component for GeneralPowerPageView {
 
                 let _ = self.settings.power.set_boolean("idle-dim", state);
             }
-
-            GeneralPowerPageViewMsg::SetSleepInactiveACType(state) => match state {
-                true => {
-                    self.sleep_inactive_ac_type = state;
-
-                    let _ = self
-                        .settings
-                        .power
-                        .set_string("sleep-inactive-ac-type", "suspend");
-                }
-                false => {
-                    self.sleep_inactive_ac_type = state;
-
-                    let _ = self
-                        .settings
-                        .power
-                        .set_string("sleep-inactive-ac-type", "nothing");
-                }
-            },
             GeneralPowerPageViewMsg::Noop => {}
         }
     }

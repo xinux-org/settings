@@ -6,6 +6,7 @@ use relm4::{
 
 use crate::ui::power::general_page::PowerSettings;
 use crate::utils::power::{SCREEN_BLANK_DELAY_LABELS, SCREEN_BLANK_DELAY_VALUES};
+use gettextrs::gettext;
 use relm4::gtk::StringList;
 
 #[derive(Debug)]
@@ -213,7 +214,7 @@ pub enum AutomaticSuspendOutput {
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
     // Label Text, Key, Settings, Labels, Values
-    type Init = (String, String, PowerSettings, Vec<String>, Vec<u32>);
+    type Init = (String, String, PowerSettings, Vec<u32>);
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
     type CommandOutput = ();
@@ -257,8 +258,23 @@ impl Component for AutomaticSuspend {
         let power_settings = init.2.power;
         let key = init.1;
 
-        let labels: StringList = init.3.iter().map(gettextrs::gettext).collect();
-        let values = init.4;
+        let suspend_delay_labels: Vec<String> = [
+            gettext("15 minute"),
+            gettext("20 minute"),
+            gettext("25 minute"),
+            gettext("30 minute"),
+            gettext("45 minute"),
+            gettext("1 hour"),
+            gettext("1 hour 20 minute"),
+            gettext("1 hour 30 minute"),
+            gettext("1 hour 40 minute"),
+            gettext("2 hours"),
+        ]
+        .to_vec();
+
+        let labels: StringList = suspend_delay_labels.iter().map(gettext).collect();
+        // let labels: StringList = init.3.iter().map(gettextrs::gettext).collect();
+        let values = init.3;
 
         let sleep_inactive_type =
             power_settings.string(format!("sleep-inactive-{}-type", key).as_str());
@@ -286,6 +302,7 @@ impl Component for AutomaticSuspend {
             AutomaticSuspendMsg::Toggle(state) => {
                 self.enabled = state;
 
+                println!("{:?}", gettextrs::gettext("1 minute"));
                 let status = if state { "suspend" } else { "nothing" };
 
                 let _ = self

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-19 22:14+0500\n"
-"PO-Revision-Date: 2026-04-19 22:16+0500\n"
+"POT-Creation-Date: 2026-04-20 20:15+0500\n"
+"PO-Revision-Date: 2026-04-20 20:18+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uz\n"
@@ -90,6 +90,50 @@ msgstr ""
 #: src/ui/window.rs:134
 msgid "Settings"
 msgstr "Sozlamalar"
+
+#: src/ui/power/power_saving.rs:120 src/ui/power/reusables.rs:262
+msgid "15 minute"
+msgstr "15 daqiqa"
+
+#: src/ui/power/power_saving.rs:121 src/ui/power/reusables.rs:263
+msgid "20 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:122 src/ui/power/reusables.rs:264
+msgid "25 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:123 src/ui/power/reusables.rs:265
+msgid "30 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:124 src/ui/power/reusables.rs:266
+msgid "45 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:125 src/ui/power/reusables.rs:267
+msgid "1 hour"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:126 src/ui/power/reusables.rs:268
+msgid "1 hour 20 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:127 src/ui/power/reusables.rs:269
+msgid "1 hour 30 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:128 src/ui/power/reusables.rs:270
+msgid "1 hour 40 minute"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:129 src/ui/power/reusables.rs:271
+msgid "2 hours"
+msgstr ""
+
+#: src/ui/power/reusables.rs:305
+msgid "1 minute"
+msgstr ""
 
 #: src/main.rs:35
 msgid "Xinux settings"

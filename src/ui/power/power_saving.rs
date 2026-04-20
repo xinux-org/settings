@@ -2,7 +2,7 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use relm4::gtk::StringList;
+use gettextrs::gettext;
 
 use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
@@ -11,7 +11,6 @@ use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
 use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
 use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
 
-use crate::utils::power::SUSPEND_DELAY_LABELS;
 use crate::utils::power::SUSPEND_DELAY_VALUES;
 
 #[derive(Debug)]
@@ -117,6 +116,20 @@ impl Component for SavingPowerPageView {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let suspend_delay_labels: Vec<String> = [
+            gettext("15 minute"),
+            gettext("20 minute"),
+            gettext("25 minute"),
+            gettext("30 minute"),
+            gettext("45 minute"),
+            gettext("1 hour"),
+            gettext("1 hour 20 minute"),
+            gettext("1 hour 30 minute"),
+            gettext("1 hour 40 minute"),
+            gettext("2 hours"),
+        ]
+        .to_vec();
+
         let settings = PowerSettings::new();
 
         let idle_dim = settings.power.boolean("idle-dim");
@@ -151,10 +164,7 @@ impl Component for SavingPowerPageView {
                 "When Plugged In".to_string(),
                 "ac".to_string(),
                 settings.to_owned(),
-                SUSPEND_DELAY_LABELS
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect(),
+                // suspend_delay_labels.clone(),
                 SUSPEND_DELAY_VALUES.to_vec(),
             ))
             .forward(sender.input_sender(), |out| match out {
@@ -166,10 +176,7 @@ impl Component for SavingPowerPageView {
                 "On Battery Power".to_string(),
                 "ac".to_string(),
                 settings.to_owned(),
-                SUSPEND_DELAY_LABELS
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect(),
+                // suspend_delay_labels.clone(),
                 SUSPEND_DELAY_VALUES.to_vec(),
             ))
             .forward(sender.input_sender(), |out| match out {
