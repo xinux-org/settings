@@ -2,5 +2,10 @@ data/uz.xinux.Settings.desktop.in.in
 data/uz.xinux.Settings.gschema.xml.in
 data/uz.xinux.Settings.metainfo.xml.in.in
 data/resources/ui/shortcuts.ui
-src/app.rs
+src/ui/window.rs 
+
+src/ui/power/general_page.rs 
+src/ui/power/power_saving.rs 
+src/ui/power/reusables.rs 
+
 src/main.rs
