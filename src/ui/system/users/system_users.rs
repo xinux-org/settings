@@ -8,9 +8,13 @@ use relm4::{
     gtk::{self},
     prelude::*,
 };
+
+const USER_ACCOUNTS_PERMISSION: &str = "org.gnome.controlcenter.user-accounts.administration";
+
 #[derive(Debug)]
 pub struct SystemUsersPage {
     currnet_user_model: Controller<UserModel>,
+    user_list: gtk::ListBox,
 }
 
 #[derive(Debug)]
@@ -101,7 +105,10 @@ impl SimpleComponent for SystemUsersPage {
                 UserModelOutput::Noop => SystemUsersMsg::Noop,
             });
 
-        let model = Self { currnet_user_model };
+        let model = Self {
+            currnet_user_model,
+            user_list: gtk::ListBox::new(),
+        };
         let currnet_user_model = model.currnet_user_model.widget();
 
         let widgets = view_output!();
