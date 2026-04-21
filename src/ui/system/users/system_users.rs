@@ -1,6 +1,6 @@
 use crate::ui::system::{
     system_page::SystemPageMsg,
-    system_user::{UserModel, UserModelInit, UserModelOutput},
+    users::system_user::{UserModel, UserModelInit, UserModelOutput},
 };
 use gettextrs::gettext;
 use relm4::{

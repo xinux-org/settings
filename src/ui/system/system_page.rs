@@ -3,8 +3,10 @@ use crate::ui::{
         system_about::SystemAboutPage,
         system_datetime::SystemDateTimePage,
         system_l10n::SystemRegionLanguagePage,
-        system_user::{UserModel, UserModelInit, UserModelMsg, UserPageModel, UserPageMsg},
-        system_users::SystemUsersPage,
+        users::{
+            system_user::{UserModelInit, UserPageModel},
+            system_users::SystemUsersPage,
+        },
     },
     window::AppMsg,
 };
