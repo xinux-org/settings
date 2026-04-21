@@ -5,9 +5,9 @@ use relm4::prelude::*;
 use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
 
-use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
-use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
-use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
+use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
+use crate::ui::power::components::auto_suspend::{AutomaticSuspend, AutomaticSuspendOutput};
+use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
 
 use crate::utils::power::SCREEN_BLANK_DELAY_VALUES;
 use crate::utils::power::SUSPEND_DELAY_VALUES;
@@ -181,7 +181,11 @@ impl Component for SavingPowerPageView {
 
             sleep_inactive_battery_type,
             sleep_inactive_ac_type,
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> b2dc6c6 (refactor: split `reusables` file into a folder)
             automatic_suspend_controller,
             automatic_suspend_controller_battery,
         };

@@ -14,9 +14,9 @@ use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
-use crate::ui::power::reusables::{AutoScreenBlank, AutoScreenBlankOutput};
-use crate::ui::power::reusables::{AutomaticSuspend, AutomaticSuspendOutput};
-use crate::ui::power::reusables::{DimScreen, DimScreenOutput};
+use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
+use crate::ui::power::components::auto_suspend::{AutomaticSuspend, AutomaticSuspendOutput};
+use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
 
 use gtk::gio::Settings;
 
