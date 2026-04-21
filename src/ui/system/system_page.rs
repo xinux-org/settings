@@ -22,7 +22,7 @@ pub struct SystemPageModel {
     system_datetime: Controller<SystemDateTimePage>,
     system_users: Controller<SystemUsersPage>,
     system_about: Controller<SystemAboutPage>,
-    user_model: Controller<UserPageModel>,
+    user_model: Option<Controller<UserPageModel>>,
 }
 
 #[derive(Debug)]
@@ -168,20 +168,13 @@ impl SimpleComponent for SystemPageModel {
             .launch(())
             .forward(sender.input_sender(), identity);
 
-        let user_model = UserPageModel::builder()
-            .launch(UserModelInit {
-                name: String::new(),
-                username: String::new(),
-            })
-            .forward(sender.input_sender(), identity);
-
         let mut model = Self {
             navigation: adw::NavigationView::new(),
             system_l10n,
             system_datetime,
             system_users,
             system_about,
-            user_model,
+            user_model: None,
         };
 
         let widgets = view_output!();
@@ -204,9 +197,15 @@ impl SimpleComponent for SystemPageModel {
                 self.navigation.push(page);
             }
             SystemPageMsg::OpenSystemUserPage(username) => {
-                let page = self.user_model.widget();
-                self.navigation.push(page);
-                self.user_model.emit(UserPageMsg::Load(username.clone()));
+                let user_model = UserPageModel::builder()
+                    .launch(UserModelInit {
+                        name: username,
+                        username: String::new(),
+                    })
+                    .forward(sender.input_sender(), identity);
+                self.navigation.push(user_model.widget());
+                self.user_model = Some(user_model);
+                // self.user_model.emit(UserPageMsg::Load(username.clone()));
             }
             SystemPageMsg::OpenSystemAboutPage => {
                 let page = self.system_about.widget();

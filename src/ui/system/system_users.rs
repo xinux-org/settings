@@ -45,11 +45,8 @@ impl SimpleComponent for SystemUsersPage {
                     // connect_button_clicked => SystemRegionLanguageMsg::LogOut,
                 },
 
-                #[name(preferences_page)]
-                adw::PreferencesPage {
-                    #[local_ref]
-                    currnet_user_model -> adw::PreferencesGroup {},
-
+                #[local_ref]
+                currnet_user_model -> adw::PreferencesPage {
                     adw::PreferencesGroup {
                         #[watch]
                         // set_visible: model.show_other_users,
@@ -74,6 +71,13 @@ impl SimpleComponent for SystemUsersPage {
                             set_end_icon_name: Some("go-next-symbolic"),
                             set_use_underline: true,
                             connect_activated => SystemUsersMsg::OpenUser(String::from("test user")),
+                        },
+
+                        adw::ButtonRow {
+                            set_title: "third user test",
+                            set_end_icon_name: Some("go-next-symbolic"),
+                            set_use_underline: true,
+                            connect_activated => SystemUsersMsg::OpenUser(String::from("third user")),
                         },
                     },
                 },

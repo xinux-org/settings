@@ -32,10 +32,8 @@ impl SimpleComponent for UserPageModel {
 
                 add_top_bar = &adw::HeaderBar {},
 
-                adw::PreferencesPage {
-                    #[local_ref]
-                    user_model -> adw::PreferencesGroup {},
-                }
+                #[local_ref]
+                user_model -> adw::PreferencesPage {},
             }
         }
     }
@@ -97,7 +95,7 @@ impl SimpleComponent for UserModel {
     type Output = UserModelOutput;
 
     view! {
-        adw::PreferencesGroup {
+        adw::PreferencesPage {
             adw::PreferencesGroup {
                 gtk::Overlay {
                     set_halign: gtk::Align::Center,
