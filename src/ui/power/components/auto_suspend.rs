@@ -30,10 +30,19 @@ pub enum AutomaticSuspendOutput {
     Toggled(bool),
 }
 
+#[derive(Debug)]
+pub struct AutomaticSuspendInit {
+    pub suspend_text: String,
+    pub key: String,
+    pub power_settings: PowerSettings,
+
+    pub values: Vec<u32>,
+}
+
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
     // Label Text, Key, Settings, Labels, Values
-    type Init = (String, String, PowerSettings, Vec<u32>);
+    type Init = AutomaticSuspendInit;
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
     type CommandOutput = ();
@@ -74,8 +83,8 @@ impl Component for AutomaticSuspend {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let power_settings = init.2.power;
-        let key = init.1;
+        let power_settings = init.power_settings.power;
+        let key = init.key;
 
         let suspend_delay_labels: Vec<String> = [
             gettext("15 minute"),
@@ -92,15 +101,14 @@ impl Component for AutomaticSuspend {
         .to_vec();
 
         let labels: StringList = suspend_delay_labels.iter().map(gettext).collect();
-        // let labels: StringList = init.3.iter().map(gettextrs::gettext).collect();
-        let values = init.3;
+        let values = init.values;
 
         let sleep_inactive_type =
             power_settings.string(format!("sleep-inactive-{}-type", key).as_str());
         let enabled = sleep_inactive_type.as_str() == "suspend";
 
         let model = Self {
-            suspend_text: init.0,
+            suspend_text: init.suspend_text,
             power_settings,
             enabled,
 
@@ -108,9 +116,6 @@ impl Component for AutomaticSuspend {
             labels,
             values,
         };
-
-        // sender.input(AutoScreenBlankMsg::Toggle(model.enabled, 0));
-        // sender.input(AutoScreenBlankMsg::Delay(delay));
 
         let widgets = view_output!();
         ComponentParts { model, widgets }
@@ -121,7 +126,6 @@ impl Component for AutomaticSuspend {
             AutomaticSuspendMsg::Toggle(state) => {
                 self.enabled = state;
 
-                println!("{:?}", gettextrs::gettext("1 minute"));
                 let status = if state { "suspend" } else { "nothing" };
 
                 let _ = self

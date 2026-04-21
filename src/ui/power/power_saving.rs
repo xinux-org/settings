@@ -5,9 +5,11 @@ use relm4::prelude::*;
 use crate::ui::power::general_page::PowerSettings;
 use crate::ui::power::power_page::PowerMsg;
 
-use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
-use crate::ui::power::components::auto_suspend::{AutomaticSuspend, AutomaticSuspendOutput};
+use crate::ui::power::components::auto_suspend::{
+    AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
+};
 use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
+use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
 
 use crate::utils::power::SCREEN_BLANK_DELAY_VALUES;
 use crate::utils::power::SUSPEND_DELAY_VALUES;
@@ -136,26 +138,24 @@ impl Component for SavingPowerPageView {
         );
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
-            .launch((
-                "When Plugged In".to_string(),
-                "ac".to_string(),
-                settings.to_owned(),
-                // suspend_delay_labels.clone(),
-                SUSPEND_DELAY_VALUES.to_vec(),
-            ))
+            .launch(AutomaticSuspendInit {
+                suspend_text: "When Plugged In".to_string(),
+                key: "ac".to_string(),
+                power_settings: settings.to_owned(),
+                values: SUSPEND_DELAY_VALUES.to_vec(),
+            })
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => PowerSavingMsg::AutomaticSuspendAC(state),
             });
 
         let automatic_suspend_controller_battery = AutomaticSuspend::builder()
-            .launch((
-                "On Battery Power".to_string(),
-                "ac".to_string(),
-                settings.to_owned(),
-                // suspend_delay_labels.clone(),
-                SUSPEND_DELAY_VALUES.to_vec(),
-            ))
+            .launch(AutomaticSuspendInit {
+                suspend_text: "On Battery Power".to_string(),
+                key: "ac".to_string(),
+                power_settings: settings.to_owned(),
+                values: SUSPEND_DELAY_VALUES.to_vec(),
+            })
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => {
@@ -181,11 +181,7 @@ impl Component for SavingPowerPageView {
 
             sleep_inactive_battery_type,
             sleep_inactive_ac_type,
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> b2dc6c6 (refactor: split `reusables` file into a folder)
             automatic_suspend_controller,
             automatic_suspend_controller_battery,
         };

@@ -14,9 +14,11 @@ use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
-use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
-use crate::ui::power::components::auto_suspend::{AutomaticSuspend, AutomaticSuspendOutput};
+use crate::ui::power::components::auto_suspend::{
+    AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
+};
 use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
+use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
 
 use gtk::gio::Settings;
 
@@ -394,16 +396,12 @@ impl Component for GeneralPowerPageView {
             });
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
-            .launch((
-                "Automatic Suspend".to_string(),
-                "ac".to_string(),
-                settings.to_owned(),
-                // SUSPEND_DELAY_LABELS
-                //     .iter()
-                //     .map(|label| gettextrs::gettext(*label).to_string())
-                //     .collect(),
-                SUSPEND_DELAY_VALUES.to_vec(),
-            ))
+            .launch(AutomaticSuspendInit {
+                suspend_text: "Automatic Suspend".to_string(),
+                key: "ac".to_string(),
+                power_settings: settings.to_owned(),
+                values: SUSPEND_DELAY_VALUES.to_vec(),
+            })
             .forward(sender.input_sender(), |out| match out {
                 AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => {

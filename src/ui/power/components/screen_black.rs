@@ -137,4 +137,3 @@ impl Component for AutoScreenBlank {
         }
     }
 }
-
