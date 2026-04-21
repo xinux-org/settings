@@ -34,7 +34,7 @@ impl SimpleComponent for AccountsModel {
                     gtk::Label {
                         set_halign: gtk::Align::Center,
                         set_label: "Allow apps to access online services by connecting your cloud accounts",
-                        add_css_class: "grey_color",
+                        add_css_class: "dim-label",
                     },
                 },
 

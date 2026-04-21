@@ -60,13 +60,6 @@ impl SimpleComponent for SystemUsersPage {
                         },
 
                         adw::ButtonRow {
-                            set_title: "Add User",
-                            set_end_icon_name: Some("go-next-symbolic"),
-                            set_use_underline: true,
-                            // connect_activated => MoveMsg::AddUser,
-                        },
-
-                        adw::ButtonRow {
                             set_title: "second user test",
                             set_end_icon_name: Some("go-next-symbolic"),
                             set_use_underline: true,
@@ -78,6 +71,14 @@ impl SimpleComponent for SystemUsersPage {
                             set_end_icon_name: Some("go-next-symbolic"),
                             set_use_underline: true,
                             connect_activated => SystemUsersMsg::OpenUser(String::from("third user")),
+                        },
+                    },
+                    adw::PreferencesGroup {
+                        adw::ButtonRow {
+                            set_title: "Add User",
+                            set_end_icon_name: Some("go-next-symbolic"),
+                            set_use_underline: true,
+                            // connect_activated => MoveMsg::AddUser,
                         },
                     },
                 },
@@ -94,6 +95,7 @@ impl SimpleComponent for SystemUsersPage {
             .launch(UserModelInit {
                 name: String::from("value"),
                 username: String::from("value"),
+                is_current_user: true,
             })
             .forward(sender.input_sender(), |out| match out {
                 UserModelOutput::Noop => SystemUsersMsg::Noop,

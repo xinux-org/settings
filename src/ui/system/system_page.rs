@@ -201,6 +201,7 @@ impl SimpleComponent for SystemPageModel {
                     .launch(UserModelInit {
                         name: username,
                         username: String::new(),
+                        is_current_user: false,
                     })
                     .forward(sender.input_sender(), identity);
                 self.navigation.push(user_model.widget());

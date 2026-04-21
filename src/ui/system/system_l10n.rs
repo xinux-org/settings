@@ -67,7 +67,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
                             gtk::Label {
                                 set_halign: gtk::Align::Center,
                                 set_label: "Filesystem locations which are selected by system apps, such as Files",
-                                add_css_class: "grey_color",
+                                add_css_class: "dim-label",
                             },
                         },
                     },
@@ -83,7 +83,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
                             add_suffix = &gtk::Label {
                                 #[watch]
                                 set_label: &model.default_display_lang,
-                                add_css_class: "grey_color",
+                                add_css_class: "dim-label",
 
                             },
                         },
@@ -94,7 +94,7 @@ impl SimpleComponent for SystemRegionLanguagePage {
 
                             add_suffix = &gtk::Label {
                               set_label: "test region",
-                              add_css_class: "grey_color",
+                              add_css_class: "dim-label",
 
                             }
                         },
@@ -574,7 +574,7 @@ impl SimpleComponent for RegionModel {
 
                     #[wrap(Some)]
                     set_title_widget = &adw::WindowTitle {
-                    set_title: &gettext("Select region"),
+                        set_title: &gettext("Select region"),
                     },
 
                     pack_start = &gtk::Button {
