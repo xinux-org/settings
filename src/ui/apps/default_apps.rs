@@ -64,7 +64,9 @@ impl DefaultCategory {
 
     fn filters(self) -> Option<&'static str> {
         match self {
-            Self::Web => Some("x-scheme-handler/http;x-scheme-handler/https;text/html;text/xml;application/xhtml+xml"),
+            Self::Web => Some(
+                "x-scheme-handler/http;x-scheme-handler/https;text/html;text/xml;application/xhtml+xml",
+            ),
             Self::Mail => Some("x-scheme-handler/mailto;message/rfc822"),
             Self::Calendar => Some("text/calendar"),
             Self::Music => Some("audio/*"),
@@ -95,20 +97,20 @@ impl SimpleComponent for DefaultAppsPage {
                     }
                 },
 
-                #[wrap(Some)]
-                set_content = &gtk::ScrolledWindow {
-                    set_vexpand: true,
-                    set_hexpand: true,
+                // #[wrap(Some)]
+                // set_content = &gtk::ScrolledWindow {
+                //     set_vexpand: true,
+                //     set_hexpand: true,
 
-                    #[wrap(Some)]
-                    set_child = &adw::Clamp {
-                        set_maximum_size: 720,
-                        set_tightening_threshold: 560,
+                    // #[wrap(Some)]
+                    // set_child = &adw::Clamp {
+                    //     set_maximum_size: 720,
+                    //     set_tightening_threshold: 560,
 
                         #[wrap(Some)]
-                        set_child = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_spacing: 18,
+                        set_content = &adw::PreferencesPage {
+                            // set_orientation: gtk::Orientation::Vertical,
+                            // set_spacing: 18,
                             set_margin_top: 24,
                             set_margin_bottom: 24,
                             set_margin_start: 24,
@@ -148,8 +150,8 @@ impl SimpleComponent for DefaultAppsPage {
                                 }
                             }
                         }
-                    }
-                }
+                    // }
+                // }
             }
         }
     }
@@ -163,8 +165,18 @@ impl SimpleComponent for DefaultAppsPage {
 
         let mut model = DefaultAppsPage { rows: Vec::new() };
 
-        setup_row(&mut model, &widgets.web_row, DefaultCategory::Web, sender.clone());
-        setup_row(&mut model, &widgets.mail_row, DefaultCategory::Mail, sender.clone());
+        setup_row(
+            &mut model,
+            &widgets.web_row,
+            DefaultCategory::Web,
+            sender.clone(),
+        );
+        setup_row(
+            &mut model,
+            &widgets.mail_row,
+            DefaultCategory::Mail,
+            sender.clone(),
+        );
         setup_row(
             &mut model,
             &widgets.calendar_row,
