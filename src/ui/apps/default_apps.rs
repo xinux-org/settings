@@ -64,7 +64,9 @@ impl DefaultCategory {
 
     fn filters(self) -> Option<&'static str> {
         match self {
-            Self::Web => Some("x-scheme-handler/http;x-scheme-handler/https;text/html;text/xml;application/xhtml+xml"),
+            Self::Web => Some(
+                "x-scheme-handler/http;x-scheme-handler/https;text/html;text/xml;application/xhtml+xml",
+            ),
             Self::Mail => Some("x-scheme-handler/mailto;message/rfc822"),
             Self::Calendar => Some("text/calendar"),
             Self::Music => Some("audio/*"),
@@ -83,70 +85,48 @@ impl SimpleComponent for DefaultAppsPage {
     view! {
         adw::NavigationPage {
             set_title: "Default Apps",
-
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
-
                 add_top_bar = &adw::HeaderBar {
                     #[wrap(Some)]
                     set_title_widget = &adw::WindowTitle {
                         set_title: "Default Apps"
                     }
                 },
-
                 #[wrap(Some)]
-                set_content = &gtk::ScrolledWindow {
-                    set_vexpand: true,
-                    set_hexpand: true,
+                set_content = &adw::PreferencesPage {
+                    adw::PreferencesGroup {
+                        set_title: "Default Apps",
 
-                    #[wrap(Some)]
-                    set_child = &adw::Clamp {
-                        set_maximum_size: 720,
-                        set_tightening_threshold: 560,
+                        #[name = "web_row"]
+                        adw::ComboRow {
+                            set_title: "Web",
+                        },
 
-                        #[wrap(Some)]
-                        set_child = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_spacing: 18,
-                            set_margin_top: 24,
-                            set_margin_bottom: 24,
-                            set_margin_start: 24,
-                            set_margin_end: 24,
+                        #[name = "mail_row"]
+                        adw::ComboRow {
+                            set_title: "Mail",
+                        },
 
-                            adw::PreferencesGroup {
-                                set_title: "Default Apps",
+                        #[name = "calendar_row"]
+                        adw::ComboRow {
+                            set_title: "Calendar",
+                        },
 
-                                #[name = "web_row"]
-                                adw::ComboRow {
-                                    set_title: "Web",
-                                },
+                        #[name = "music_row"]
+                        adw::ComboRow {
+                            set_title: "Music",
+                        },
 
-                                #[name = "mail_row"]
-                                adw::ComboRow {
-                                    set_title: "Mail",
-                                },
+                        #[name = "video_row"]
+                        adw::ComboRow {
+                            set_title: "Video",
+                        },
 
-                                #[name = "calendar_row"]
-                                adw::ComboRow {
-                                    set_title: "Calendar",
-                                },
-
-                                #[name = "music_row"]
-                                adw::ComboRow {
-                                    set_title: "Music",
-                                },
-
-                                #[name = "video_row"]
-                                adw::ComboRow {
-                                    set_title: "Video",
-                                },
-
-                                #[name = "photos_row"]
-                                adw::ComboRow {
-                                    set_title: "Photos",
-                                }
-                            }
+                        #[name = "photos_row"]
+                        adw::ComboRow {
+                            set_title: "Photos",
                         }
                     }
                 }
@@ -163,8 +143,18 @@ impl SimpleComponent for DefaultAppsPage {
 
         let mut model = DefaultAppsPage { rows: Vec::new() };
 
-        setup_row(&mut model, &widgets.web_row, DefaultCategory::Web, sender.clone());
-        setup_row(&mut model, &widgets.mail_row, DefaultCategory::Mail, sender.clone());
+        setup_row(
+            &mut model,
+            &widgets.web_row,
+            DefaultCategory::Web,
+            sender.clone(),
+        );
+        setup_row(
+            &mut model,
+            &widgets.mail_row,
+            DefaultCategory::Mail,
+            sender.clone(),
+        );
         setup_row(
             &mut model,
             &widgets.calendar_row,
