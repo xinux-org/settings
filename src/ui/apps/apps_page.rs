@@ -111,20 +111,21 @@ impl SimpleComponent for AppModal {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let widgets = view_output!();
-
         let default_apps = DefaultAppsPage::builder().launch(()).detach();
 
         let apps = collect_apps();
         let filtered_apps = apps.clone();
 
-        let model = Self {
-            navigation: widgets.navigation.clone(),
-            apps_list: widgets.apps_list.clone(),
+        let mut model = Self {
+            navigation: adw::NavigationView::new(),
+            apps_list: gtk::ListBox::new(),
             default_apps,
             apps,
             filtered_apps,
         };
+        let widgets = view_output!();
+        model.navigation = widgets.navigation.clone();
+        model.apps_list = widgets.apps_list.clone();
 
         rebuild_apps_list(&model.apps_list, &model.filtered_apps, sender.clone());
 

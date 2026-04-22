@@ -85,73 +85,51 @@ impl SimpleComponent for DefaultAppsPage {
     view! {
         adw::NavigationPage {
             set_title: "Default Apps",
-
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
-
                 add_top_bar = &adw::HeaderBar {
                     #[wrap(Some)]
                     set_title_widget = &adw::WindowTitle {
                         set_title: "Default Apps"
                     }
                 },
+                #[wrap(Some)]
+                set_content = &adw::PreferencesPage {
+                    adw::PreferencesGroup {
+                        set_title: "Default Apps",
 
-                // #[wrap(Some)]
-                // set_content = &gtk::ScrolledWindow {
-                //     set_vexpand: true,
-                //     set_hexpand: true,
+                        #[name = "web_row"]
+                        adw::ComboRow {
+                            set_title: "Web",
+                        },
 
-                    // #[wrap(Some)]
-                    // set_child = &adw::Clamp {
-                    //     set_maximum_size: 720,
-                    //     set_tightening_threshold: 560,
+                        #[name = "mail_row"]
+                        adw::ComboRow {
+                            set_title: "Mail",
+                        },
 
-                        #[wrap(Some)]
-                        set_content = &adw::PreferencesPage {
-                            // set_orientation: gtk::Orientation::Vertical,
-                            // set_spacing: 18,
-                            set_margin_top: 24,
-                            set_margin_bottom: 24,
-                            set_margin_start: 24,
-                            set_margin_end: 24,
+                        #[name = "calendar_row"]
+                        adw::ComboRow {
+                            set_title: "Calendar",
+                        },
 
-                            adw::PreferencesGroup {
-                                set_title: "Default Apps",
+                        #[name = "music_row"]
+                        adw::ComboRow {
+                            set_title: "Music",
+                        },
 
-                                #[name = "web_row"]
-                                adw::ComboRow {
-                                    set_title: "Web",
-                                },
+                        #[name = "video_row"]
+                        adw::ComboRow {
+                            set_title: "Video",
+                        },
 
-                                #[name = "mail_row"]
-                                adw::ComboRow {
-                                    set_title: "Mail",
-                                },
-
-                                #[name = "calendar_row"]
-                                adw::ComboRow {
-                                    set_title: "Calendar",
-                                },
-
-                                #[name = "music_row"]
-                                adw::ComboRow {
-                                    set_title: "Music",
-                                },
-
-                                #[name = "video_row"]
-                                adw::ComboRow {
-                                    set_title: "Video",
-                                },
-
-                                #[name = "photos_row"]
-                                adw::ComboRow {
-                                    set_title: "Photos",
-                                }
-                            }
+                        #[name = "photos_row"]
+                        adw::ComboRow {
+                            set_title: "Photos",
                         }
-                    // }
-                // }
+                    }
+                }
             }
         }
     }
