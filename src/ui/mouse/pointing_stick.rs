@@ -1,16 +1,17 @@
-use crate::ui::window::AppMsg;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-#[derive(Debug, Clone, Copy)]
-pub struct MouseAndTouchpad {}
+use crate::ui::mouse::mouse_page::MouseMsg;
+
+#[derive(Debug, Clone)]
+pub struct PointingStick {}
 
 #[relm4::component(pub)]
-impl SimpleComponent for MouseAndTouchpad {
+impl SimpleComponent for PointingStick {
     type Init = ();
     type Input = ();
-    type Output = AppMsg;
+    type Output = MouseMsg;
 
     view! {
         #[root]
