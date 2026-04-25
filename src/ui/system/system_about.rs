@@ -41,123 +41,104 @@ impl SimpleComponent for SystemAboutPage {
     view! {
         adw::NavigationPage {
             set_title: "About system",
-
             adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
                 add_top_bar = &adw::HeaderBar {},
-
                 #[wrap(Some)]
-                set_content = &gtk::Box {
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 12,
-                    set_margin_top: 12,
-                    set_margin_bottom: 12,
-                    set_margin_start: 12,
-                    set_margin_end: 12,
-
-                    gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        set_halign: gtk::Align::Center,
-                        set_spacing: 5,
-
-                        gtk::Image {
-                            set_pixel_size: 220,
-                            set_paintable: Some(&embedded_logo()),
+                set_content = &adw::PreferencesPage {
+                    adw::PreferencesGroup {
+                        add = &adw::Clamp {
+                            gtk::Image {
+                                set_pixel_size: 220,
+                                set_paintable: Some(&embedded_logo()),
+                            },
                         },
                     },
+                    adw::PreferencesGroup {
+                        adw::ActionRow {
+                            set_title: "Support GNOME",
 
-                    adw::PreferencesPage {
-                        adw::PreferencesGroup {
-                            adw::ActionRow {
-                                set_title: "Support GNOME",
-
-                                add_suffix = &gtk::Button {
-                                    set_label: "Donate",
-                                    set_use_underline: true,
-                                    set_valign: gtk::Align::Center,
-                                    add_css_class: "suggested-action",
-                                }
-                            },
-                        },
-
-                        adw::PreferencesGroup {
-                            adw::EntryRow {
-                                set_title: "Device Name",
+                            add_suffix = &gtk::Button {
+                                set_label: "Donate",
                                 set_use_underline: true,
-                                set_text: &model.device_name,
-                            },
+                                set_valign: gtk::Align::Center,
+                                add_css_class: "suggested-action",
+                            }
                         },
-
-                        adw::PreferencesGroup {
-                            set_title: "Hardware",
-
-                            adw::ActionRow {
-                                set_title: "Hardware model",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.hardware_model,
-                            },
-                            adw::ActionRow {
-                                set_title: "Processor",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.processor,
-                            },
-                            adw::ActionRow {
-                                set_title: "Graphics",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.graphics.join(", "),
-                            },
-                            adw::ActionRow {
-                                set_title: "Memory",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.memory,
-                            },
-                            adw::ActionRow {
-                                set_title: "Disk capacity",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.disk_capacity,
-                            },
+                    },
+                    adw::PreferencesGroup {
+                        adw::EntryRow {
+                            set_title: "Device Name",
+                            set_use_underline: true,
+                            set_text: &model.device_name,
+                            set_show_apply_button: true,
                         },
-
-                        adw::PreferencesGroup {
-                            set_title: "Software",
-
-                            adw::ActionRow {
-                                set_title: "Operating System",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.operating_system,
-                            },
-                            adw::ActionRow {
-                                set_title: "Operating System architecture",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.os_architecture,
-                            },
-                            adw::ActionRow {
-                                set_title: "Kernel version",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.kernel_version,
-                            },
-                            adw::ActionRow {
-                                set_title: "Desktop environment",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.desktop_environment,
-                            },
-                            adw::ActionRow {
-                                set_title: "Windowing system",
-                                add_css_class: "property",
-                                set_subtitle_selectable: true,
-                                set_subtitle: &model.windowing_system,
-                            },
-                        }
+                    },
+                    adw::PreferencesGroup {
+                        set_title: "Hardware",
+                        adw::ActionRow {
+                            set_title: "Hardware model",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.hardware_model,
+                        },
+                        adw::ActionRow {
+                            set_title: "Processor",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.processor,
+                        },
+                        adw::ActionRow {
+                            set_title: "Graphics",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.graphics.join(", "),
+                        },
+                        adw::ActionRow {
+                            set_title: "Memory",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.memory,
+                        },
+                        adw::ActionRow {
+                            set_title: "Disk capacity",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.disk_capacity,
+                        },
+                    },
+                    adw::PreferencesGroup {
+                        set_title: "Software",
+                        adw::ActionRow {
+                            set_title: "Operating System",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.operating_system,
+                        },
+                        adw::ActionRow {
+                            set_title: "Operating System architecture",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.os_architecture,
+                        },
+                        adw::ActionRow {
+                            set_title: "Kernel version",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.kernel_version,
+                        },
+                        adw::ActionRow {
+                            set_title: "Desktop environment",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.desktop_environment,
+                        },
+                        adw::ActionRow {
+                            set_title: "Windowing system",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.windowing_system,
+                        },
                     }
                 }
             }

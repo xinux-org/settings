@@ -1,8 +1,12 @@
 use crate::ui::{
     system::{
         system_about::SystemAboutPage,
-        system_datetime::{SystemDateTimePage},
+        system_datetime::SystemDateTimePage,
         system_l10n::SystemRegionLanguagePage,
+        users::{
+            system_user::{UserModelInit, UserPageModel},
+            system_users::SystemUsersPage,
+        },
     },
     window::AppMsg,
 };
@@ -17,15 +21,19 @@ use std::convert::identity;
 pub struct SystemPageModel {
     navigation: adw::NavigationView,
     system_l10n: Controller<SystemRegionLanguagePage>,
-    system_date_time: Controller<SystemDateTimePage>,
+    system_datetime: Controller<SystemDateTimePage>,
+    system_users: Controller<SystemUsersPage>,
     system_about: Controller<SystemAboutPage>,
+    user_model: Option<Controller<UserPageModel>>,
 }
 
 #[derive(Debug)]
 pub enum SystemPageMsg {
-    OpenSystemAboutPage,
     OpenSystemRegionLanguagePage,
     OpenSystemDateTimePage,
+    OpenSystemUsersPage,
+    OpenSystemAboutPage,
+    OpenSystemUserPage(String),
     Rebuild(String, String, String), // single line nix path, argument and value
 }
 
@@ -96,7 +104,9 @@ impl SimpleComponent for SystemPageModel {
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_pixel_size: 16,
-                                }
+                                },
+
+                                connect_activated => SystemPageMsg::OpenSystemUsersPage
                             },
 
                             // adw::ActionRow {
@@ -148,7 +158,11 @@ impl SimpleComponent for SystemPageModel {
             .launch(())
             .forward(sender.input_sender(), identity);
 
-        let system_date_time = SystemDateTimePage::builder()
+        let system_datetime = SystemDateTimePage::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
+
+        let system_users = SystemUsersPage::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
 
@@ -159,8 +173,10 @@ impl SimpleComponent for SystemPageModel {
         let mut model = Self {
             navigation: adw::NavigationView::new(),
             system_l10n,
-            system_date_time,
+            system_datetime,
+            system_users,
             system_about,
+            user_model: None,
         };
 
         let widgets = view_output!();
@@ -175,8 +191,24 @@ impl SimpleComponent for SystemPageModel {
                 self.navigation.push(page);
             }
             SystemPageMsg::OpenSystemDateTimePage => {
-                let page = self.system_date_time.widget();
+                let page = self.system_datetime.widget();
                 self.navigation.push(page);
+            }
+            SystemPageMsg::OpenSystemUsersPage => {
+                let page = self.system_users.widget();
+                self.navigation.push(page);
+            }
+            SystemPageMsg::OpenSystemUserPage(username) => {
+                let user_model = UserPageModel::builder()
+                    .launch(UserModelInit {
+                        name: username,
+                        username: String::new(),
+                        is_current_user: false,
+                    })
+                    .forward(sender.input_sender(), identity);
+                self.navigation.push(user_model.widget());
+                self.user_model = Some(user_model);
+                // self.user_model.emit(UserPageMsg::Load(username.clone()));
             }
             SystemPageMsg::OpenSystemAboutPage => {
                 let page = self.system_about.widget();
