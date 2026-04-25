@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
@@ -592,6 +595,7 @@ impl SimpleComponent for AppearanceModel {
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         let settings = AppearanceSettings::new();
+        let user = get_user_by_uid(get_current_uid()).unwrap();
 
         match msg {
             AppearanceMsg::OpenRequest => self.open_dialog.emit(OpenDialogMsg::Open),
@@ -604,6 +608,17 @@ impl SimpleComponent for AppearanceModel {
                 self.recent_wallpapers
                     .guard()
                     .push_back(path.to_str().unwrap().to_string());
+
+                std::fs::copy(
+                    path.clone(),
+                    Path::new(&format!(
+                        "/home/{}/.local/share/backgrounds/{}",
+                        user.name().to_string_lossy(),
+                        // file_name().unwrap() will never be None, in this case
+                        path.file_name().unwrap().to_str().unwrap()
+                    )),
+                )
+                .unwrap();
             }
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
