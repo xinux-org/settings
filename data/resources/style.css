@@ -26,11 +26,124 @@
     color: color-mix(in srgb, var(--window-fg-color) 40%, transparent);
 }
 
+background-preview {
+    border-radius: 6px;
+}
+
+background-preview .window {
+    border-radius: 6px;
+    box-shadow:
+        0 1px 4px 1px color-mix(in srgb, black 13%, transparent),
+        0 1px 10px 5px color-mix(in srgb, black 9%, transparent),
+        0 3px 16px 8px color-mix(in srgb, black 4%, transparent),
+        0 0 0 1px color-mix(in srgb, black 5%, transparent);
+
+    --window-bg-color: #fafafa;
+    --headerbar-bg-color: white;
+    --headerbar-shade-color: rgb(0 0 0 / 12%);
+    --sidebar-bg-color: #ebebeb;
+    --sidebar-backdrop-color: #f2f2f2;
+    --sidebar-border-color: rgb(0 0 0 / 7%);
+}
+
+background-preview .window.dark {
+    --window-bg-color: #242424;
+    --headerbar-bg-color: #303030;
+    --headerbar-shade-color: rgb(0 0 0 / 36%);
+    --sidebar-bg-color: #303030;
+    --sidebar-backdrop-color: #2a2a2a;
+    --sidebar-border-color: rgb(0 0 0 / 36%);
+}
+
+background-preview .window .header-bar {
+    min-height: 15px;
+    box-shadow:
+        0 1px color-mix(in srgb, var(--headerbar-shade-color) 50%, transparent),
+        0 2px 4px
+            color-mix(in srgb, var(--headerbar-shade-color) 50%, transparent);
+}
+
+background-preview .window.front .header-bar {
+    background-color: var(--headerbar-bg-color);
+}
+
+background-preview .window .sidebar {
+    background-color: var(--sidebar-backdrop-color);
+    min-width: 30px;
+    border: none;
+}
+
+background-preview .window.front .sidebar {
+    background-color: var(--sidebar-bg-color);
+}
+
+background-preview .window .sidebar:dir(ltr) {
+    box-shadow: inset -1px 0 var(--sidebar-border-color);
+}
+
+background-preview .window .sidebar:dir(rtl) {
+    border: none;
+    box-shadow: inset 1px 0 var(--sidebar-border-color);
+}
+
+.background-preview-button {
+    background: none;
+    border-radius: 9px;
+    padding: 3px;
+    box-shadow: none;
+    outline: none;
+}
+
+.background-preview-button:checked {
+    box-shadow: 0 0 0 3px var(--accent-bg-color);
+}
+
+.background-preview-button:focus:focus-visible {
+    box-shadow:
+        0 0 0 3px var(--accent-bg-color),
+        0 0 0 6px color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+
+.background-preview-button:checked:focus:focus-visible {
+    box-shadow:
+        0 0 0 3px var(--accent-color),
+        0 0 0 6px color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+
+.background-flowbox > flowboxchild {
+    background: none;
+    border-radius: 9px;
+}
+
+.background-thumbnail {
+    border-radius: 6px;
+}
+
+.slideshow-icon {
+    color: white;
+    -gtk-icon-shadow: 0 1px 2px rgba(0, 0, 0, 0.33);
+    margin: 8px;
+}
+
+.selected-check {
+    color: var(--accent-fg-color);
+    background: var(--accent-bg-color);
+    border-radius: 100px;
+    padding: 2px;
+    opacity: 0;
+    margin: 6px;
+    transition-duration: 200ms;
+}
+
+flowboxchild.active-item .selected-check {
+    opacity: 1;
+}
+
 row.illustrated picture:disabled {
     /*
-   * FIXME: This is a workaround to handle disabled pictures
-   * see: https://gitlab.gnome.org/GNOME/libadwaita/-/merge_requests/814
-   */
+    * FIXME: This is a workaround to handle disabled pictures
+    * see: https://gitlab.gnome.org/GNOME/libadwaita/-/merge_requests/814
+    */
     opacity: 0.5;
 }
 
@@ -429,8 +542,8 @@ flowboxchild.active-item .selected-check {
 }
 
 /*************************************************
- * CcContentRow, mostly copied from AdwActionRow *
- *************************************************/
+  * CcContentRow, mostly copied from AdwActionRow *
+  *************************************************/
 
 row.content box.header,
 row.content box.contents {
@@ -909,8 +1022,8 @@ levelbar .strength-high {
 /* Break scheduling */
 .break-schedule-row popover listview header {
     /* Override the default GTK theming for the header row of a listview because
-   * that much top padding looks weird when the listview is the only child of a
-   * popover. The original padding was 18px. */
+    * that much top padding looks weird when the listview is the only child of a
+    * popover. The original padding was 18px. */
     padding-top: 6px;
 }
 

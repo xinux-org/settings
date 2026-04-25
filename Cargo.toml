@@ -61,3 +61,4 @@ zbus = { version = "5.13", default-features = false }
 notify = { version = "8.1.0", features = ["serde"] }
 regex = "1.12.3"
 nmrs = "2.0.1"
+users = "0.11.0"

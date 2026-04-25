@@ -3561,6 +3561,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracker",
+ "users",
  "vte4",
  "walkdir",
  "wgpu",

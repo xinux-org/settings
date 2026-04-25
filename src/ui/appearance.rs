@@ -1,3 +1,6 @@
+use std::{fs, path::PathBuf};
+use users::{get_current_uid, get_user_by_uid};
+
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
 use relm4::{
@@ -5,6 +8,7 @@ use relm4::{
     gtk::{self, gio::Settings},
     prelude::*,
 };
+use relm4_components::open_dialog::*;
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
@@ -50,6 +54,100 @@ impl From<String> for AccentColorWrapped {
     }
 }
 
+#[derive(Debug, Clone)]
+struct Background {
+    path: String,
+}
+
+#[derive(Debug)]
+enum BackgroundMsg {
+    SetBackground(String),
+}
+
+#[derive(Debug)]
+enum BackgroundOutput {
+    SetBackground(String),
+}
+
+#[relm4::factory(pub)]
+impl FactoryComponent for Background {
+    type Init = String;
+    type Input = BackgroundMsg;
+    type Output = BackgroundOutput;
+    type CommandOutput = ();
+    type ParentWidget = gtk::FlowBox;
+
+    view! {
+        #[root]
+        gtk::FlowBoxChild {
+            // set_width_request: 50,
+            // set_halign: gtk::Align::Fill,
+            // set_valign: gtk::Align::Fill,
+            set_size_request: (200, 150),
+            set_halign: gtk::Align::Center,
+            set_accessible_role: gtk::AccessibleRole::ToggleButton,
+
+            // set_width_request: 144,
+            // set_height_request: 144,
+            //
+
+            gtk::ToggleButton {
+                // set_group: Some(&wallpaper_group),
+                add_css_class: "style-toggle",
+                set_overflow: gtk::Overflow::Hidden,
+                connect_clicked[sender, path = self.path.clone()] => move |_| {
+                    println!("HAHAHAHAHAHAHA");
+                    sender.input(BackgroundMsg::SetBackground(path.clone()))
+                },
+                gtk::Overlay{
+                    add_css_class: "background-thumbnail",
+
+                    gtk::Picture {
+                        // set_width_request: 144,
+                        // set_height_request: 120,
+                        set_content_fit: gtk::ContentFit::Fill,
+                        set_filename: Some(&self.path.clone()),
+                        set_can_shrink: true,
+                        set_size_request: (200, 150),
+
+                    },
+                    // add_overlay = &gtk::Button {
+                    //     // set_icon: "cross-small-symbolic",
+                    //     set_halign: gtk::Align::Center,
+                    //     set_valign: gtk::Align::Center,
+                    //     add_css_class: "osd",
+                    //     add_css_class: "circular",
+                    //     add_css_class: "remove-button",
+                    // }
+                }
+            }
+
+        },
+
+    }
+
+    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
+        Self { path: init }
+    }
+
+    fn update(&mut self, message: Self::Input, _sender: FactorySender<Self>) {
+        let settings = AppearanceSettings::new();
+        println!("BACKGROUND: ");
+        match message {
+            BackgroundMsg::SetBackground(path) => {
+                let _ = settings.background.set(
+                    match settings.interface.get::<String>("color-scheme").as_str() {
+                        "prefer-dark" => "picture-uri-dark",
+                        _ => "picture-uri",
+                    },
+                    &format!("file://{}", path),
+                );
+                println!("BACKGROUND: {}", &path.clone())
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AppearanceStyle {
     Default,
@@ -60,13 +158,19 @@ pub enum AppearanceStyle {
 pub struct AppearanceModel {
     style: AppearanceStyle,
     wallpaper: String,
+    wallpapers: FactoryVecDeque<Background>,
+    recent_wallpapers: FactoryVecDeque<Background>,
     accent_color: AccentColorWrapped,
+    open_dialog: Controller<OpenDialog>,
 }
 
 #[derive(Debug)]
 pub enum AppearanceMsg {
     SetStyle(AppearanceStyle),
     SendPick(AccentColorWrapped),
+    OpenRequest,
+    OpenResponse(PathBuf),
+    Ignore,
 }
 
 #[relm4::component(pub)]
@@ -104,7 +208,17 @@ impl SimpleComponent for AppearanceModel {
                         "margin-bottom",
                         &6
                     ),
-                ]
+                ],
+
+                add_setters: &[
+                    (recent_wallpaper_box, "min_children_per_line", &1),
+                    (recent_wallpaper_box, "max_children_per_line", &1)
+                ],
+
+                add_setters: &[
+                    (wallpaper_box, "min_children_per_line", &1),
+                    (wallpaper_box, "max_children_per_line", &1)
+                ],
             },
 
             add_breakpoint = adw::Breakpoint::new(
@@ -130,7 +244,18 @@ impl SimpleComponent for AppearanceModel {
                         "margin-bottom",
                         &12
                     ),
-                ]
+                ],
+
+                add_setters: &[
+                    (recent_wallpaper_box, "min_children_per_line", &3),
+                    (recent_wallpaper_box, "max_children_per_line", &3)
+                ],
+
+
+                add_setters: &[
+                    (wallpaper_box, "min_children_per_line", &3),
+                    (wallpaper_box, "max_children_per_line", &3)
+                ],
             },
 
             #[wrap(Some)]
@@ -143,6 +268,7 @@ impl SimpleComponent for AppearanceModel {
                         set_title: "Appearance",
                     }
                 },
+                #[name(toast_overlay)]
                 adw::ToastOverlay {
                     adw::PreferencesPage {
                         adw::PreferencesGroup {
@@ -327,9 +453,12 @@ impl SimpleComponent for AppearanceModel {
 
                             #[wrap(Some)]
                             set_header_suffix = &gtk::Button {
+                                add_css_class: "flat",
+
+                                connect_clicked => AppearanceMsg::OpenRequest,
+
                                 adw::ButtonContent {
                                     set_icon_name: "list-add-symbolic",
-                                    add_css_class: "flat",
                                     set_label: "Add Picture",
                                     set_use_underline: true,
                                 }
@@ -342,22 +471,26 @@ impl SimpleComponent for AppearanceModel {
                                 #[name = "background_chooser"]
                                 gtk::Box {
                                     set_orientation: gtk::Orientation::Vertical,
+                                    set_hexpand: true,
+                                    // set_toast_overlay: toast_overlay,
 
                                     #[name="recent_box"]
                                     gtk::Box {
                                         set_orientation: gtk::Orientation::Vertical,
                                         set_halign: gtk::Align::Center,
 
-                                        #[name = "recent_flowbox"]
-                                        gtk::FlowBox {
+                                        #[local_ref]
+                                        recent_wallpaper_box -> gtk::FlowBox {
                                             add_css_class: "background-flowbox",
+                                            set_orientation: gtk::Orientation::Horizontal,
                                             set_margin_all: 12,
                                             set_column_spacing: 12,
                                             set_row_spacing: 12,
                                             set_homogeneous: true,
                                             set_halign: gtk::Align::Center,
-                                            set_min_children_per_line: 1,
-                                            set_max_children_per_line: 8,
+                                            set_hexpand: true,
+                                            set_min_children_per_line: 3,
+                                            set_max_children_per_line: 3,
                                             set_activate_on_single_click: true,
                                             set_selection_mode: gtk::SelectionMode::Single
                                         },
@@ -367,20 +500,22 @@ impl SimpleComponent for AppearanceModel {
                                             set_margin_bottom: 12,
                                         }
                                     },
+                                    ////////////////////////////////////////////////////////////
 
-                                    #[name = "flowbox"]
-                                    gtk::FlowBox {
+                                    // #[name = "flowbox"]
+                                    #[local_ref]
+                                    wallpaper_box -> gtk::FlowBox {
                                         add_css_class: "background-flowbox",
                                         set_margin_all: 12,
                                         set_column_spacing: 12,
                                         set_row_spacing: 12,
                                         set_homogeneous: true,
                                         set_halign: gtk::Align::Center,
-                                        set_min_children_per_line: 1,
-                                        set_max_children_per_line: 8,
+                                        set_min_children_per_line: 3,
+                                        set_max_children_per_line: 3,
                                         set_activate_on_single_click: true,
-                                        set_selection_mode: gtk::SelectionMode::Single
-                                    }
+                                        set_selection_mode: gtk::SelectionMode::Single,
+                                    },
                                 },
                             },
                         }
@@ -389,27 +524,67 @@ impl SimpleComponent for AppearanceModel {
             }
         }
     }
+
     fn init(
         _init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let settings = AppearanceSettings::new();
+        let open_dialog = OpenDialog::builder()
+            .transient_for_native(&root)
+            .launch(OpenDialogSettings::default())
+            .forward(sender.input_sender(), |response| match response {
+                OpenDialogResponse::Accept(path) => AppearanceMsg::OpenResponse(path),
+                OpenDialogResponse::Cancel => AppearanceMsg::Ignore,
+            });
 
+        let wallpapers = FactoryVecDeque::builder().launch_default().detach();
+        let recent_wallpapers = FactoryVecDeque::builder().launch_default().detach();
+        let settings = AppearanceSettings::new();
+        let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
+        let accent_color =
+            AccentColorWrapped::from(settings.interface.get::<String>("accent-color"));
         let style = match settings.interface.get::<String>("color-scheme").as_str() {
             "prefer-dark" => AppearanceStyle::Dark,
             _ => AppearanceStyle::Default,
         };
 
-        let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
-        let accent_color =
-            AccentColorWrapped::from(settings.interface.get::<String>("accent-color"));
-
-        let model = AppearanceModel {
+        let mut model = AppearanceModel {
             style,
             wallpaper,
+            wallpapers,
+            recent_wallpapers,
             accent_color,
+            open_dialog,
         };
+
+        let _: Vec<_> = fs::read_dir("/run/current-system/sw/share/backgrounds/nixos")
+            .unwrap()
+            .map(|x| {
+                model
+                    .wallpapers
+                    .guard()
+                    .push_back(x.unwrap().path().to_str().unwrap().to_string());
+            })
+            .collect();
+
+        let user = get_user_by_uid(get_current_uid()).unwrap();
+
+        let _: Vec<_> = fs::read_dir(format!(
+            "/home/{}/.local/share/backgrounds",
+            user.name().to_string_lossy()
+        ))
+        .unwrap()
+        .map(|x| {
+            model
+                .recent_wallpapers
+                .guard()
+                .push_back(x.unwrap().path().to_str().unwrap().to_string());
+        })
+        .collect();
+
+        let wallpaper_box = model.wallpapers.widget();
+        let recent_wallpaper_box = model.recent_wallpapers.widget();
 
         let widgets = view_output!();
         ComponentParts { model, widgets }
@@ -419,6 +594,17 @@ impl SimpleComponent for AppearanceModel {
         let settings = AppearanceSettings::new();
 
         match msg {
+            AppearanceMsg::OpenRequest => self.open_dialog.emit(OpenDialogMsg::Open),
+            // AppearanceMsg::OpenResponse(path) => match std::fs::read_to_string(&path) {
+            //     Ok(content) => self.recent_wallpapers.guard().push_back(content),
+            //     Err(e) => println!("{}", e),
+            //     _ => {}
+            // },
+            AppearanceMsg::OpenResponse(path) => {
+                self.recent_wallpapers
+                    .guard()
+                    .push_back(path.to_str().unwrap().to_string());
+            }
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
 
@@ -441,6 +627,7 @@ impl SimpleComponent for AppearanceModel {
                     .set("accent-color", &format!("{:?}", color.0).to_lowercase())
                     .unwrap();
             }
+            AppearanceMsg::Ignore => {}
         }
     }
 }
