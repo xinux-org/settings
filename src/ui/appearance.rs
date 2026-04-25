@@ -60,6 +60,7 @@ impl From<String> for AccentColorWrapped {
 #[derive(Debug, Clone)]
 struct Background {
     path: String,
+    group: gtk::ToggleButton,
 }
 
 #[derive(Debug)]
@@ -74,7 +75,7 @@ enum BackgroundOutput {
 
 #[relm4::factory(pub)]
 impl FactoryComponent for Background {
-    type Init = String;
+    type Init = Background;
     type Input = BackgroundMsg;
     type Output = BackgroundOutput;
     type CommandOutput = ();
@@ -94,8 +95,9 @@ impl FactoryComponent for Background {
             // set_height_request: 144,
             //
 
+            // #[name="wallpaper_group"]
             gtk::ToggleButton {
-                // set_group: Some(&wallpaper_group),
+                set_group: Some(&self.group),
                 add_css_class: "style-toggle",
                 set_overflow: gtk::Overflow::Hidden,
                 connect_clicked[sender, path = self.path.clone()] => move |_| {
@@ -130,7 +132,10 @@ impl FactoryComponent for Background {
     }
 
     fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
-        Self { path: init }
+        Self {
+            path: init.path,
+            group: init.group,
+        }
     }
 
     fn update(&mut self, message: Self::Input, _sender: FactorySender<Self>) {
@@ -165,6 +170,7 @@ pub struct AppearanceModel {
     recent_wallpapers: FactoryVecDeque<Background>,
     accent_color: AccentColorWrapped,
     open_dialog: Controller<OpenDialog>,
+    group: gtk::ToggleButton,
 }
 
 #[derive(Debug)]
@@ -518,6 +524,12 @@ impl SimpleComponent for AppearanceModel {
                                         set_max_children_per_line: 3,
                                         set_activate_on_single_click: true,
                                         set_selection_mode: gtk::SelectionMode::Single,
+
+
+                                        #[name="wallpaper_group"]
+                                        gtk::ToggleButton {
+                                            // set_group: Some(&wallpaper_group),
+                                        }
                                     },
                                 },
                             },
@@ -551,7 +563,7 @@ impl SimpleComponent for AppearanceModel {
             "prefer-dark" => AppearanceStyle::Dark,
             _ => AppearanceStyle::Default,
         };
-
+        let group = gtk::ToggleButton::new();
         let mut model = AppearanceModel {
             style,
             wallpaper,
@@ -559,15 +571,16 @@ impl SimpleComponent for AppearanceModel {
             recent_wallpapers,
             accent_color,
             open_dialog,
+            group: group,
         };
 
         let _: Vec<_> = fs::read_dir("/run/current-system/sw/share/backgrounds/nixos")
             .unwrap()
             .map(|x| {
-                model
-                    .wallpapers
-                    .guard()
-                    .push_back(x.unwrap().path().to_str().unwrap().to_string());
+                model.wallpapers.guard().push_back(Background {
+                    path: x.unwrap().path().to_str().unwrap().to_string(),
+                    group: model.group.clone(),
+                });
             })
             .collect();
 
@@ -579,10 +592,10 @@ impl SimpleComponent for AppearanceModel {
         ))
         .unwrap()
         .map(|x| {
-            model
-                .recent_wallpapers
-                .guard()
-                .push_back(x.unwrap().path().to_str().unwrap().to_string());
+            model.recent_wallpapers.guard().push_back(Background {
+                path: x.unwrap().path().to_str().unwrap().to_string(),
+                group: model.group.clone(),
+            });
         })
         .collect();
 
@@ -605,9 +618,10 @@ impl SimpleComponent for AppearanceModel {
             //     _ => {}
             // },
             AppearanceMsg::OpenResponse(path) => {
-                self.recent_wallpapers
-                    .guard()
-                    .push_back(path.to_str().unwrap().to_string());
+                self.recent_wallpapers.guard().push_back(Background {
+                    path: path.to_str().unwrap().to_string(),
+                    group: self.group.clone(),
+                });
 
                 std::fs::copy(
                     path.clone(),
