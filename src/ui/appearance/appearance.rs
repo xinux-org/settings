@@ -1,17 +1,14 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use crate::ui::appearance::appearance_background::Background;
+
+use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
-use relm4::{
-    adw::{AccentColor, prelude::*},
-    gtk::{self, gio::Settings},
-    prelude::*,
-};
+use relm4::adw::AccentColor;
+use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*};
 use relm4_components::open_dialog::*;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
@@ -28,8 +25,14 @@ impl AppearanceSettings {
     }
 }
 
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        AppearanceSettings::new()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct AccentColorWrapped(AccentColor);
+pub struct AccentColorWrapped(pub AccentColor);
 
 impl AccentColorWrapped {
     pub fn iterator() -> impl Iterator<Item = AccentColor> {
@@ -57,109 +60,19 @@ impl From<String> for AccentColorWrapped {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Background {
-    path: String,
-    group: gtk::ToggleButton,
-}
-
-#[derive(Debug)]
-enum BackgroundMsg {
-    SetBackground(String),
-}
-
-#[derive(Debug)]
-enum BackgroundOutput {
-    SetBackground(String),
-}
-
-#[relm4::factory(pub)]
-impl FactoryComponent for Background {
-    type Init = Background;
-    type Input = BackgroundMsg;
-    type Output = BackgroundOutput;
-    type CommandOutput = ();
-    type ParentWidget = gtk::FlowBox;
-
-    view! {
-        #[root]
-        gtk::FlowBoxChild {
-            // set_width_request: 50,
-            // set_halign: gtk::Align::Fill,
-            // set_valign: gtk::Align::Fill,
-            set_size_request: (200, 150),
-            set_halign: gtk::Align::Center,
-            set_accessible_role: gtk::AccessibleRole::ToggleButton,
-
-            // set_width_request: 144,
-            // set_height_request: 144,
-            //
-
-            // #[name="wallpaper_group"]
-            gtk::ToggleButton {
-                set_group: Some(&self.group),
-                add_css_class: "style-toggle",
-                set_overflow: gtk::Overflow::Hidden,
-                connect_clicked[sender, path = self.path.clone()] => move |_| {
-                    println!("HAHAHAHAHAHAHA");
-                    sender.input(BackgroundMsg::SetBackground(path.clone()))
-                },
-                gtk::Overlay{
-                    add_css_class: "background-thumbnail",
-
-                    gtk::Picture {
-                        // set_width_request: 144,
-                        // set_height_request: 120,
-                        set_content_fit: gtk::ContentFit::Fill,
-                        set_filename: Some(&self.path.clone()),
-                        set_can_shrink: true,
-                        set_size_request: (200, 150),
-
-                    },
-                    // add_overlay = &gtk::Button {
-                    //     // set_icon: "cross-small-symbolic",
-                    //     set_halign: gtk::Align::Center,
-                    //     set_valign: gtk::Align::Center,
-                    //     add_css_class: "osd",
-                    //     add_css_class: "circular",
-                    //     add_css_class: "remove-button",
-                    // }
-                }
-            }
-
-        },
-
-    }
-
-    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
-        Self {
-            path: init.path,
-            group: init.group,
-        }
-    }
-
-    fn update(&mut self, message: Self::Input, _sender: FactorySender<Self>) {
-        let settings = AppearanceSettings::new();
-        println!("BACKGROUND: ");
-        match message {
-            BackgroundMsg::SetBackground(path) => {
-                let _ = settings.background.set(
-                    match settings.interface.get::<String>("color-scheme").as_str() {
-                        "prefer-dark" => "picture-uri-dark",
-                        _ => "picture-uri",
-                    },
-                    &format!("file://{}", path),
-                );
-                println!("BACKGROUND: {}", &path.clone())
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AppearanceStyle {
     Default,
     Dark,
+}
+
+#[derive(Debug)]
+pub enum AppearanceMsg {
+    SetStyle(AppearanceStyle),
+    SendPick(AccentColorWrapped),
+    OpenRequest,
+    OpenResponse(PathBuf),
+    Ignore,
 }
 
 #[derive(Debug)]
@@ -171,15 +84,6 @@ pub struct AppearanceModel {
     accent_color: AccentColorWrapped,
     open_dialog: Controller<OpenDialog>,
     group: gtk::ToggleButton,
-}
-
-#[derive(Debug)]
-pub enum AppearanceMsg {
-    SetStyle(AppearanceStyle),
-    SendPick(AccentColorWrapped),
-    OpenRequest,
-    OpenResponse(PathBuf),
-    Ignore,
 }
 
 #[relm4::component(pub)]
@@ -571,7 +475,7 @@ impl SimpleComponent for AppearanceModel {
             recent_wallpapers,
             accent_color,
             open_dialog,
-            group: group,
+            group,
         };
 
         let _: Vec<_> = fs::read_dir("/run/current-system/sw/share/backgrounds/nixos")
@@ -653,7 +557,7 @@ impl SimpleComponent for AppearanceModel {
             AppearanceMsg::SendPick(color) => {
                 settings
                     .interface
-                    .set("accent-color", &format!("{:?}", color.0).to_lowercase())
+                    .set("accent-color", format!("{:?}", color.0).to_lowercase())
                     .unwrap();
             }
             AppearanceMsg::Ignore => {}
