@@ -5,6 +5,7 @@ use relm4::{
     actions::{RelmAction, RelmActionGroup},
     adw::{self, prelude::*},
     gtk::{gio, glib},
+    prelude::{AsyncComponent, AsyncComponentController, AsyncController},
     *,
 };
 
@@ -28,7 +29,7 @@ use std::{convert::identity, fs, path::Path};
 
 pub struct App {
     #[allow(dead_code)]
-    wifi: Controller<WifiModel>,
+    wifi: AsyncController<WifiModel>,
     #[allow(dead_code)]
     network: Controller<NetworkModel>,
     #[allow(dead_code)]

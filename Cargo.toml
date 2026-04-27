@@ -27,8 +27,8 @@ opt-level = 3
 [dependencies]
 # GNOME deps
 gettext-rs = { version = "0.7.7", features = ["gettext-system"] }
-relm4 = { version = "0.10.0", features = ["libadwaita", "gnome_48", "macros"] }
-relm4-components = { version = "0.10.0", features = ["libadwaita"] }
+relm4 = { version = "0.10.1", features = ["libadwaita", "gnome_48", "macros"] }
+relm4-components = { version = "0.10.1", features = ["libadwaita"] }
 adw = { version = "0.8", package = "libadwaita", features = ["v1_8"] }
 vte = { package = "vte4", version = "0.9" }
 libgweather = "4.7"

@@ -63,8 +63,8 @@ enum WifiStack {
     Airplane,
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for WifiModel {
+#[relm4::component(pub, async)]
+impl SimpleAsyncComponent for WifiModel {
     type Init = ();
     type Input = WifiInput;
     type Output = AppMsg;
@@ -193,11 +193,11 @@ impl SimpleComponent for WifiModel {
         },
     }
 
-    fn init(
+    async fn init(
         _init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
         let networks = FactoryVecDeque::builder()
             .launch(adw::PreferencesGroup::new())
             .forward(sender.input_sender(), |msg| match msg {
@@ -246,22 +246,23 @@ impl SimpleComponent for WifiModel {
         //     }
         // });
 
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    async fn update(&mut self, message: Self::Input, sender: AsyncComponentSender<Self>) {
         match message {
             WifiInput::LoadNetworks => {
                 if self.wifi_enabled && !self.airplane_mode {
                     sender.input(WifiInput::ClearNetworksList);
-                    relm4::spawn_local(async move {
-                        match load_networks().await {
-                            Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
-                            Err(e) => {
-                                eprintln!("nmrs error: {e}");
-                            }
+                    // glib::timeout_future(std::time::Duration::from_secs(5)).await;
+
+                    match load_networks().await {
+                        Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
+                        Err(e) => {
+                            eprintln!("nmrs error: {e}");
+                            return;
                         }
-                    });
+                    }
                 }
             }
             WifiInput::NetworksLoaded(nets) => {
@@ -276,6 +277,10 @@ impl SimpleComponent for WifiModel {
                 // Currently if you turn of/on wifi toggle so many times,
                 // It also loads network many times giving not good experience
                 self.wifi_enabled = on;
+                // if let Err(e) = set_wifi_enabled(on).await {
+                //     debug!("Could not toggle Wi-Fi: {e}");
+                //     return;
+                // }
 
                 // Immediate UI cleanup
                 if !on {
@@ -284,6 +289,9 @@ impl SimpleComponent for WifiModel {
                 } else {
                     self.loading = true;
                     self.wifi_stack = WifiStack::WifiOn;
+
+                    // glib::timeout_future(std::time::Duration::from_secs(5)).await;
+                    // sender.input(WifiInput::LoadNetworks);
                 }
                 // Returns itʻs status when finished on backgroud without
                 // depending WifiInput::ToggleWifi
@@ -297,6 +305,15 @@ impl SimpleComponent for WifiModel {
                         sender.input(WifiInput::LoadNetworks);
                     }
                 });
+
+                // if let Err(e) = set_wifi_enabled(on).await {
+                //     debug!("Could not toggle Wi-Fi: {e}");
+                //     return;
+                // }
+                // if on {
+                //     glib::timeout_future(std::time::Duration::from_secs(5)).await;
+                //     sender.input(WifiInput::LoadNetworks);
+                // }
             }
             WifiInput::ConnectResult(res) => match res {
                 Ok(_) => {
