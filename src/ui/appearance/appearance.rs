@@ -478,15 +478,26 @@ impl SimpleComponent for AppearanceModel {
             group,
         };
 
-        let _: Vec<_> = fs::read_dir("/run/current-system/sw/share/backgrounds/nixos")
-            .unwrap()
-            .map(|x| {
-                model.wallpapers.guard().push_back(Background {
-                    path: x.unwrap().path().to_str().unwrap().to_string(),
-                    group: model.group.clone(),
-                });
-            })
-            .collect();
+        let bg_base_dir = "/run/current-system/sw/share/backgrounds";
+        let folders: [&str; 2] = ["nixos", "gnome"];
+
+        for folder in folders {
+            let path: PathBuf = Path::new(bg_base_dir).join(folder);
+            match fs::read_dir(&path) {
+                Ok(rd) => rd
+                    .map(|x| {
+                        model.wallpapers.guard().push_back(Background {
+                            path: x.unwrap().path().to_str().unwrap().to_string(),
+                            group: model.group.clone(),
+                        });
+                    })
+                    .collect(),
+                Err(err) => {
+                    eprintln!("Failed to read '{1}': {0}", err, path.to_str().unwrap());
+                    continue;
+                }
+            }
+        }
 
         let user = get_user_by_uid(get_current_uid()).unwrap();
 
