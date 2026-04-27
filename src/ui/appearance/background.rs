@@ -92,7 +92,7 @@ impl FactoryComponent for Background {
                         "prefer-dark" => "picture-uri-dark",
                         _ => "picture-uri",
                     },
-                    &format!("file://{}", path),
+                    format!("file://{}", path),
                 );
                 println!("BACKGROUND: {}", &path.clone())
             }

@@ -14,3 +14,9 @@ impl AppearanceSettings {
         }
     }
 }
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        AppearanceSettings::new()
+    }
+}
