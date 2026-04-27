@@ -1,4 +1,4 @@
-use crate::ui::appearance::settings::AppearanceSettings;
+use crate::ui::appearance::appearance::AppearanceSettings;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 
 #[derive(Debug, Clone)]

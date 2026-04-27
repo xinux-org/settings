@@ -1,5 +1,4 @@
 use crate::ui::appearance::appearance_background::Background;
-use crate::ui::appearance::settings::AppearanceSettings;
 
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
@@ -7,9 +6,30 @@ use users::{get_current_uid, get_user_by_uid};
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
 use relm4::adw::AccentColor;
-use relm4::{adw::prelude::*, gtk, prelude::*};
+use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
+
+#[derive(Debug, Clone)]
+pub struct AppearanceSettings {
+    pub background: Settings,
+    pub interface: Settings,
+}
+
+impl AppearanceSettings {
+    pub fn new() -> Self {
+        Self {
+            background: Settings::new("org.gnome.desktop.background"),
+            interface: Settings::new("org.gnome.desktop.interface"),
+        }
+    }
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        AppearanceSettings::new()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AccentColorWrapped(pub AccentColor);
@@ -458,7 +478,7 @@ impl SimpleComponent for AppearanceModel {
             group,
         };
 
-        let _: Vec<_> = fs::read_dir("/run/current-system/sw/share/backgrounds/gnome")
+        let _: Vec<_> = fs::read_dir("/run/current-system/sw/share/backgrounds/nixos")
             .unwrap()
             .map(|x| {
                 model.wallpapers.guard().push_back(Background {
