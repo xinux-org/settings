@@ -10,7 +10,7 @@ use relm4::{
 use crate::ui::search::SearchModal;
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
-    appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
+    appearance::appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
     mouse::MouseAndTouchpad, multitasking::MultitaskingModel, network::NetworkModel,
     notifications::NotificationsModel, power::PowerModel,
     privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel, sound::SoundModel,
