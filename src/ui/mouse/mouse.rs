@@ -2,11 +2,38 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use gtk::gio::Settings;
 use crate::ui::mouse::mouse_page::MouseMsg;
+use gtk::gio::Settings;
 
 #[derive(Debug, Clone)]
-pub struct Mouse {}
+pub struct MouseSettings {
+    pub mouse: Settings,
+}
+
+impl MouseSettings {
+    pub fn new() -> Self {
+        Self {
+            mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
+        }
+    }
+}
+#[derive(Debug, Clone)]
+pub struct Mouse {
+    settings: MouseSettings,
+
+    /// key is left-handed
+    primary_button: bool,
+
+    /// pointer speed
+    speed: f64,
+
+    /// mouse acceleration
+    /// default for true, flat for false
+    accel_profile: bool,
+
+    /// scroll direction
+    natural_scroll: bool,
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for Mouse {
@@ -45,7 +72,7 @@ impl SimpleComponent for Mouse {
                             append = &gtk::ToggleButton {
                                 set_group: Some(&right),
                                 set_label: "Left",
-                                set_active: true,
+                                set_active: model.primary_button,
                             },
 
                             #[name= "right" ]
@@ -79,8 +106,8 @@ impl SimpleComponent for Mouse {
                                 set_orientation: gtk::Orientation::Horizontal,
                                 set_hexpand: true,
                                 set_draw_value: false,
-                                set_range: (0.0, 1.0),
-                                set_value: 0.6,
+                                set_range: (-1.0, 1.0),
+                                set_value: model.speed,
                             },
 
                             append = &gtk::Label {
@@ -90,10 +117,36 @@ impl SimpleComponent for Mouse {
                         }
                     },
 
-                    add = &adw::SwitchRow {
+                    add = &adw::ActionRow {
                         set_title: "Mouse Acceleration",
                         set_subtitle: "Recommended for most users and applications",
-                        set_active: true,
+
+                        add_suffix = &gtk::Box {
+                            gtk::MenuButton {
+                                set_icon_name: "help-about",
+                
+                                set_direction: gtk::ArrowType::Down,
+                
+                                #[wrap(Some)]
+                                set_popover = &gtk::Popover {
+                                    set_valign: gtk::Align::Center,
+                    
+                                    gtk::Label {
+                                        set_label: "Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
+                                    },
+                                },
+                            },
+                        },
+
+                        add_suffix = &gtk::Switch {
+                            set_valign: gtk::Align::Center,
+                            #[watch]
+                            set_active: model.accel_profile,
+                            connect_state_set[sender] => move |_, state| {
+                                // sender.input(PowerSavingMsg::SetAutoPowerSaver(state));
+                                gtk::glib::Propagation::Proceed
+                            },
+                        },
                     },
                 },
 
@@ -129,7 +182,7 @@ impl SimpleComponent for Mouse {
 
                                     #[name = "traditional"]
                                     append = &gtk::CheckButton {
-                                        set_active: true,
+                                        set_active: model.natural_scroll,
                                     },
 
                                     append = &gtk::Box {
@@ -170,7 +223,6 @@ impl SimpleComponent for Mouse {
 
                                     append = &gtk::CheckButton {
                                         set_group: Some(&traditional),
-                                        set_active: false,
                                     },
 
                                     append = &gtk::Box {
@@ -207,13 +259,27 @@ impl SimpleComponent for Mouse {
     fn init(
         _init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let settings = Settings::new("org.gnome.desktop.peripherals.touchpad");
-        let touchpad_exists = settings.boolean("send-events");
-        println!("Touchpad: {:?}\n\n\n\n\n\n\n\n\n\n", touchpad_exists);
-        let model = Self {};
+        let settings = MouseSettings::new();
+
+        let acceleration = settings.mouse.string("accel-profile").to_string();
+        let accel_profile = acceleration == String::from("default");
+        let primary_button = settings.mouse.boolean("left-handed");
+        let speed = settings.mouse.value("speed").get::<f64>().unwrap();
+        let natural_scroll = settings.mouse.boolean("natural-scroll");
+
+        let model = Self {
+            settings,
+
+            primary_button,
+            speed,
+            accel_profile,
+            natural_scroll,
+        };
+
         let widgets = view_output!();
+
         ComponentParts { model, widgets }
     }
 }

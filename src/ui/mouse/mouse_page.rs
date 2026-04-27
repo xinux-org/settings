@@ -1,4 +1,3 @@
-
 use crate::ui::mouse::mouse::Mouse;
 use crate::ui::mouse::pointing_stick::PointingStick;
 use crate::ui::window::AppMsg;
@@ -20,7 +19,7 @@ pub struct MouseModal {
 
 #[derive(Debug)]
 pub enum MouseMsg {
-    SetViewSwitchBar(bool)
+    SetViewSwitchBar(bool),
 }
 
 #[relm4::component(pub)]
@@ -128,7 +127,7 @@ impl SimpleComponent for MouseModal {
         let pointing_stick = PointingStick::builder()
             .launch(())
             .forward(_sender.input_sender(), identity);
-        
+
         let model = Self {
             view_stack: view_stack.clone(),
             mouse,
@@ -140,7 +139,7 @@ impl SimpleComponent for MouseModal {
         let widgets = view_output!();
 
         let view_stack = model.view_stack.clone();
-        
+
         let mouse_switcher = widgets.view_stack.page(model.mouse.widget());
         let touchpad_swticher = widgets.view_stack.page(model.touchpad.widget());
         let pointing_stick_switcher = widgets.view_stack.page(model.pointing_stick.widget());
