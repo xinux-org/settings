@@ -17,6 +17,7 @@ impl MouseSettings {
         }
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct Mouse {
     settings: MouseSettings,
@@ -35,10 +36,18 @@ pub struct Mouse {
     natural_scroll: bool,
 }
 
+#[derive(Debug, Clone)]
+pub enum MousePageMsg {
+    PrimaryButton (bool),
+    PointerSpeed(f64),
+    MouseAcceleration(bool),
+    ScrollDirection(bool)
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for Mouse {
     type Init = ();
-    type Input = ();
+    type Input = MousePageMsg;
     type Output = MouseMsg;
 
     view! {
@@ -124,13 +133,13 @@ impl SimpleComponent for Mouse {
                         add_suffix = &gtk::Box {
                             gtk::MenuButton {
                                 set_icon_name: "help-about",
-                
+
                                 set_direction: gtk::ArrowType::Down,
-                
+
                                 #[wrap(Some)]
                                 set_popover = &gtk::Popover {
                                     set_valign: gtk::Align::Center,
-                    
+
                                     gtk::Label {
                                         set_label: "Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
                                     },
@@ -182,7 +191,11 @@ impl SimpleComponent for Mouse {
 
                                     #[name = "traditional"]
                                     append = &gtk::CheckButton {
-                                        set_active: model.natural_scroll,
+                                        #[watch]
+                                        set_active: !model.natural_scroll,
+                                        connect_toggled[sender] => move |state| {
+                                            sender.input(MousePageMsg::ScrollDirection(state.is_active()));
+                                        },
                                     },
 
                                     append = &gtk::Box {
@@ -223,6 +236,12 @@ impl SimpleComponent for Mouse {
 
                                     append = &gtk::CheckButton {
                                         set_group: Some(&traditional),
+
+                                        #[watch]
+                                        set_active: model.natural_scroll,
+                                        connect_toggled[sender] => move |state| {
+                                            sender.input(MousePageMsg::ScrollDirection(state.is_active()));
+                                        },
                                     },
 
                                     append = &gtk::Box {
