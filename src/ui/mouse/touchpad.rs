@@ -2,10 +2,15 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::mouse_page::MouseMsg;
+use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug, Clone)]
-pub struct Touchpad {}
+pub struct Touchpad {
+    settings: MouseSettings,
+    send_events: bool,
+    disable_while_typing: bool,
+    speed: f64,
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for Touchpad {
@@ -18,46 +23,22 @@ impl SimpleComponent for Touchpad {
         adw::ToolbarView {
             set_top_bar_style: adw::ToolbarStyle::Flat,
 
-            add_top_bar = &adw::HeaderBar {
-                #[wrap(Some)]
-                set_title_widget = &adw::WindowTitle {
-                    set_title: "Mouse & Touchpad",
-                }
-            },
-
             #[wrap(Some)]
             set_content = &adw::PreferencesPage {
                 add = &adw::PreferencesGroup {
-                    set_title: "General",
-
-                    add = &adw::ActionRow {
-                        set_title: "Primary Button",
-                        set_subtitle: "Order of physical buttons on mice and touchpads",
-
-                        add_suffix = &gtk::Box {
-                            set_spacing: 0,
-                            set_halign: gtk::Align::End,
-                            set_valign: gtk::Align::Center,
-                            add_css_class: "linked",
-
-                            #[name= "left" ]
-                            append = &gtk::ToggleButton {
-                                set_group: Some(&right),
-                                set_label: "Left",
-                                set_active: true,
-                            },
-
-                            #[name= "right" ]
-                            append = &gtk::ToggleButton {
-                                set_label: "Right",
-                            },
-                        }
+                    add = &adw::SwitchRow {
+                        set_title: "Touchpad",
+                        set_active: model.send_events,
                     },
                 },
 
-
                 add = &adw::PreferencesGroup {
-                    set_title: "Mouse",
+                    set_title: "General",
+
+                    add = &adw::SwitchRow {
+                        set_title: "Disable Touchpad While Typing",
+                        set_active: model.disable_while_typing,
+                    },
 
                     add = &adw::ActionRow {
                         set_title: "Pointer Speed",
@@ -78,8 +59,8 @@ impl SimpleComponent for Touchpad {
                                 set_orientation: gtk::Orientation::Horizontal,
                                 set_hexpand: true,
                                 set_draw_value: false,
-                                set_range: (0.0, 1.0),
-                                set_value: 0.6,
+                                set_range: (-1.0, 1.0),
+                                set_value: model.speed,
                             },
 
                             append = &gtk::Label {
@@ -87,116 +68,6 @@ impl SimpleComponent for Touchpad {
                                 add_css_class: "dim-label",
                             },
                         }
-                    },
-
-                    add = &adw::SwitchRow {
-                        set_title: "Mouse Acceleration",
-                        set_subtitle: "Recommended for most users and applications",
-                        set_active: true,
-                    },
-                },
-
-                add = &adw::PreferencesGroup {
-                    set_title: "Scroll Direction",
-
-                    add = &adw::ActionRow {
-
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 12,
-                            set_homogeneous: true,
-                            set_hexpand: true,
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    #[name = "traditional"]
-                                    append = &gtk::CheckButton {
-                                        set_active: true,
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Traditional",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the view",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    append = &gtk::CheckButton {
-                                        set_group: Some(&traditional),
-                                        set_active: false,
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Natural",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the content",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-                        }
-                    },
-                },
-
-                add = &adw::PreferencesGroup {
-                    add = &adw::ButtonRow {
-                            set_title: "Test Settings",
-                            set_end_icon_name: Some("go-next-symbolic"),
                     },
                 },
             }
@@ -208,7 +79,20 @@ impl SimpleComponent for Touchpad {
         root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self {};
+        let settings = MouseSettings::new();
+
+        let events = settings.touchpad.string("send-events");
+        let send_events = events == String::from("enabled");
+        let disable_while_typing = settings.touchpad.boolean("disable-while-typing");
+        let speed = settings.touchpad.value("speed").get::<f64>().unwrap();
+
+        let model = Self {
+            settings,
+
+            send_events,
+            disable_while_typing,
+            speed,
+        };
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }

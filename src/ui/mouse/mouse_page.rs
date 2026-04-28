@@ -1,12 +1,28 @@
 use crate::ui::mouse::mouse::Mouse;
 use crate::ui::mouse::pointing_stick::PointingStick;
 use crate::ui::window::AppMsg;
+use gtk::gio::Settings;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 use std::convert::identity;
 
 use crate::ui::mouse::touchpad::Touchpad;
+
+#[derive(Debug, Clone)]
+pub struct MouseSettings {
+    pub mouse: Settings,
+    pub touchpad: Settings,
+}
+
+impl MouseSettings {
+    pub fn new() -> Self {
+        Self {
+            mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
+            touchpad: Settings::new("org.gnome.desktop.peripherals.touchpad"),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct MouseModal {

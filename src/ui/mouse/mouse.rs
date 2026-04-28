@@ -2,21 +2,7 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::mouse_page::MouseMsg;
-use gtk::gio::Settings;
-
-#[derive(Debug, Clone)]
-pub struct MouseSettings {
-    pub mouse: Settings,
-}
-
-impl MouseSettings {
-    pub fn new() -> Self {
-        Self {
-            mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
-        }
-    }
-}
+use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug, Clone)]
 pub struct Mouse {
@@ -38,10 +24,10 @@ pub struct Mouse {
 
 #[derive(Debug, Clone)]
 pub enum MousePageMsg {
-    PrimaryButton (bool),
+    PrimaryButton(bool),
     PointerSpeed(f64),
     MouseAcceleration(bool),
-    ScrollDirection(bool)
+    ScrollDirection(bool),
 }
 
 #[relm4::component(pub)]
@@ -327,32 +313,30 @@ impl SimpleComponent for Mouse {
         ComponentParts { model, widgets }
     }
 
-
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>){
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             MousePageMsg::PrimaryButton(state) => {
                 self.left_handed = state;
-                
-               let _ = self.settings.mouse.set_boolean("left-handed", state);
-            },
+
+                let _ = self.settings.mouse.set_boolean("left-handed", state);
+            }
             MousePageMsg::PointerSpeed(speed) => {
                 self.speed = speed;
-                
+
                 let _ = self.settings.mouse.set_value("speed", &speed.to_variant());
-            },
+            }
             MousePageMsg::MouseAcceleration(state) => {
                 self.accel_profile = state;
 
-                let profile = if state {"default"} else {"flat"};
-                
+                let profile = if state { "default" } else { "flat" };
+
                 let _ = self.settings.mouse.set_string("accel-profile", profile);
-            },
+            }
             MousePageMsg::ScrollDirection(state) => {
                 self.natural_scroll = state;
 
                 let _ = self.settings.mouse.set_boolean("natural-scroll", state);
-            },
+            }
         }
-
     }
 }
