@@ -23,7 +23,7 @@ pub struct Mouse {
     settings: MouseSettings,
 
     /// key is left-handed
-    primary_button: bool,
+    left_handed: bool,
 
     /// pointer speed
     speed: f64,
@@ -81,12 +81,27 @@ impl SimpleComponent for Mouse {
                             append = &gtk::ToggleButton {
                                 set_group: Some(&right),
                                 set_label: "Left",
-                                set_active: model.primary_button,
+                                #[watch]
+                                set_active: !model.left_handed,
+
+                                connect_toggled[sender] => move |btn| {
+                                    if btn.is_active() {
+                                        sender.input(MousePageMsg::PrimaryButton(!btn.is_active()));
+                                    }
+                                },
                             },
 
                             #[name= "right" ]
                             append = &gtk::ToggleButton {
                                 set_label: "Right",
+                                #[watch]
+                                set_active: model.left_handed,
+
+                                connect_toggled[sender] => move |btn| {
+                                    if btn.is_active() {
+                                        sender.input(MousePageMsg::PrimaryButton(btn.is_active()));
+                                    }
+                                },
                             },
                         }
                     },
@@ -117,6 +132,10 @@ impl SimpleComponent for Mouse {
                                 set_draw_value: false,
                                 set_range: (-1.0, 1.0),
                                 set_value: model.speed,
+
+                                connect_value_changed[sender] => move |scale|{
+                                    sender.input(MousePageMsg::PointerSpeed(scale.value()));
+                                }
                             },
 
                             append = &gtk::Label {
@@ -124,6 +143,8 @@ impl SimpleComponent for Mouse {
                                 add_css_class: "dim-label",
                             },
                         }
+
+
                     },
 
                     add = &adw::ActionRow {
@@ -152,7 +173,7 @@ impl SimpleComponent for Mouse {
                             #[watch]
                             set_active: model.accel_profile,
                             connect_state_set[sender] => move |_, state| {
-                                // sender.input(PowerSavingMsg::SetAutoPowerSaver(state));
+                                sender.input(MousePageMsg::MouseAcceleration(state));
                                 gtk::glib::Propagation::Proceed
                             },
                         },
@@ -193,8 +214,10 @@ impl SimpleComponent for Mouse {
                                     append = &gtk::CheckButton {
                                         #[watch]
                                         set_active: !model.natural_scroll,
-                                        connect_toggled[sender] => move |state| {
-                                            sender.input(MousePageMsg::ScrollDirection(state.is_active()));
+                                        connect_toggled[sender] => move |btn| {
+                                            if  btn.is_active() {
+                                                sender.input(MousePageMsg::ScrollDirection(!btn.is_active()));
+                                            }
                                         },
                                     },
 
@@ -239,8 +262,10 @@ impl SimpleComponent for Mouse {
 
                                         #[watch]
                                         set_active: model.natural_scroll,
-                                        connect_toggled[sender] => move |state| {
-                                            sender.input(MousePageMsg::ScrollDirection(state.is_active()));
+                                        connect_toggled[sender] => move |btn| {
+                                            if  btn.is_active() {
+                                                sender.input(MousePageMsg::ScrollDirection(btn.is_active()));
+                                            }
                                         },
                                     },
 
@@ -284,14 +309,14 @@ impl SimpleComponent for Mouse {
 
         let acceleration = settings.mouse.string("accel-profile").to_string();
         let accel_profile = acceleration == String::from("default");
-        let primary_button = settings.mouse.boolean("left-handed");
+        let left_handed = settings.mouse.boolean("left-handed");
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
         let natural_scroll = settings.mouse.boolean("natural-scroll");
 
         let model = Self {
             settings,
 
-            primary_button,
+            left_handed,
             speed,
             accel_profile,
             natural_scroll,
@@ -300,5 +325,34 @@ impl SimpleComponent for Mouse {
         let widgets = view_output!();
 
         ComponentParts { model, widgets }
+    }
+
+
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>){
+        match message {
+            MousePageMsg::PrimaryButton(state) => {
+                self.left_handed = state;
+                
+               let _ = self.settings.mouse.set_boolean("left-handed", state);
+            },
+            MousePageMsg::PointerSpeed(speed) => {
+                self.speed = speed;
+                
+                let _ = self.settings.mouse.set_value("speed", &speed.to_variant());
+            },
+            MousePageMsg::MouseAcceleration(state) => {
+                self.accel_profile = state;
+
+                let profile = if state {"default"} else {"flat"};
+                
+                let _ = self.settings.mouse.set_string("accel-profile", profile);
+            },
+            MousePageMsg::ScrollDirection(state) => {
+                self.natural_scroll = state;
+
+                let _ = self.settings.mouse.set_boolean("natural-scroll", state);
+            },
+        }
+
     }
 }
