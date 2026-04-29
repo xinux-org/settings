@@ -293,8 +293,8 @@ impl SimpleComponent for Mouse {
     ) -> ComponentParts<Self> {
         let settings = MouseSettings::new();
 
-        let acceleration = settings.mouse.string("accel-profile").to_string();
-        let accel_profile = acceleration == String::from("default");
+        let acceleration = settings.mouse.string("accel-profile");
+        let accel_profile = acceleration.as_str() == "default";
         let left_handed = settings.mouse.boolean("left-handed");
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
         let natural_scroll = settings.mouse.boolean("natural-scroll");
