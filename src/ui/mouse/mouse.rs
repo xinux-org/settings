@@ -2,9 +2,12 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
+use crate::ui::mouse::components::choice::Choice;
+use crate::ui::mouse::components::choice::ChoiceInit;
+use crate::ui::mouse::components::choice::ChoiceOutput;
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Mouse {
     settings: MouseSettings,
 
@@ -20,6 +23,8 @@ pub struct Mouse {
 
     /// scroll direction
     natural_scroll: bool,
+natural_scroll_component: 
+     Controller<Choice>,
 }
 
 #[derive(Debug, Clone)]
@@ -276,6 +281,8 @@ impl SimpleComponent for Mouse {
                     },
                 },
 
+                add = model.natural_scroll_component.widget(),
+
                 add = &adw::PreferencesGroup {
                     add = &adw::ButtonRow {
                             set_title: "Test Settings",
@@ -299,6 +306,16 @@ impl SimpleComponent for Mouse {
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
         let natural_scroll = settings.mouse.boolean("natural-scroll");
 
+        let natural_scroll_component =
+            Choice::builder()
+                .launch(ChoiceInit {
+                key: String::from("natural-scroll"), settings: settings.clone().touchpad,
+                title: String::from("Scroll Direction"), options: vec![String::from("Traditional"), String::from("Natural")], subtitles: vec![String::from("Scrolling moves the view"), String::from("Scrolling moves the content")],
+            })
+                .forward(sender.input_sender(), |out| match out {
+                    ChoiceOutput::Changed(state) => MousePageMsg::ScrollDirection(state),
+                });
+
         let model = Self {
             settings,
 
@@ -306,6 +323,9 @@ impl SimpleComponent for Mouse {
             speed,
             accel_profile,
             natural_scroll,
+
+
+            natural_scroll_component,
         };
 
         let widgets = view_output!();

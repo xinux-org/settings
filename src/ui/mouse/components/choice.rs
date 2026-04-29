@@ -28,12 +28,12 @@ pub enum ChoiceOutput {
 
 #[derive(Debug)]
 pub struct ChoiceInit {
-    key: String,
-    settings: Settings,
+   pub key: String,
+   pub settings: Settings,
 
-    title: String,
-    options: Vec<String>,
-    subtitles: Vec<String>,
+   pub title: String,
+   pub options: Vec<String>,
+   pub subtitles: Vec<String>,
 }
 
 #[relm4::component(pub)]
@@ -77,10 +77,10 @@ impl Component for Choice {
                         #[name = "left"]
                         append = &gtk::CheckButton {
                             #[watch]
-                            set_active: model.left,
+                            set_active: !model.left,
                             connect_toggled[sender] => move |btn| {
                                 if  btn.is_active() {
-                                    sender.input(ChoiceMsg::Change(btn.is_active()));
+                                    sender.input(ChoiceMsg::Change(!btn.is_active()));
                                 }
                             },
                         },
@@ -125,10 +125,10 @@ impl Component for Choice {
                             set_group: Some(&left),
 
                             #[watch]
-                            set_active: !model.left,
+                            set_active: model.left,
                             connect_toggled[sender] => move |btn| {
                                 if  btn.is_active() {
-                                    sender.input(ChoiceMsg::Change(!btn.is_active()));
+                                    sender.input(ChoiceMsg::Change(btn.is_active()));
                                 }
                             },
                         },
