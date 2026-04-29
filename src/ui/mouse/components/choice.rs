@@ -28,12 +28,12 @@ pub enum ChoiceOutput {
 
 #[derive(Debug)]
 pub struct ChoiceInit {
-   pub key: String,
-   pub settings: Settings,
+    pub key: String,
+    pub settings: Settings,
 
-   pub title: String,
-   pub options: Vec<String>,
-   pub subtitles: Vec<String>,
+    pub title: String,
+    pub options: Vec<String>,
+    pub subtitles: Vec<String>,
 }
 
 #[relm4::component(pub)]

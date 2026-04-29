@@ -23,8 +23,7 @@ pub struct Mouse {
 
     /// scroll direction
     natural_scroll: bool,
-natural_scroll_component: 
-     Controller<Choice>,
+    natural_scroll_component: Controller<Choice>,
 }
 
 #[derive(Debug, Clone)]
@@ -306,15 +305,20 @@ impl SimpleComponent for Mouse {
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
         let natural_scroll = settings.mouse.boolean("natural-scroll");
 
-        let natural_scroll_component =
-            Choice::builder()
-                .launch(ChoiceInit {
-                key: String::from("natural-scroll"), settings: settings.clone().touchpad,
-                title: String::from("Scroll Direction"), options: vec![String::from("Traditional"), String::from("Natural")], subtitles: vec![String::from("Scrolling moves the view"), String::from("Scrolling moves the content")],
+        let natural_scroll_component = Choice::builder()
+            .launch(ChoiceInit {
+                key: String::from("natural-scroll"),
+                settings: settings.clone().touchpad,
+                title: String::from("Scroll Direction"),
+                options: vec![String::from("Traditional"), String::from("Natural")],
+                subtitles: vec![
+                    String::from("Scrolling moves the view"),
+                    String::from("Scrolling moves the content"),
+                ],
             })
-                .forward(sender.input_sender(), |out| match out {
-                    ChoiceOutput::Changed(state) => MousePageMsg::ScrollDirection(state),
-                });
+            .forward(sender.input_sender(), |out| match out {
+                ChoiceOutput::Changed(state) => MousePageMsg::ScrollDirection(state),
+            });
 
         let model = Self {
             settings,
@@ -323,7 +327,6 @@ impl SimpleComponent for Mouse {
             speed,
             accel_profile,
             natural_scroll,
-
 
             natural_scroll_component,
         };

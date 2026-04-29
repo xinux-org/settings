@@ -390,10 +390,7 @@ impl Component for GeneralPowerPageView {
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
             .launch((settings.to_owned(), SCREEN_BLANK_DELAY_VALUES.to_vec()))
-            .forward(sender.input_sender(), |out| match out {
-                // we do not need child and parent relationship in this case
-                AutoScreenBlankOutput::Noop => GeneralPowerPageViewMsg::Noop,
-            });
+            .detach();
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
             .launch(AutomaticSuspendInit {
