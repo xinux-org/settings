@@ -21,6 +21,7 @@ pub struct WifiModel {
     wifi_stack: gtk::Stack,
     wifi_stack_page: WifiStack,
     airplane_mode: bool,
+    client: nmrs::NetworkManager,
     // Store the proxy to call methods later
     // proxy: Option<RfkillProxy<'static>>,
 }
@@ -200,7 +201,11 @@ impl SimpleAsyncComponent for WifiModel {
                 NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
-        let wifi_stack_page = if is_wifi_enabled().await {
+        let nm = NetworkManager::new()
+            .await
+            .expect("cannot connect to NetworkManager in is_wifi_enabled");
+
+        let wifi_stack_page = if is_wifi_enabled(&nm).await {
             WifiStack::WifiOn
         } else {
             WifiStack::WifiOff
@@ -208,12 +213,13 @@ impl SimpleAsyncComponent for WifiModel {
 
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
-            wifi_enabled: is_wifi_enabled().await,
+            wifi_enabled: is_wifi_enabled(&nm).await,
             networks,
             loading: true,
             wifi_stack: gtk::Stack::new(),
             wifi_stack_page, // fixme with airplane mode
             airplane_mode: false,
+            client: nm,
             // proxy: None,
         };
         let networks_group = model.networks.widget();
@@ -256,7 +262,7 @@ impl SimpleAsyncComponent for WifiModel {
                     sender.input(WifiInput::ClearNetworksList);
                     // glib::timeout_future(std::time::Duration::from_secs(5)).await;
 
-                    match load_networks().await {
+                    match load_networks(&self.client).await {
                         Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
                         Err(e) => {
                             eprintln!("nmrs error: {e}");
@@ -268,7 +274,6 @@ impl SimpleAsyncComponent for WifiModel {
                 self.loading = false;
                 let _: Vec<_> = nets
                     .into_iter()
-                    .filter(|net| net.ssid.ne("<Hidden Network>"))
                     .map(|n| self.networks.guard().push_back(n))
                     .collect();
             }
@@ -276,26 +281,23 @@ impl SimpleAsyncComponent for WifiModel {
                 // Currently if you turn of/on wifi toggle so many times,
                 // It also loads network many times giving not good experience
                 self.wifi_enabled = on;
-                // if let Err(e) = set_wifi_enabled(on).await {
-                //     debug!("Could not toggle Wi-Fi: {e}");
-                //     return;
-                // }
 
                 // Immediate UI cleanup
-                if !on {
-                    sender.input(WifiInput::ClearNetworksList);
-                    self.wifi_stack_page = WifiStack::WifiOff;
-                } else {
+                if on {
                     self.loading = true;
                     self.wifi_stack_page = WifiStack::WifiOn;
-
+                } else {
+                    sender.input(WifiInput::ClearNetworksList);
+                    self.wifi_stack_page = WifiStack::WifiOff;
                     // glib::timeout_future(std::time::Duration::from_secs(5)).await;
                     // sender.input(WifiInput::LoadNetworks);
                 }
+                
                 // Returns itʻs status when finished on backgroud without
                 // depending WifiInput::ToggleWifi
+                let clinet_clone = self.client.clone();
                 relm4::spawn_local(async move {
-                    if let Err(e) = set_wifi_enabled(on).await {
+                    if let Err(e) = set_wifi_enabled(clinet_clone, on).await {
                         debug!("Could not toggle Wi-Fi: {e}");
                         return;
                     }
@@ -343,29 +345,26 @@ impl SimpleAsyncComponent for WifiModel {
     }
 }
 
-async fn is_wifi_enabled() -> bool {
-    let nm = NetworkManager::new()
-        .await
-        .expect("cannot connect to NetworkManager in is_wifi_enabled");
+async fn is_wifi_enabled(client: &nmrs::NetworkManager) -> bool {
     // Control WiFi
-    nm.wifi_enabled()
+    client
+        .wifi_enabled()
         .await
         .expect("cannot get whather wifi_enabled")
 }
 
-async fn load_networks() -> nmrs::Result<Vec<WifiNetwork>> {
-    let nm = NetworkManager::new().await?;
-
-    let current = nm.current_ssid().await;
-    let raw = nm.list_networks().await?;
-
+async fn load_networks(client: &nmrs::NetworkManager) -> nmrs::Result<Vec<WifiNetwork>> {
+    let current = client.current_ssid().await;
+    let raw = client.list_networks().await?;
     let mut seen = std::collections::HashSet::new();
 
     let mut networks: Vec<WifiNetwork> = raw
         .into_iter()
         .filter(|n| !n.ssid.trim().is_empty()) // remove unnamed networks
+        .filter(|n| n.ssid.ne("<Hidden Network>")) // remove hidden networks
         .filter(|n| seen.insert(n.ssid.clone())) // deduplicate by SSID
         .map(|n| WifiNetwork {
+            client: client.clone(),
             connected: current.as_deref() == Some(&n.ssid),
             strength: n.strength.unwrap_or(0),
             ssid: n.ssid,
@@ -377,10 +376,9 @@ async fn load_networks() -> nmrs::Result<Vec<WifiNetwork>> {
     Ok(networks)
 }
 
-async fn set_wifi_enabled(enabled: bool) -> nmrs::Result<()> {
-    let nm = NetworkManager::new().await?;
+async fn set_wifi_enabled(client: nmrs::NetworkManager, enabled: bool) -> nmrs::Result<()> {
     // Control WiFi
-    nm.set_wifi_enabled(enabled).await?; // Disable WiFi
+    client.set_wifi_enabled(enabled).await?; // Disable WiFi
     Ok(())
 }
 

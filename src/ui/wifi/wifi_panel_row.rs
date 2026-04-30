@@ -7,6 +7,7 @@ use relm4::{
 
 #[derive(Debug)]
 pub struct WifiNetwork {
+    pub client: nmrs::NetworkManager,
     pub ssid: String,
     pub strength: u8,
     pub connected: bool,
@@ -84,8 +85,26 @@ impl FactoryComponent for WifiNetwork {
     fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
         match message {
             NetworkRowMsg::Connect(ssid) => {
+                let clinet_clone = self.client.clone();
                 relm4::spawn(async move {
-                    let result = connect_network(&ssid).await.map_err(|e| e.to_string());
+                    let result = clinet_clone
+                        // FIXME: this is not open network. nmrs yields error
+                        //  ERROR nmrs::core::connection: Fresh connection also failed:
+                        // org.freedesktop.NetworkManager.Settings.Connection.InvalidProperty:
+                        // 802-11-wireless.ssid: connection does not match access poin
+                        //
+                        // D-Bus error: org.freedesktop.NetworkManager.Settings.Connection.InvalidProperty:
+                        // 802-11-wireless.ssid: connection does not match access point
+                        //
+                        // Either password should be set via WifiSecurity::WpaPsk or find other way
+                        // CLI action to connect wireless network first time works perfect:
+                        // nmcli device wifi connect "UIC_Dgov"
+                        .connect(ssid.as_ref(), WifiSecurity::Open)
+                        .await
+                        .map_err(|e| {
+                            println!("aaa\n\n\n\n\n\n\n\n\n\n\n\n {}", e);
+                            "a".to_string()
+                        });
                     let _ = sender.output(NetworkRowOutput::ConnectResult(result));
                 });
             }
@@ -93,7 +112,7 @@ impl FactoryComponent for WifiNetwork {
     }
 }
 
-async fn connect_network(ssid: &str) -> nmrs::Result<()> {
-    let nm = NetworkManager::new().await?;
-    nm.connect(ssid, WifiSecurity::Open).await
-}
+// async fn connect_network(ssid: &str) -> nmrs::Result<()> {
+//     let nm = NetworkManager::new().await?;
+//     nm.connect(ssid, WifiSecurity::Open).await
+// }
