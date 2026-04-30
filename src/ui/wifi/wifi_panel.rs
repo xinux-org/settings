@@ -13,14 +13,13 @@ use relm4::{
     prelude::*,
 };
 use tracing::debug;
-use zbus::{Connection, proxy};
 
 pub struct WifiModel {
     wifi_enabled: bool,
     networks: FactoryVecDeque<WifiNetwork>,
     loading: bool,
-    many: gtk::Stack,
-    wifi_stack: WifiStack,
+    wifi_stack: gtk::Stack,
+    wifi_stack_page: WifiStack,
     airplane_mode: bool,
     // Store the proxy to call methods later
     // proxy: Option<RfkillProxy<'static>>,
@@ -57,7 +56,7 @@ pub enum WifiInput {
 }
 
 #[derive(Debug)]
-enum WifiStack {
+pub enum WifiStack {
     WifiOn,
     WifiOff,
     Airplane,
@@ -134,13 +133,13 @@ impl SimpleAsyncComponent for WifiModel {
                     }
                 },
                 adw::PreferencesGroup {
-                    #[name(many)]
+                    #[name(wifi_stack)]
                     gtk::Stack {
                         set_transition_type: gtk::StackTransitionType::Crossfade,
                         set_hhomogeneous: false,
                         set_vhomogeneous: false,
                         #[watch]
-                        set_visible_child_name: match model.wifi_stack {
+                        set_visible_child_name: match model.wifi_stack_page {
                           // donʻt translate
                           WifiStack::WifiOn => "wifi-connections",
                           WifiStack::WifiOff => "wifi-off",
@@ -201,27 +200,31 @@ impl SimpleAsyncComponent for WifiModel {
                 NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
+        let wifi_stack_page = if is_wifi_enabled().await {
+            WifiStack::WifiOn
+        } else {
+            WifiStack::WifiOff
+        };
+
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
-            wifi_enabled: true,
+            wifi_enabled: is_wifi_enabled().await,
             networks,
             loading: true,
-            many: gtk::Stack::new(),
-            wifi_stack: WifiStack::WifiOn, // fixme
+            wifi_stack: gtk::Stack::new(),
+            wifi_stack_page, // fixme with airplane mode
             airplane_mode: false,
             // proxy: None,
         };
-
         let networks_group = model.networks.widget();
+
+        if model.wifi_enabled {
+            sender.input(WifiInput::LoadNetworks);
+        }
+
         let widgets = view_output!();
-
-        // FIXME: change it to toggle wifi
-        sender.input(WifiInput::LoadNetworks);
-
-        // please improve logic
-        let many = widgets.many.clone();
-        // many.set_visible_child_name("wifi-connections");
-        model.many = many;
+        let wifi_stack = widgets.wifi_stack.clone();
+        model.wifi_stack = wifi_stack;
 
         // let sender_clone = sender.clone();
         // relm4::spawn_local(async move {
@@ -257,7 +260,6 @@ impl SimpleAsyncComponent for WifiModel {
                         Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
                         Err(e) => {
                             eprintln!("nmrs error: {e}");
-                            return;
                         }
                     }
                 }
@@ -282,10 +284,10 @@ impl SimpleAsyncComponent for WifiModel {
                 // Immediate UI cleanup
                 if !on {
                     sender.input(WifiInput::ClearNetworksList);
-                    self.wifi_stack = WifiStack::WifiOff;
+                    self.wifi_stack_page = WifiStack::WifiOff;
                 } else {
                     self.loading = true;
-                    self.wifi_stack = WifiStack::WifiOn;
+                    self.wifi_stack_page = WifiStack::WifiOn;
 
                     // glib::timeout_future(std::time::Duration::from_secs(5)).await;
                     // sender.input(WifiInput::LoadNetworks);
@@ -342,31 +344,17 @@ impl SimpleAsyncComponent for WifiModel {
 }
 
 async fn is_wifi_enabled() -> bool {
-    #[proxy(
-        interface = "org.freedesktop.NetworkManager",
-        default_service = "org.freedesktop.NetworkManager",
-        default_path = "/org/freedesktop/NetworkManager"
-    )]
-    trait NetworkManagerDBus {
-        #[zbus(property)]
-        fn wireless_enabled(&self) -> zbus::Result<bool>;
-    }
-
-    let Ok(conn) = Connection::system().await else {
-        return false;
-    };
-    let Ok(proxy) = NetworkManagerDBusProxy::new(&conn).await else {
-        return false;
-    };
-    proxy.wireless_enabled().await.unwrap_or(false)
+    let nm = NetworkManager::new()
+        .await
+        .expect("cannot connect to NetworkManager in is_wifi_enabled");
+    // Control WiFi
+    nm.wifi_enabled()
+        .await
+        .expect("cannot get whather wifi_enabled")
 }
 
 async fn load_networks() -> nmrs::Result<Vec<WifiNetwork>> {
     let nm = NetworkManager::new().await?;
-
-    if !is_wifi_enabled().await {
-        return Ok(vec![]);
-    }
 
     let current = nm.current_ssid().await;
     let raw = nm.list_networks().await?;
@@ -389,19 +377,46 @@ async fn load_networks() -> nmrs::Result<Vec<WifiNetwork>> {
     Ok(networks)
 }
 
-async fn set_wifi_enabled(enabled: bool) -> Result<(), Box<dyn std::error::Error>> {
-    #[proxy(
-        interface = "org.freedesktop.NetworkManager",
-        default_service = "org.freedesktop.NetworkManager",
-        default_path = "/org/freedesktop/NetworkManager"
-    )]
-    trait NetworkManagerDBus {
-        #[zbus(property)]
-        fn set_wireless_enabled(&self, enabled: bool) -> zbus::Result<()>;
-    }
-
-    let conn = Connection::system().await?;
-    let proxy = NetworkManagerDBusProxy::new(&conn).await?;
-    proxy.set_wireless_enabled(enabled).await?;
+async fn set_wifi_enabled(enabled: bool) -> nmrs::Result<()> {
+    let nm = NetworkManager::new().await?;
+    // Control WiFi
+    nm.set_wifi_enabled(enabled).await?; // Disable WiFi
     Ok(())
 }
+
+// async fn is_wifi_enabled() -> bool {
+//     #[proxy(
+//         interface = "org.freedesktop.NetworkManager",
+//         default_service = "org.freedesktop.NetworkManager",
+//         default_path = "/org/freedesktop/NetworkManager"
+//     )]
+//     trait NetworkManagerDBus {
+//         #[zbus(property)]
+//         fn wireless_enabled(&self) -> zbus::Result<bool>;
+//     }
+
+//     let Ok(conn) = Connection::system().await else {
+//         return false;
+//     };
+//     let Ok(proxy) = NetworkManagerDBusProxy::new(&conn).await else {
+//         return false;
+//     };
+//     proxy.wireless_enabled().await.unwrap_or(false)
+// }
+
+// async fn set_wifi_enabled(enabled: bool) -> Result<(), Box<dyn std::error::Error>> {
+//     #[proxy(
+//         interface = "org.freedesktop.NetworkManager",
+//         default_service = "org.freedesktop.NetworkManager",
+//         default_path = "/org/freedesktop/NetworkManager"
+//     )]
+//     trait NetworkManagerDBus {
+//         #[zbus(property)]
+//         fn set_wireless_enabled(&self, enabled: bool) -> zbus::Result<()>;
+//     }
+
+//     let conn = Connection::system().await?;
+//     let proxy = NetworkManagerDBusProxy::new(&conn).await?;
+//     proxy.set_wireless_enabled(enabled).await?;
+//     Ok(())
+// }

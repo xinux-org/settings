@@ -84,7 +84,7 @@ impl FactoryComponent for WifiNetwork {
     fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
         match message {
             NetworkRowMsg::Connect(ssid) => {
-                relm4::spawn_local(async move {
+                relm4::spawn(async move {
                     let result = connect_network(&ssid).await.map_err(|e| e.to_string());
                     let _ = sender.output(NetworkRowOutput::ConnectResult(result));
                 });
