@@ -120,7 +120,7 @@ impl SimpleAsyncComponent for WifiModel {
                     }
                 },
                 adw::PreferencesGroup {
-                    // FIXME: only in laptop!
+                    // FIXME: show only in laptop!
                     adw::SwitchRow {
                         set_title: "Airplane Mode",
                         set_subtitle: "Disables Wi-Fi, Bluetooth and mobile broadband",
@@ -133,9 +133,6 @@ impl SimpleAsyncComponent for WifiModel {
                         // }
                     }
                 },
-
-                // FIXME: use StackPage use display multiple modes
-                // source: https://github.com/GNOME/gnome-control-center/blob/main/panels/network/cc-wifi-panel.blp#L42-L167
                 adw::PreferencesGroup {
                     #[name(many)]
                     gtk::Stack {
@@ -223,7 +220,7 @@ impl SimpleAsyncComponent for WifiModel {
 
         // please improve logic
         let many = widgets.many.clone();
-        many.set_visible_child_name("wifi-connections");
+        // many.set_visible_child_name("wifi-connections");
         model.many = many;
 
         // let sender_clone = sender.clone();

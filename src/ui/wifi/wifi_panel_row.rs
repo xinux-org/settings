@@ -69,11 +69,11 @@ impl FactoryComponent for WifiNetwork {
                 }
             },
 
-            connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_| {
-                let _ = sender.input(NetworkRowMsg::Connect(
+            connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_|
+                sender.input(NetworkRowMsg::Connect(
                     ssid.to_string()
-                ));
-            }
+                )
+            )
         }
     }
 
