@@ -22,6 +22,7 @@ pub struct WifiModel {
     wifi_stack_page: WifiStack,
     airplane_mode: bool,
     client: nmrs::NetworkManager,
+    active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
     // Store the proxy to call methods later
     // proxy: Option<RfkillProxy<'static>>,
 }
@@ -220,6 +221,7 @@ impl SimpleAsyncComponent for WifiModel {
             wifi_stack_page, // fixme with airplane mode
             airplane_mode: false,
             client: nm,
+            active_toggle_task: None,
             // proxy: None,
         };
         let networks_group = model.networks.widget();
@@ -278,9 +280,11 @@ impl SimpleAsyncComponent for WifiModel {
                     .collect();
             }
             WifiInput::ToggleWifi(on) => {
-                // Currently if you turn of/on wifi toggle so many times,
-                // It also loads network many times giving not good experience
                 self.wifi_enabled = on;
+                // drop spawned load_networks async task and run fresh task
+                if let Some(handle) = self.active_toggle_task.take() {
+                    handle.abort();
+                }
 
                 // Immediate UI cleanup
                 if on {
@@ -289,14 +293,11 @@ impl SimpleAsyncComponent for WifiModel {
                 } else {
                     sender.input(WifiInput::ClearNetworksList);
                     self.wifi_stack_page = WifiStack::WifiOff;
-                    // glib::timeout_future(std::time::Duration::from_secs(5)).await;
-                    // sender.input(WifiInput::LoadNetworks);
                 }
-                
-                // Returns itʻs status when finished on backgroud without
-                // depending WifiInput::ToggleWifi
+
+                // spawn task on background and let finish WifiInput::ToggleWifi
                 let clinet_clone = self.client.clone();
-                relm4::spawn_local(async move {
+                let handle = relm4::spawn_local(async move {
                     if let Err(e) = set_wifi_enabled(clinet_clone, on).await {
                         debug!("Could not toggle Wi-Fi: {e}");
                         return;
@@ -306,15 +307,7 @@ impl SimpleAsyncComponent for WifiModel {
                         sender.input(WifiInput::LoadNetworks);
                     }
                 });
-
-                // if let Err(e) = set_wifi_enabled(on).await {
-                //     debug!("Could not toggle Wi-Fi: {e}");
-                //     return;
-                // }
-                // if on {
-                //     glib::timeout_future(std::time::Duration::from_secs(5)).await;
-                //     sender.input(WifiInput::LoadNetworks);
-                // }
+                self.active_toggle_task = Some(handle);
             }
             WifiInput::ConnectResult(res) => match res {
                 Ok(_) => {
