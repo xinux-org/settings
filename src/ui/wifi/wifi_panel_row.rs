@@ -1,4 +1,4 @@
-use nmrs::{NetworkManager, WifiSecurity};
+use nmrs::WifiSecurity;
 use relm4::{
     adw::{self, prelude::*},
     gtk::{self},
@@ -87,6 +87,7 @@ impl FactoryComponent for WifiNetwork {
             NetworkRowMsg::Connect(ssid) => {
                 let clinet_clone = self.client.clone();
                 relm4::spawn(async move {
+                    // let connections = clinet_clone.has_saved_connection(&ssid).await.unwrap();
                     let result = clinet_clone
                         // FIXME: this is not open network. nmrs yields error
                         //  ERROR nmrs::core::connection: Fresh connection also failed:
