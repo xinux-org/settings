@@ -129,8 +129,6 @@ impl SimpleComponent for Mouse {
                                 add_css_class: "dim-label",
                             },
                         }
-
-
                     },
 
                     add = &adw::ActionRow {
