@@ -1,3 +1,4 @@
+use adw::glib::Variant;
 use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
@@ -7,13 +8,24 @@ use relm4::{
 
 #[derive(Debug)]
 pub struct Choice {
-    left: bool,
+    /// single value being chosen
+    value: Variant,
+    /// array of values that can be chosen
+    values: Vec<Variant>,
+    /// jk
+    position: Position,
     key: String,
     settings: Settings,
 
     title: String,
     options: Vec<String>,
     subtitles: Vec<String>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Position {
+    Left,
+    Right,
 }
 
 #[derive(Debug)]
@@ -30,6 +42,8 @@ pub enum ChoiceOutput {
 pub struct ChoiceInit {
     pub key: String,
     pub settings: Settings,
+    pub values: Vec<Variant>,
+    pub position: Position,
 
     pub title: String,
     pub options: Vec<String>,
@@ -77,7 +91,7 @@ impl Component for Choice {
                         #[name = "left"]
                         append = &gtk::CheckButton {
                             #[watch]
-                            set_active: !model.left,
+                            set_active: model.position == Position::Left,
                             connect_toggled[sender] => move |btn| {
                                 if  btn.is_active() {
                                     sender.input(ChoiceMsg::Change(!btn.is_active()));
@@ -107,13 +121,10 @@ impl Component for Choice {
                     set_orientation: gtk::Orientation::Vertical,
                     set_spacing: 6,
 
-                    append = &gtk::Frame {
-                        set_hexpand: true,
-                        #[wrap(Some)]
-                        set_child = &gtk::Image {
-                            set_icon_name: Some("input-mouse-symbolic"),
-                            set_pixel_size: 64,
-                        },
+                    set_hexpand: true,
+                    gtk::Picture {
+                        set_content_fit:  gtk::ContentFit::Cover,
+                        set_filename: Some("/home/sae/projects/settings/src/ui/mouse/assets/scroll-natural.webm"),
                     },
 
                     append = &gtk::Box {
@@ -125,7 +136,7 @@ impl Component for Choice {
                             set_group: Some(&left),
 
                             #[watch]
-                            set_active: model.left,
+                            set_active: model.position == Position::Right,
                             connect_toggled[sender] => move |btn| {
                                 if  btn.is_active() {
                                     sender.input(ChoiceMsg::Change(btn.is_active()));
@@ -160,12 +171,14 @@ impl Component for Choice {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let left = init.settings.boolean(init.key.as_str());
+        let value = init.settings.value(init.key.as_str());
 
         let model = Self {
+            value,
             settings: init.settings,
-            left,
             key: init.key,
+            values: init.values,
+            position: init.position,
             title: init.title,
             options: init.options,
             subtitles: init.subtitles,
@@ -179,7 +192,9 @@ impl Component for Choice {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             ChoiceMsg::Change(state) => {
-                self.left = state;
+                let index = if state { 0 } else { 1 };
+
+                self.value = self.values.get(index).unwrap().to_variant();
 
                 sender.output(ChoiceOutput::Changed(state)).unwrap()
             }
