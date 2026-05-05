@@ -2,6 +2,8 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
+use crate::ui::mouse::components::pointer_speed::PointerSpeed;
+use crate::ui::mouse::components::pointer_speed::PointerSpeedInit;
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug)]
@@ -13,6 +15,7 @@ pub struct Mouse {
 
     /// pointer speed
     speed: f64,
+    speed_controller: Controller<PointerSpeed>,
 
     /// mouse acceleration
     /// default for true, flat for false
@@ -97,39 +100,7 @@ impl SimpleComponent for Mouse {
                 add = &adw::PreferencesGroup {
                     set_title: "Mouse",
 
-                    add = &adw::ActionRow {
-                        set_title: "Pointer Speed",
-
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 6,
-                            set_halign: gtk::Align::Fill,
-                            set_valign: gtk::Align::Center,
-                            set_hexpand: true,
-
-                            append = &gtk::Label {
-                                set_label: "Slow",
-                                add_css_class: "dim-label",
-                            },
-
-                            append = &gtk::Scale {
-                                set_orientation: gtk::Orientation::Horizontal,
-                                set_hexpand: true,
-                                set_draw_value: false,
-                                set_range: (-1.0, 1.0),
-                                set_value: model.speed,
-
-                                connect_value_changed[sender] => move |scale|{
-                                    sender.input(MousePageMsg::PointerSpeed(scale.value()));
-                                }
-                            },
-
-                            append = &gtk::Label {
-                                set_label: "Fast",
-                                add_css_class: "dim-label",
-                            },
-                        }
-                    },
+                    add = model.speed_controller.widget(),
 
                     add = &adw::ActionRow {
                         set_title: "Mouse Acceleration",
@@ -297,11 +268,19 @@ impl SimpleComponent for Mouse {
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
         let natural_scroll = settings.mouse.boolean("natural-scroll");
 
+        let speed_controller = PointerSpeed::builder()
+            .launch(PointerSpeedInit {
+                speed,
+                settings: settings.mouse.clone(),
+            })
+            .detach();
+
         let model = Self {
             settings,
 
             left_handed,
             speed,
+            speed_controller,
             accel_profile,
             natural_scroll,
         };

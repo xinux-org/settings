@@ -1,5 +1,3 @@
-
-use adw::glib::Variant;
 use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
@@ -9,13 +7,9 @@ use relm4::{
 
 #[derive(Debug)]
 pub struct PointerSpeed {
-    /// single value being chosen
-    value: Variant,
-    key: String,
     settings: Settings,
-    speed: f64
+    speed: f64,
 }
-
 
 #[derive(Debug)]
 pub enum PointerSpeedMsg {
@@ -23,59 +17,54 @@ pub enum PointerSpeedMsg {
 }
 
 #[derive(Debug)]
-pub enum PointerSpeedOutput {
-    
-}
+pub enum PointerSpeedOutput {}
 
 #[derive(Debug)]
-pub struct ChoiceInit {
-    pub key: String,
-    pub speed: f64,
+pub struct PointerSpeedInit {
     pub settings: Settings,
+    pub speed: f64,
 }
 
 #[relm4::component(pub)]
 impl Component for PointerSpeed {
-    type Init = ChoiceInit;
+    type Init = PointerSpeedInit;
     type Input = PointerSpeedMsg;
     type Output = PointerSpeedOutput;
     type CommandOutput = ();
 
     view! {
-        adw::PreferencesGroup {
-            add = &adw::ActionRow {
-                set_title: "Pointer Speed",
+        adw::ActionRow {
+            set_title: "Pointer Speed",
 
-                add_suffix = &gtk::Box {
+            add_suffix = &gtk::Box {
+                set_orientation: gtk::Orientation::Horizontal,
+                set_spacing: 6,
+                set_halign: gtk::Align::Fill,
+                set_valign: gtk::Align::Center,
+                set_hexpand: true,
+
+                append = &gtk::Label {
+                    set_label: "Slow",
+                    add_css_class: "dim-label",
+                },
+
+                append = &gtk::Scale {
                     set_orientation: gtk::Orientation::Horizontal,
-                    set_spacing: 6,
-                    set_halign: gtk::Align::Fill,
-                    set_valign: gtk::Align::Center,
                     set_hexpand: true,
+                    set_draw_value: false,
+                    set_range: (-1.0, 1.0),
+                    set_value: model.speed,
 
-                    append = &gtk::Label {
-                        set_label: "Slow",
-                        add_css_class: "dim-label",
-                    },
+                    connect_value_changed[sender] => move |scale|{
+                        sender.input(PointerSpeedMsg::PointerSpeed(scale.value()));
+                    }
+                },
 
-                    append = &gtk::Scale {
-                        set_orientation: gtk::Orientation::Horizontal,
-                        set_hexpand: true,
-                        set_draw_value: false,
-                        set_range: (-1.0, 1.0),
-                        set_value: model.speed,
-
-                        connect_value_changed[sender] => move |scale|{
-                            sender.input(PointerSpeedMsg::PointerSpeed(scale.value()));
-                        }
-                    },
-
-                    append = &gtk::Label {
-                        set_label: "Fast",
-                        add_css_class: "dim-label",
-                    },
-                }
-            },
+                append = &gtk::Label {
+                    set_label: "Fast",
+                    add_css_class: "dim-label",
+                },
+            }
         },
     }
 
@@ -84,13 +73,9 @@ impl Component for PointerSpeed {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let value = init.settings.value(init.key.as_str());
-
         let model = Self {
-            key: init.key,
-            speed: init.speed,
             settings: init.settings,
-            value,
+            speed: init.speed,
         };
 
         let widgets = view_output!();
@@ -98,7 +83,7 @@ impl Component for PointerSpeed {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             PointerSpeedMsg::PointerSpeed(speed) => {
                 self.speed = speed;
