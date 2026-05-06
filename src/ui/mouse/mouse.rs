@@ -14,7 +14,6 @@ pub struct Mouse {
     left_handed: bool,
 
     /// pointer speed
-    speed: f64,
     speed_controller: Controller<PointerSpeed>,
 
     /// mouse acceleration
@@ -28,7 +27,6 @@ pub struct Mouse {
 #[derive(Debug, Clone)]
 pub enum MousePageMsg {
     PrimaryButton(bool),
-    PointerSpeed(f64),
     MouseAcceleration(bool),
     ScrollDirection(bool),
 }
@@ -105,7 +103,8 @@ impl SimpleComponent for Mouse {
                     add = &adw::ActionRow {
                         set_title: "Mouse Acceleration",
                         set_subtitle: "Recommended for most users and applications",
-
+                        set_activatable_widget: Some(&mouse_acceleration), 
+                        
                         add_suffix = &gtk::Box {
                             gtk::MenuButton {
                                 set_icon_name: "help-about",
@@ -123,6 +122,7 @@ impl SimpleComponent for Mouse {
                             },
                         },
 
+                        #[name = "mouse_acceleration"]
                         add_suffix = &gtk::Switch {
                             set_valign: gtk::Align::Center,
                             #[watch]
@@ -133,10 +133,12 @@ impl SimpleComponent for Mouse {
                             },
                         },
                     },
-                },
 
-                add = &adw::PreferencesGroup {
-                    set_title: "Scroll Direction",
+                    add = &adw::Clamp {
+                        gtk::Label {
+                            set_label: "Scroll Direction",
+                        }
+                    },
 
                     add = &adw::ActionRow {
 
@@ -279,7 +281,6 @@ impl SimpleComponent for Mouse {
             settings,
 
             left_handed,
-            speed,
             speed_controller,
             accel_profile,
             natural_scroll,
@@ -296,11 +297,6 @@ impl SimpleComponent for Mouse {
                 self.left_handed = state;
 
                 let _ = self.settings.mouse.set_boolean("left-handed", state);
-            }
-            MousePageMsg::PointerSpeed(speed) => {
-                self.speed = speed;
-
-                let _ = self.settings.mouse.set_value("speed", &speed.to_variant());
             }
             MousePageMsg::MouseAcceleration(state) => {
                 self.accel_profile = state;
