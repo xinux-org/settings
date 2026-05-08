@@ -197,11 +197,9 @@ impl SimpleComponent for Touchpad {
 
                                 append = &adw::SwitchRow {
                                     #[watch]
-                                    set_active: model.natural_scroll,
+                                    set_active: model.tap_to_click,
                                     connect_active_notify[sender] => move |btn| {
-                                        if  btn.is_active() {
-                                            sender.input(TouchpadMsg::TapToClick(btn.is_active()));
-                                        }
+                                        sender.input(TouchpadMsg::TapToClick(btn.is_active()));
                                     },
                                 },
 
