@@ -149,7 +149,7 @@ impl SimpleComponent for Touchpad {
                                     set_halign: gtk::Align::Start,
 
                                     append = &gtk::CheckButton {
-                                        set_group: Some(&traditional),
+                                        set_group: Some(&fingers),
 
                                         #[watch]
                                         set_active: !model.secondary_click,
@@ -189,12 +189,21 @@ impl SimpleComponent for Touchpad {
                         add_suffix = &gtk::Box {
                             set_orientation: gtk::Orientation::Horizontal,
                             set_spacing: 12,
-                            set_homogeneous: true,
                             set_hexpand: true,
 
                             append = &gtk::Box {
                                 set_orientation: gtk::Orientation::Vertical,
                                 set_spacing: 6,
+
+                                append = &adw::SwitchRow {
+                                    #[watch]
+                                    set_active: model.natural_scroll,
+                                    connect_active_notify[sender] => move |btn| {
+                                        if  btn.is_active() {
+                                            sender.input(TouchpadMsg::TapToClick(btn.is_active()));
+                                        }
+                                    },
+                                },
 
                                 append = &gtk::Frame {
                                     set_hexpand: true,
@@ -202,40 +211,6 @@ impl SimpleComponent for Touchpad {
                                     set_child = &gtk::Image {
                                         set_icon_name: Some("input-mouse-symbolic"),
                                         set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    append = &gtk::CheckButton {
-                                        set_group: Some(&traditional),
-
-                                        #[watch]
-                                        set_active: model.natural_scroll,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::TapToClick(btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Natural",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the content",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
                                     },
                                 },
                             },
@@ -321,7 +296,7 @@ impl SimpleComponent for Touchpad {
                                     set_halign: gtk::Align::Start,
 
                                     append = &gtk::CheckButton {
-                                        set_group: Some(&traditional),
+                                        set_group: Some(&two_finger),
 
                                         #[watch]
                                         set_active: !model.scroll_method,
@@ -520,12 +495,8 @@ impl SimpleComponent for Touchpad {
             TouchpadMsg::SendEvents(state) => {
                 self.send_events = state;
 
-                let variant = if state {
-                    "enabled"
-                } else {
-                    "disabled"
-                };
-                
+                let variant = if state { "enabled" } else { "disabled" };
+
                 let _ = self
                     .settings
                     .touchpad
@@ -561,11 +532,13 @@ impl SimpleComponent for Touchpad {
             TouchpadMsg::ScrollMethod(state) => {
                 self.scroll_method = state;
 
+                println!("State: {:?}", state);
+
                 if state {
                     let _ = self
                         .settings
                         .touchpad
-                        .set_value("edge-scrolling-method", &false.to_variant());
+                        .set_value("edge-scrolling-enabled", &false.to_variant());
 
                     let _ = self
                         .settings
@@ -575,12 +548,13 @@ impl SimpleComponent for Touchpad {
                     let _ = self
                         .settings
                         .touchpad
+                        .set_value("edge-scrolling-enabled", &true.to_variant());
+
+                    let _ = self
+                        .settings
+                        .touchpad
                         .set_value("two-finger-scrolling-enabled", &false.to_variant());
                 }
-                let _ = self
-                    .settings
-                    .touchpad
-                    .set_value("edge-scrolling-method", &true.to_variant());
             }
             TouchpadMsg::ScrollDirection(state) => {
                 self.natural_scroll = state;

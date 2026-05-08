@@ -103,8 +103,8 @@ impl SimpleComponent for Mouse {
                     add = &adw::ActionRow {
                         set_title: "Mouse Acceleration",
                         set_subtitle: "Recommended for most users and applications",
-                        set_activatable_widget: Some(&mouse_acceleration), 
-                        
+                        set_activatable_widget: Some(&mouse_acceleration),
+
                         add_suffix = &gtk::Box {
                             gtk::MenuButton {
                                 set_icon_name: "help-about",
