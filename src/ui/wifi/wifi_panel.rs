@@ -12,6 +12,7 @@ use relm4::{
     },
     prelude::*,
 };
+use std::sync::Arc;
 use tracing::debug;
 
 pub struct WifiModel {
@@ -44,6 +45,22 @@ pub struct WifiModel {
 //     fn set_airplane_mode(&self, value: bool) -> zbus::Result<()>;
 // }
 
+// #[tokio::main]
+// async fn main() -> nmrs::Result<()> {
+//     let nm = NetworkManager::new().await?;
+
+//     // 1. Monitor network changes (e.g., signal strength, SSID)
+//     nm.monitor_network_changes(|| {
+//         println!("Networks changed! Refresh your UI.");
+//     }).await?;
+
+//     // 2. Monitor device state changes (e.g., WiFi connected/disconnected)
+//     nm.monitor_device_changes(|| {
+//         println!("Device state changed!");
+//     }).await?;
+
+//     Ok(())
+// }
 #[derive(Debug)]
 pub enum WifiInput {
     NetworksLoaded(Vec<WifiNetwork>),
@@ -211,6 +228,24 @@ impl SimpleAsyncComponent for WifiModel {
         } else {
             WifiStack::WifiOff
         };
+        // 1. Monitor network changes (e.g., signal strength, SSID)
+        let clinet_clone = nm.clone();
+        // relm4::spawn_local(async move {
+        //     let wifi_status0 = &clinet_clone
+        //         .monitor_network_changes(|| {
+        //             println!("Networks changed! Refresh your UI.");
+        //         })
+        //         .await;
+
+        //     // 2. Monitor device state changes (e.g., WiFi connected/disconnected)
+        //     clinet_clone
+        //         .monitor_device_changes(|| {
+        //             println!("Device state changed!");
+        //         })
+        //         .await;
+        // });
+
+        // Spawn monitoring task
 
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
@@ -233,6 +268,14 @@ impl SimpleAsyncComponent for WifiModel {
         let widgets = view_output!();
         let wifi_stack = widgets.wifi_stack.clone();
         model.wifi_stack = wifi_stack;
+
+        relm4::spawn_local(async move {
+            loop {
+                let wifi_status = is_wifi_enabled(&clinet_clone).await;
+                sender.input(WifiInput::ToggleWifi(wifi_status));
+                println!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n\n\n\n\n");
+            }
+        });
 
         // let sender_clone = sender.clone();
         // relm4::spawn_local(async move {
