@@ -48,6 +48,7 @@ pkgs.mkShell {
     pkg-config
     gdk-pixbuf
     libadwaita
+    libudev-zero
     pkg-config
     gnome-desktop
     appstream
