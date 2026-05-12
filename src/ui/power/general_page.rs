@@ -9,7 +9,9 @@ use relm4::{
     gtk::{self},
     prelude::*,
 };
+
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
+
 use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
@@ -18,7 +20,7 @@ use crate::ui::power::components::auto_suspend::{
     AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
 };
 use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
-use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
+use crate::ui::power::components::screen_black::{AutoScreenBlank};
 
 use gtk::gio::Settings;
 

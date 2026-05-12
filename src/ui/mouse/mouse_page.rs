@@ -9,6 +9,8 @@ use std::convert::identity;
 
 use crate::ui::mouse::touchpad::Touchpad;
 
+use input;
+
 #[derive(Debug, Clone)]
 pub struct MouseSettings {
     pub mouse: Settings,
@@ -47,8 +49,8 @@ impl SimpleComponent for MouseModal {
     view! {
         #[root]
         adw::BreakpointBin {
-            // when no battery found itʻs shows only general page,
-            // otherwise shows battery and view_switcher_bar
+            // when no trackpad is found itʻs shows only general page,
+            // otherwise view_switcher_bar
             add_breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
                 adw::BreakpointConditionLengthType::MinWidth,
                 560.0,
