@@ -11,6 +11,11 @@
     transition: all 1s;
 }
 
+.wallpaper-button {
+    padding: 0px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
 /* below copied from: gnome-control-center/shell/style.css */
 
 /*

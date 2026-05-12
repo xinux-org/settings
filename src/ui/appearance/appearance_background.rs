@@ -5,6 +5,7 @@ use relm4::{adw::prelude::*, gtk, prelude::*};
 pub struct Background {
     pub path: String,
     pub group: gtk::ToggleButton,
+    pub active: bool,
 }
 
 #[derive(Debug)]
@@ -42,12 +43,13 @@ impl FactoryComponent for Background {
             // #[name="wallpaper_group"]
             gtk::ToggleButton {
                 set_group: Some(&self.group),
-                add_css_class: "style-toggle",
+                add_css_class: "wallpaper-button",
                 set_overflow: gtk::Overflow::Hidden,
+                set_active: self.active,
                 connect_clicked[sender, path = self.path.clone()] => move |_| {
-                    println!("HAHAHAHAHAHAHA");
                     sender.input(BackgroundMsg::SetBackground(path.clone()))
                 },
+
                 gtk::Overlay{
                     add_css_class: "background-thumbnail",
 
@@ -58,16 +60,17 @@ impl FactoryComponent for Background {
                         set_filename: Some(&self.path.clone()),
                         set_can_shrink: true,
                         set_size_request: (200, 150),
-
                     },
-                    // add_overlay = &gtk::Button {
-                    //     // set_icon: "cross-small-symbolic",
-                    //     set_halign: gtk::Align::Center,
-                    //     set_valign: gtk::Align::Center,
-                    //     add_css_class: "osd",
-                    //     add_css_class: "circular",
-                    //     add_css_class: "remove-button",
-                    // }
+
+                    add_overlay = &gtk::Button {
+                        set_icon_name: "emblem-default",
+                        set_halign: gtk::Align::End,
+                        set_valign: gtk::Align::End,
+                        add_css_class: "osd",
+                        add_css_class: "circular",
+                        add_css_class: "remove-button",
+                        set_visible: self.active
+                    }
                 }
             }
 
@@ -79,6 +82,7 @@ impl FactoryComponent for Background {
         Self {
             path: init.path,
             group: init.group,
+            active: init.active,
         }
     }
 

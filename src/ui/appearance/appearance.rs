@@ -486,9 +486,22 @@ impl SimpleComponent for AppearanceModel {
             match fs::read_dir(&path) {
                 Ok(rd) => rd
                     .map(|x| {
+                        let path = x.unwrap().path().to_str().unwrap().to_string();
+                        if path == settings.background.get::<String>("picture-uri") {
+                            println!("AXAXXAXAXAXAXAXAAXAXAXAXAXAXAXAXAXA, walpaper found ")
+                        }
+
+                        println!(
+                            "CURRENT wallpaper is: {}\nbut current I is: {}",
+                            &settings.background.get::<String>("picture-uri")[51..].to_string(),
+                            path[47..].to_string()
+                        );
+
                         model.wallpapers.guard().push_back(Background {
-                            path: x.unwrap().path().to_str().unwrap().to_string(),
+                            path: path.clone(),
                             group: model.group.clone(),
+                            active: path[47..]
+                                == settings.background.get::<String>("picture-uri")[51..],
                         });
                     })
                     .collect(),
@@ -510,6 +523,7 @@ impl SimpleComponent for AppearanceModel {
             model.recent_wallpapers.guard().push_back(Background {
                 path: x.unwrap().path().to_str().unwrap().to_string(),
                 group: model.group.clone(),
+                active: false,
             });
         })
         .collect();
@@ -536,6 +550,7 @@ impl SimpleComponent for AppearanceModel {
                 self.recent_wallpapers.guard().push_back(Background {
                     path: path.to_str().unwrap().to_string(),
                     group: self.group.clone(),
+                    active: false,
                 });
 
                 std::fs::copy(
