@@ -7,9 +7,9 @@ use relm4::gtk;
 use relm4::prelude::*;
 use std::convert::identity;
 
-use input::event::EventTrait;
-use input::{Libinput};
 use crate::ui::mouse::touchpad::Touchpad;
+use input::Libinput;
+use input::event::EventTrait;
 
 use crate::utils::input::Interface;
 
@@ -174,22 +174,27 @@ impl SimpleComponent for MouseModal {
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
-        while let Some(event) = input.next() {
-            let device = event.device();
+        let events: Vec<bool> = input
+            .clone()
+            .collect::<Vec<input::Event>>()
+            .into_iter()
+            .map(|event| event.device())
+            .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
+            .map(|device| device.has_capability(input::DeviceCapability::Gesture))
+            .collect();
 
-            if device.has_capability(input::DeviceCapability::Gesture) {
+        println!("Events: {:#?}", events);
+
+        if events.len() > 0 {
                 touchpad_swticher.set_title(Some("Touchpad"));
                 touchpad_swticher.set_name(Some("touchpad")); // do not translate
                 touchpad_swticher.set_icon_name(Some("input-touchpad"));
-            }
-
-            if device.name().contains("TrackPoint") {
-                pointing_stick_switcher.set_title(Some("Pointing Stick"));
-                pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
-                pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
-            }
         }
-
+        // if device.name().contains("TrackPoint") {
+        //     pointing_stick_switcher.set_title(Some("Pointing Stick"));
+        //     pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
+        //     pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
+        // }
 
         ComponentParts { model, widgets }
     }
