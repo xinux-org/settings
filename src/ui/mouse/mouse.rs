@@ -108,20 +108,16 @@ impl SimpleComponent for Mouse {
                         add_suffix = &gtk::Box {
                             gtk::MenuButton {
                                 set_icon_name: "help-about",
-
                                 set_direction: gtk::ArrowType::Down,
-
                                 #[wrap(Some)]
                                 set_popover = &gtk::Popover {
                                     set_valign: gtk::Align::Center,
-
                                     gtk::Label {
                                         set_label: "Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
                                     },
                                 },
                             },
                         },
-
                         #[name = "mouse_acceleration"]
                         add_suffix = &gtk::Switch {
                             set_valign: gtk::Align::Center,
@@ -134,116 +130,274 @@ impl SimpleComponent for Mouse {
                         },
                     },
 
-                    add = &adw::Clamp {
-                        gtk::Label {
-                            set_label: "Scroll Direction",
-                        }
-                    },
+                    ////////////////////////////// gif
+                    add = &gtk::Box {
+                        set_hexpand: true,
+                        set_homogeneous: true,
+                        set_spacing: 3,
+                        #[name(default_option_box)]
+                        gtk::Box {
+                            set_accessible_role: gtk::AccessibleRole::Radio,
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_can_focus: true,
+                            set_focusable: true,
+                            set_receives_default: true,
+                            // accessibility {
+                            //     labelled-by: default_option_title;
+                            //     described-by: default_option_subtitle;
+                            // }
+                            #[iterate]
+                            add_css_class: ["activatable","card"],
+                            // gtk::EventControllerMotion {
+                            //     // Read C code blya
+                            //     // connect_enter => some sender
+                            //     // connect_leave => some sender
+                            // },
+                            //
+                            // gtk::GestureClick {
+                            //     released => $on_option_released_cb(default_option_box);
+                            // }
 
-                    add = &adw::ActionRow {
+                            adw::Bin {
+                                set_margin_top: 9,
+                                set_margin_bottom: 9,
+                                set_margin_start: 9,
+                                set_margin_end: 9,
 
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 12,
-                            set_homogeneous: true,
-                            set_hexpand: true,
+                                #[iterate]
+                                add_css_class: ["background","frame"],
 
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
+                                #[name(default_option_picture)]
+                                gtk::Picture {
                                     set_hexpand: true,
+                                    set_halign: gtk::Align::Center,
+                                    set_margin_top: 6,
+                                    set_margin_bottom: 6,
+                                    set_margin_start: 6,
+                                    set_margin_end: 6,
+                                    set_height_request: 128,
 
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    #[name = "traditional"]
-                                    append = &gtk::CheckButton {
-                                        #[watch]
-                                        set_active: !model.natural_scroll,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(MousePageMsg::ScrollDirection(!btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Traditional",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the view",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
+                                    // #[name(default_option_mask)]
+                                    set_filename: Some("/home/bahrom/workplace/xinux/settings/src/ui/mouse/assets/scroll-traditional.webm"),
                                 },
                             },
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
+                            gtk::Box {
+                                set_margin_start: 15,
+                                set_margin_bottom: 9,
+                                #[name(default_checkbutton_image)]
+                                adw::Bin {
+                                    add_css_class: "radio",
+                                    set_can_target: false,
+                                    set_valign: gtk::Align::Center,
+                                    set_halign: gtk::Align::Center
                                 },
+                                gtk::Box {
+                                    set_valign: gtk::Align::Center,
+                                    set_margin_start: 6,
+                                    set_orientation: gtk::Orientation::Vertical,
+                                    add_css_class: "title",
 
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    append = &gtk::CheckButton {
-                                        set_group: Some(&traditional),
-
-                                        #[watch]
-                                        set_active: model.natural_scroll,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(MousePageMsg::ScrollDirection(btn.is_active()));
-                                            }
-                                        },
+                                    #[name(default_option_title)]
+                                    gtk::Label {
+                                        set_use_underline: true,
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: "aaaaaaaaaaaaah",
+                                        add_css_class: "title",
                                     },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Natural",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the content",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
+                                    #[name(default_option_subtitle)]
+                                    gtk::Label {
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: "aaaaaaaaaaaaah subtitle",
+                                        add_css_class: "subtitle",
                                     },
+                                }
+                            },
+                        },
+                        #[name(alternative_option_box)]
+                        gtk::Box {
+                            set_accessible_role: gtk::AccessibleRole::Radio,
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_can_focus: true,
+                            set_focusable: true,
+                            set_receives_default: true,
+                            // accessibility {
+                            //     labelled-by: default_option_title;
+                            //     described-by: default_option_subtitle;
+                            // }
+                            #[iterate]
+                            add_css_class: ["activatable","card"],
+                            // gtk::EventControllerMotion {
+                            //     // Read C code blya
+                            //     // connect_enter => some sender
+                            //     // connect_leave => some sender
+                            // },
+                            //
+                            // gtk::GestureClick {
+                            //     released => $on_option_released_cb(default_option_box);
+                            // }
+
+                            adw::Bin {
+                                set_margin_top: 9,
+                                set_margin_bottom: 9,
+                                set_margin_start: 9,
+                                set_margin_end: 9,
+
+                                #[iterate]
+                                add_css_class: ["background","frame"],
+
+                                #[name(alternative_option_picture)]
+                                gtk::Picture {
+                                    set_hexpand: true,
+                                    set_halign: gtk::Align::Center,
+                                    set_margin_top: 6,
+                                    set_margin_bottom: 6,
+                                    set_margin_start: 6,
+                                    set_margin_end: 6,
+                                    set_height_request: 128,
+
+                                    // #[name(default_option_mask)]
+                                    // paintable: $CcMaskPaintable {
+                                    //     follow-accent: true;
+                                    // };
                                 },
                             },
-                        }
+                            gtk::Box {
+                                set_margin_start: 15,
+                                set_margin_bottom: 9,
+                                #[name(alternative_checkbutton_image)]
+                                adw::Bin {
+                                    add_css_class: "radio",
+                                    set_can_target: false,
+                                    set_valign: gtk::Align::Center,
+                                    set_halign: gtk::Align::Center
+                                },
+                                gtk::Box {
+                                    set_valign: gtk::Align::Center,
+                                    set_margin_start: 6,
+                                    set_orientation: gtk::Orientation::Vertical,
+                                    add_css_class: "title",
+
+                                    #[name(alternative_option_title)]
+                                    gtk::Label {
+                                        set_use_underline: true,
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: "aaaaaaaaaaaaah",
+                                        add_css_class: "title",
+                                    },
+                                    #[name(alternative_option_subtitle)]
+                                    gtk::Label {
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: "aaaaaaaaaaaaah subtitle",
+                                        add_css_class: "subtitle",
+                                    },
+                                }
+                            },
+                        },
+
+                        ///////// old logic
+                        // append = &gtk::Box {
+                        //     set_orientation: gtk::Orientation::Vertical,
+                        //     set_spacing: 6,
+
+                        //     append = &gtk::Frame {
+                        //         set_hexpand: true,
+
+                        //         #[wrap(Some)]
+                        //         set_child = &gtk::Image {
+                        //             set_icon_name: Some("input-mouse-symbolic"),
+                        //             set_pixel_size: 64,
+                        //         },
+                        //     },
+
+                        //     append = &gtk::Box {
+                        //         set_orientation: gtk::Orientation::Horizontal,
+                        //         set_spacing: 6,
+                        //         set_halign: gtk::Align::Start,
+
+                        //         #[name = "traditional"]
+                        //         append = &gtk::CheckButton {
+                        //             #[watch]
+                        //             set_active: !model.natural_scroll,
+                        //             connect_toggled[sender] => move |btn| {
+                        //                 if  btn.is_active() {
+                        //                     sender.input(MousePageMsg::ScrollDirection(!btn.is_active()));
+                        //                 }
+                        //             },
+                        //         },
+
+                        //         append = &gtk::Box {
+                        //             set_orientation: gtk::Orientation::Vertical,
+
+                        //             append = &gtk::Label {
+                        //                 set_label: "Traditional",
+                        //                 set_halign: gtk::Align::Start,
+                        //             },
+
+                        //             append = &gtk::Label {
+                        //                 set_label: "Scrolling moves the view",
+                        //                 set_halign: gtk::Align::Start,
+                        //                 add_css_class: "dim-label",
+                        //                 add_css_class: "caption",
+                        //             },
+                        //         },
+                        //     },
+                        // },
+
+                        // append = &gtk::Box {
+                        //     set_orientation: gtk::Orientation::Vertical,
+                        //     set_spacing: 6,
+
+                        //     append = &gtk::Frame {
+                        //         set_hexpand: true,
+                        //         #[wrap(Some)]
+                        //         set_child = &gtk::Image {
+                        //             set_icon_name: Some("input-mouse-symbolic"),
+                        //             set_pixel_size: 64,
+                        //         },
+                        //     },
+
+                        //     append = &gtk::Box {
+                        //         set_orientation: gtk::Orientation::Horizontal,
+                        //         set_spacing: 6,
+                        //         set_halign: gtk::Align::Start,
+
+                        //         append = &gtk::CheckButton {
+                        //             set_group: Some(&traditional),
+
+                        //             #[watch]
+                        //             set_active: model.natural_scroll,
+                        //             connect_toggled[sender] => move |btn| {
+                        //                 if  btn.is_active() {
+                        //                     sender.input(MousePageMsg::ScrollDirection(btn.is_active()));
+                        //                 }
+                        //             },
+                        //         },
+
+                        //         append = &gtk::Box {
+                        //             set_orientation: gtk::Orientation::Vertical,
+
+                        //             append = &gtk::Label {
+                        //                 set_label: "Natural",
+                        //                 set_halign: gtk::Align::Start,
+                        //             },
+
+                        //             append = &gtk::Label {
+                        //                 set_label: "Scrolling moves the content",
+                        //                 set_halign: gtk::Align::Start,
+                        //                 add_css_class: "dim-label",
+                        //                 add_css_class: "caption",
+                        //             },
+                        //         },
+                        //     },
+                        // },
                     },
                 },
 
@@ -316,4 +470,19 @@ impl SimpleComponent for Mouse {
             }
         }
     }
+}
+
+use relm4::gtk::{
+    gdk::Texture,
+    gdk_pixbuf::Pixbuf,
+    gio::{Cancellable, MemoryInputStream},
+    glib,
+};
+
+fn embedded_logo() -> Texture {
+    let bytes = include_bytes!("assets/scroll-traditional.webm");
+    let g_bytes = glib::Bytes::from(&bytes.to_vec());
+    let stream = MemoryInputStream::from_bytes(&g_bytes);
+    let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
+    Texture::for_pixbuf(&pixbuf)
 }
