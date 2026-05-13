@@ -3,6 +3,7 @@ use relm4::adw::prelude::*;
 use relm4::gtk::gio;
 use relm4::prelude::*;
 
+const GLOBAL_SCHEMA: &str = "org.gnome.desktop.notifications";
 const APP_SCHEMA: &str = "org.gnome.desktop.notifications.application";
 const APP_PREFIX: &str = "/org/gnome/desktop/notifications/application/";
 
@@ -32,6 +33,7 @@ pub struct AppNotificationsPageModel {
     pub app: AppNotificationItem,
     pub do_not_disturb: bool,
     pub lock_screen_notifications: bool,
+    settings: gio::Settings,
 }
 
 #[derive(Debug)]
@@ -42,6 +44,7 @@ pub enum AppNotificationsPageInput {
     SetForceExpanded(bool),
     SetShowInLockScreen(bool),
     SetDetailsInLockScreen(bool),
+    ReloadFromGSettings,
 }
 
 #[derive(Debug)]
@@ -65,9 +68,12 @@ impl SimpleComponent for AppNotificationsPageModel {
                 adw::SwitchRow {
                     set_title: "Notifications",
                     set_subtitle: "Show in notifications list",
+
                     #[watch]
                     set_active: model.app.enable,
+
                     set_sensitive: true,
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetNotifications(row.is_active()));
                     }
@@ -77,10 +83,13 @@ impl SimpleComponent for AppNotificationsPageModel {
                 adw::SwitchRow {
                     set_title: "Sound",
                     set_subtitle: "Allow notification sounds from app",
+
                     #[watch]
                     set_active: model.app.enable_sound_alerts,
+
                     #[watch]
                     set_sensitive: model.app.enable,
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetSoundAlerts(row.is_active()));
                     }
@@ -94,10 +103,13 @@ impl SimpleComponent for AppNotificationsPageModel {
                 adw::SwitchRow {
                     set_title: "Show Banners",
                     set_subtitle: "Show notifications above apps",
+
                     #[watch]
                     set_active: model.app.show_banners,
+
                     #[watch]
                     set_sensitive: model.app.enable && !model.do_not_disturb,
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetShowBanners(row.is_active()));
                     }
@@ -107,10 +119,15 @@ impl SimpleComponent for AppNotificationsPageModel {
                 adw::SwitchRow {
                     set_title: "Show Content",
                     set_subtitle: "Include message details in notification banners",
+
                     #[watch]
                     set_active: model.app.force_expanded,
+
                     #[watch]
-                    set_sensitive: model.app.enable && model.app.show_banners && !model.do_not_disturb,
+                    set_sensitive: model.app.enable
+                        && model.app.show_banners
+                        && !model.do_not_disturb,
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetForceExpanded(row.is_active()));
                     }
@@ -124,10 +141,13 @@ impl SimpleComponent for AppNotificationsPageModel {
                 adw::SwitchRow {
                     set_title: "Show Banners",
                     set_subtitle: "Show notifications on lock screen",
+
                     #[watch]
                     set_active: model.app.show_in_lock_screen,
+
                     #[watch]
                     set_sensitive: model.app.enable && model.lock_screen_notifications,
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetShowInLockScreen(row.is_active()));
                     }
@@ -137,12 +157,15 @@ impl SimpleComponent for AppNotificationsPageModel {
                 adw::SwitchRow {
                     set_title: "Show Content",
                     set_subtitle: "Include message details on lock screen",
+
                     #[watch]
                     set_active: model.app.details_in_lock_screen,
+
                     #[watch]
                     set_sensitive: model.app.enable
                         && model.app.show_in_lock_screen
                         && model.lock_screen_notifications,
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetDetailsInLockScreen(row.is_active()));
                     }
@@ -156,96 +179,207 @@ impl SimpleComponent for AppNotificationsPageModel {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        ensure_app_notification_child(&init.app.canonical_id);
+
+        let settings = app_settings_for_canonical(&init.app.canonical_id);
+
+        let mut app = init.app;
+        reload_app_from_settings(&mut app, &settings);
+
+        for key in [
+            "enable",
+            "enable-sound-alerts",
+            "show-banners",
+            "force-expanded",
+            "show-in-lock-screen",
+            "details-in-lock-screen",
+        ] {
+            let sender = sender.clone();
+
+            settings.connect_changed(Some(key), move |_settings, _key| {
+                sender.input(AppNotificationsPageInput::ReloadFromGSettings);
+            });
+        }
+
         let model = AppNotificationsPageModel {
-            app: init.app,
+            app,
             do_not_disturb: init.do_not_disturb,
             lock_screen_notifications: init.lock_screen_notifications,
+            settings,
         };
 
         let widgets = view_output!();
+
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, msg: AppNotificationsPageInput, sender: ComponentSender<Self>) {
+        let mut changed = false;
+
         match msg {
             AppNotificationsPageInput::SetNotifications(value) => {
-                self.app.enable = value;
-                save_app_bool(&self.app.canonical_id, "enable", value);
+                if self.app.enable != value {
+                    self.app.enable = value;
+                    save_app_bool(&self.settings, "enable", value);
+                    changed = true;
 
-                if !value {
-                    self.app.enable_sound_alerts = false;
-                    self.app.show_banners = false;
-                    self.app.force_expanded = false;
-                    self.app.show_in_lock_screen = false;
-                    self.app.details_in_lock_screen = false;
+                    if !value {
+                        if self.app.enable_sound_alerts {
+                            self.app.enable_sound_alerts = false;
+                            save_app_bool(&self.settings, "enable-sound-alerts", false);
+                        }
 
-                    save_app_bool(&self.app.canonical_id, "enable-sound-alerts", false);
-                    save_app_bool(&self.app.canonical_id, "show-banners", false);
-                    save_app_bool(&self.app.canonical_id, "force-expanded", false);
-                    save_app_bool(&self.app.canonical_id, "show-in-lock-screen", false);
-                    save_app_bool(&self.app.canonical_id, "details-in-lock-screen", false);
+                        if self.app.show_banners {
+                            self.app.show_banners = false;
+                            save_app_bool(&self.settings, "show-banners", false);
+                        }
+
+                        if self.app.force_expanded {
+                            self.app.force_expanded = false;
+                            save_app_bool(&self.settings, "force-expanded", false);
+                        }
+
+                        if self.app.show_in_lock_screen {
+                            self.app.show_in_lock_screen = false;
+                            save_app_bool(&self.settings, "show-in-lock-screen", false);
+                        }
+
+                        if self.app.details_in_lock_screen {
+                            self.app.details_in_lock_screen = false;
+                            save_app_bool(&self.settings, "details-in-lock-screen", false);
+                        }
+                    }
                 }
             }
 
             AppNotificationsPageInput::SetSoundAlerts(value) => {
-                if self.app.enable {
+                if self.app.enable && self.app.enable_sound_alerts != value {
                     self.app.enable_sound_alerts = value;
-                    save_app_bool(&self.app.canonical_id, "enable-sound-alerts", value);
+                    save_app_bool(&self.settings, "enable-sound-alerts", value);
+                    changed = true;
                 }
             }
 
             AppNotificationsPageInput::SetShowBanners(value) => {
-                if self.app.enable && !self.do_not_disturb {
+                if self.app.enable && !self.do_not_disturb && self.app.show_banners != value {
                     self.app.show_banners = value;
-                    save_app_bool(&self.app.canonical_id, "show-banners", value);
+                    save_app_bool(&self.settings, "show-banners", value);
+                    changed = true;
 
-                    if !value {
+                    if !value && self.app.force_expanded {
                         self.app.force_expanded = false;
-                        save_app_bool(&self.app.canonical_id, "force-expanded", false);
+                        save_app_bool(&self.settings, "force-expanded", false);
                     }
                 }
             }
 
             AppNotificationsPageInput::SetForceExpanded(value) => {
-                if self.app.enable && self.app.show_banners && !self.do_not_disturb {
+                if self.app.enable
+                    && self.app.show_banners
+                    && !self.do_not_disturb
+                    && self.app.force_expanded != value
+                {
                     self.app.force_expanded = value;
-                    save_app_bool(&self.app.canonical_id, "force-expanded", value);
+                    save_app_bool(&self.settings, "force-expanded", value);
+                    changed = true;
                 }
             }
 
             AppNotificationsPageInput::SetShowInLockScreen(value) => {
-                if self.app.enable && self.lock_screen_notifications {
+                if self.app.enable
+                    && self.lock_screen_notifications
+                    && self.app.show_in_lock_screen != value
+                {
                     self.app.show_in_lock_screen = value;
-                    save_app_bool(&self.app.canonical_id, "show-in-lock-screen", value);
+                    save_app_bool(&self.settings, "show-in-lock-screen", value);
+                    changed = true;
 
-                    if !value {
+                    if !value && self.app.details_in_lock_screen {
                         self.app.details_in_lock_screen = false;
-                        save_app_bool(&self.app.canonical_id, "details-in-lock-screen", false);
+                        save_app_bool(&self.settings, "details-in-lock-screen", false);
                     }
                 }
             }
 
             AppNotificationsPageInput::SetDetailsInLockScreen(value) => {
-                if self.app.enable && self.app.show_in_lock_screen && self.lock_screen_notifications
+                if self.app.enable
+                    && self.app.show_in_lock_screen
+                    && self.lock_screen_notifications
+                    && self.app.details_in_lock_screen != value
                 {
                     self.app.details_in_lock_screen = value;
-                    save_app_bool(&self.app.canonical_id, "details-in-lock-screen", value);
+                    save_app_bool(&self.settings, "details-in-lock-screen", value);
+                    changed = true;
+                }
+            }
+
+            AppNotificationsPageInput::ReloadFromGSettings => {
+                let old_app = self.app.clone();
+
+                reload_app_from_settings(&mut self.app, &self.settings);
+
+                if old_app.enable != self.app.enable
+                    || old_app.enable_sound_alerts != self.app.enable_sound_alerts
+                    || old_app.show_banners != self.app.show_banners
+                    || old_app.force_expanded != self.app.force_expanded
+                    || old_app.show_in_lock_screen != self.app.show_in_lock_screen
+                    || old_app.details_in_lock_screen != self.app.details_in_lock_screen
+                {
+                    changed = true;
                 }
             }
         }
 
-        let _ = sender.output(AppNotificationsPageOutput::Changed(self.app.clone()));
+        if changed {
+            let _ = sender.output(AppNotificationsPageOutput::Changed(self.app.clone()));
+        }
     }
 }
 
-fn save_app_bool(canonical_id: &str, key: &str, value: bool) {
+pub fn ensure_app_notification_child(canonical_id: &str) {
+    let global_settings = gio::Settings::new(GLOBAL_SCHEMA);
+
+    let mut children: Vec<String> = global_settings
+        .strv("application-children")
+        .iter()
+        .map(|child| child.to_string())
+        .collect();
+
+    if children.iter().any(|child| child == canonical_id) {
+        return;
+    }
+
+    children.push(canonical_id.to_string());
+
+    let children_refs: Vec<&str> = children.iter().map(String::as_str).collect();
+
+    let _ = global_settings.set_strv("application-children", children_refs.as_slice());
+}
+
+pub fn app_settings_for_canonical(canonical_id: &str) -> gio::Settings {
+    ensure_app_notification_child(canonical_id);
+
     let path = format!("{APP_PREFIX}{canonical_id}/");
-    let settings = gio::Settings::with_path(APP_SCHEMA, &path);
-    let _ = settings.set_boolean(key, value);
+
+    gio::Settings::with_path(APP_SCHEMA, &path)
 }
 
 pub fn app_bool_from_canonical(canonical_id: &str, key: &str) -> bool {
-    let path = format!("{APP_PREFIX}{canonical_id}/");
-    let settings = gio::Settings::with_path(APP_SCHEMA, &path);
+    let settings = app_settings_for_canonical(canonical_id);
     settings.boolean(key)
+}
+
+fn save_app_bool(settings: &gio::Settings, key: &str, value: bool) {
+    if settings.boolean(key) != value {
+        let _ = settings.set_boolean(key, value);
+    }
+}
+
+fn reload_app_from_settings(app: &mut AppNotificationItem, settings: &gio::Settings) {
+    app.enable = settings.boolean("enable");
+    app.enable_sound_alerts = settings.boolean("enable-sound-alerts");
+    app.show_banners = settings.boolean("show-banners");
+    app.force_expanded = settings.boolean("force-expanded");
+    app.show_in_lock_screen = settings.boolean("show-in-lock-screen");
+    app.details_in_lock_screen = settings.boolean("details-in-lock-screen");
 }
