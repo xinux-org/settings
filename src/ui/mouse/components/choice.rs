@@ -110,8 +110,8 @@ impl Component for Choice {
                             append = &gtk::Label {
                                 set_label: model.subtitles.first().unwrap(),
                                 set_halign: gtk::Align::Start,
-                                add_css_class: "dim-label",
-                                add_css_class: "caption",
+                                #[iterate]
+                                add_css_class: ["dim-label", "caption"],
                             },
                         },
                     },
@@ -155,8 +155,8 @@ impl Component for Choice {
                             append = &gtk::Label {
                                 set_label: model.subtitles.get(1).unwrap(),
                                 set_halign: gtk::Align::Start,
-                                add_css_class: "dim-label",
-                                    add_css_class: "caption",
+                                #[iterate]
+                                add_css_class: ["dim-label", "caption"],
                                 },
                             },
                         },

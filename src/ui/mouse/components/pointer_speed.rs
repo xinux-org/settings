@@ -9,6 +9,7 @@ use relm4::{
 pub struct PointerSpeed {
     settings: Settings,
     speed: f64,
+    mouse_speed_scale: Option<gtk::Scale>,
 }
 
 #[derive(Debug)]
@@ -33,38 +34,29 @@ impl Component for PointerSpeed {
     type CommandOutput = ();
 
     view! {
+        #[name(mouse_row)]
         adw::ActionRow {
             set_title: "Pointer Speed",
-
-            add_suffix = &gtk::Box {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_spacing: 6,
-                set_halign: gtk::Align::Fill,
-                set_valign: gtk::Align::Center,
+            set_use_underline: true,
+            // set_activatable_widget: model.mouse_speed_scale,
+            #[name(mouse_speed_scale)]
+            add_suffix = &gtk::Scale {
                 set_hexpand: true,
-
-                append = &gtk::Label {
-                    set_label: "Slow",
-                    add_css_class: "dim-label",
+                set_value: model.speed,
+                set_range: (-1.0, 1.0),
+                add_mark: (-1.0, gtk::PositionType::Left, Some("Slow")),
+                add_mark: (0.0, gtk::PositionType::Top, None),
+                add_mark: (1.0, gtk::PositionType::Right, Some("Fast")),
+                set_adjustment = &gtk::Adjustment {
+                    set_lower: -1.0,
+                    set_upper: 1.0,
+                    set_step_increment: 0.1,
+                    set_page_increment: 0.1,
                 },
-
-                append = &gtk::Scale {
-                    set_orientation: gtk::Orientation::Horizontal,
-                    set_hexpand: true,
-                    set_draw_value: false,
-                    set_range: (-1.0, 1.0),
-                    set_value: model.speed,
-
-                    connect_value_changed[sender] => move |scale|{
-                        sender.input(PointerSpeedMsg::PointerSpeed(scale.value()));
-                    }
-                },
-
-                append = &gtk::Label {
-                    set_label: "Fast",
-                    add_css_class: "dim-label",
-                },
-            }
+                connect_value_changed[sender] => move |scale|{
+                    sender.input(PointerSpeedMsg::PointerSpeed(scale.value()));
+                }
+            },
         },
     }
 
@@ -73,12 +65,15 @@ impl Component for PointerSpeed {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self {
+        let mut model = Self {
             settings: init.settings,
             speed: init.speed,
+            mouse_speed_scale: None,
         };
 
         let widgets = view_output!();
+        let mouse_speed_scale = widgets.mouse_speed_scale.clone();
+        model.mouse_speed_scale = Some(mouse_speed_scale);
 
         ComponentParts { model, widgets }
     }
