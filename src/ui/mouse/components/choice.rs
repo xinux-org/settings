@@ -188,7 +188,7 @@ impl SimpleComponent for Choice {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             ChoiceMsg::Change(state) => {
                 let index = if state { 0 } else { 1 };

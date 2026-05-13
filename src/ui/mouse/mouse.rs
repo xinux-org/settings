@@ -6,6 +6,11 @@ use crate::ui::mouse::components::pointer_speed::PointerSpeed;
 use crate::ui::mouse::components::pointer_speed::PointerSpeedInit;
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
+use input::Libinput;
+use input::event::EventTrait;
+use crate::utils::input::Interface;
+use input;
+
 #[derive(Debug)]
 pub struct Mouse {
     settings: MouseSettings,
@@ -41,13 +46,6 @@ impl SimpleComponent for Mouse {
         #[root]
         adw::ToolbarView {
             set_top_bar_style: adw::ToolbarStyle::Flat,
-
-            add_top_bar = &adw::HeaderBar {
-                #[wrap(Some)]
-                set_title_widget = &adw::WindowTitle {
-                    set_title: "Mouse & Touchpad",
-                }
-            },
 
             #[wrap(Some)]
             set_content = &adw::PreferencesPage {
@@ -301,110 +299,13 @@ impl SimpleComponent for Mouse {
                                 }
                             },
                         },
-
-                        ///////// old logic
-                        // append = &gtk::Box {
-                        //     set_orientation: gtk::Orientation::Vertical,
-                        //     set_spacing: 6,
-
-                        //     append = &gtk::Frame {
-                        //         set_hexpand: true,
-
-                        //         #[wrap(Some)]
-                        //         set_child = &gtk::Image {
-                        //             set_icon_name: Some("input-mouse-symbolic"),
-                        //             set_pixel_size: 64,
-                        //         },
-                        //     },
-
-                        //     append = &gtk::Box {
-                        //         set_orientation: gtk::Orientation::Horizontal,
-                        //         set_spacing: 6,
-                        //         set_halign: gtk::Align::Start,
-
-                        //         #[name = "traditional"]
-                        //         append = &gtk::CheckButton {
-                        //             #[watch]
-                        //             set_active: !model.natural_scroll,
-                        //             connect_toggled[sender] => move |btn| {
-                        //                 if  btn.is_active() {
-                        //                     sender.input(MousePageMsg::ScrollDirection(!btn.is_active()));
-                        //                 }
-                        //             },
-                        //         },
-
-                        //         append = &gtk::Box {
-                        //             set_orientation: gtk::Orientation::Vertical,
-
-                        //             append = &gtk::Label {
-                        //                 set_label: "Traditional",
-                        //                 set_halign: gtk::Align::Start,
-                        //             },
-
-                        //             append = &gtk::Label {
-                        //                 set_label: "Scrolling moves the view",
-                        //                 set_halign: gtk::Align::Start,
-                        //                 add_css_class: "dim-label",
-                        //                 add_css_class: "caption",
-                        //             },
-                        //         },
-                        //     },
-                        // },
-
-                        // append = &gtk::Box {
-                        //     set_orientation: gtk::Orientation::Vertical,
-                        //     set_spacing: 6,
-
-                        //     append = &gtk::Frame {
-                        //         set_hexpand: true,
-                        //         #[wrap(Some)]
-                        //         set_child = &gtk::Image {
-                        //             set_icon_name: Some("input-mouse-symbolic"),
-                        //             set_pixel_size: 64,
-                        //         },
-                        //     },
-
-                        //     append = &gtk::Box {
-                        //         set_orientation: gtk::Orientation::Horizontal,
-                        //         set_spacing: 6,
-                        //         set_halign: gtk::Align::Start,
-
-                        //         append = &gtk::CheckButton {
-                        //             set_group: Some(&traditional),
-
-                        //             #[watch]
-                        //             set_active: model.natural_scroll,
-                        //             connect_toggled[sender] => move |btn| {
-                        //                 if  btn.is_active() {
-                        //                     sender.input(MousePageMsg::ScrollDirection(btn.is_active()));
-                        //                 }
-                        //             },
-                        //         },
-
-                        //         append = &gtk::Box {
-                        //             set_orientation: gtk::Orientation::Vertical,
-
-                        //             append = &gtk::Label {
-                        //                 set_label: "Natural",
-                        //                 set_halign: gtk::Align::Start,
-                        //             },
-
-                        //             append = &gtk::Label {
-                        //                 set_label: "Scrolling moves the content",
-                        //                 set_halign: gtk::Align::Start,
-                        //                 add_css_class: "dim-label",
-                        //                 add_css_class: "caption",
-                        //             },
-                        //         },
-                        //     },
-                        // },
                     },
                 },
 
                 add = &adw::PreferencesGroup {
                     add = &adw::ButtonRow {
-                            set_title: "Test Settings",
-                            set_end_icon_name: Some("go-next-symbolic"),
+                        set_title: "Test Settings",
+                        set_end_icon_name: Some("go-next-symbolic"),
                     },
                 },
             }
@@ -423,6 +324,21 @@ impl SimpleComponent for Mouse {
         let left_handed = settings.mouse.boolean("left-handed");
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
         let natural_scroll = settings.mouse.boolean("natural-scroll");
+
+        let mut input = Libinput::new_with_udev(Interface);
+        input.udev_assign_seat("seat0").unwrap();
+        input.dispatch().unwrap();
+
+        let events: Vec<bool> = input
+            .clone()
+            .collect::<Vec<input::Event>>()
+            .into_iter()
+            .map(|event| event.device())
+            .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
+            .map(|device| device.has_capability(input::DeviceCapability::Gesture))
+            .collect();
+
+        let show_header = events.is_empty();
 
         let speed_controller = PointerSpeed::builder()
             .launch(PointerSpeedInit {

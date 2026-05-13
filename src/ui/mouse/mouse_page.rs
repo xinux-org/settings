@@ -142,6 +142,7 @@ impl SimpleComponent for MouseModal {
         let mouse = Mouse::builder()
             .launch(())
             .forward(_sender.input_sender(), identity);
+
         let touchpad = Touchpad::builder()
             .launch(())
             .forward(_sender.input_sender(), identity);
@@ -159,7 +160,6 @@ impl SimpleComponent for MouseModal {
         };
 
         let widgets = view_output!();
-
         let view_stack = model.view_stack.clone();
 
         let mouse_switcher = widgets.view_stack.page(model.mouse.widget());
@@ -169,6 +169,14 @@ impl SimpleComponent for MouseModal {
         mouse_switcher.set_title(Some("Mouse"));
         mouse_switcher.set_name(Some("mouse")); // do not translate
         mouse_switcher.set_icon_name(Some("input-mouse"));
+
+        touchpad_swticher.set_title(Some("Touchpad"));
+        touchpad_swticher.set_name(Some("touchpad")); // do not translate
+        touchpad_swticher.set_icon_name(Some("input-touchpad"));
+
+        pointing_stick_switcher.set_title(Some("Pointing Stick"));
+        pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
+        pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
 
         let mut input = Libinput::new_with_udev(Interface);
         input.udev_assign_seat("seat0").unwrap();
@@ -185,15 +193,14 @@ impl SimpleComponent for MouseModal {
 
         println!("Events: {:#?}", events);
 
-        if events.len() > 0 {
-                touchpad_swticher.set_title(Some("Touchpad"));
-                touchpad_swticher.set_name(Some("touchpad")); // do not translate
-                touchpad_swticher.set_icon_name(Some("input-touchpad"));
+        if events.is_empty() {
+            touchpad_swticher.set_visible(false);
+            pointing_stick_switcher.set_visible(false);
+
+            let title_stack = widgets.title_stack.clone();
+            title_stack.set_visible_child_name("window_title");
         }
         // if device.name().contains("TrackPoint") {
-        //     pointing_stick_switcher.set_title(Some("Pointing Stick"));
-        //     pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
-        //     pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
         // }
 
         ComponentParts { model, widgets }
