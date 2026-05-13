@@ -28,9 +28,11 @@ pkgs.stdenv.mkDerivation {
     polkit
     wrapGAppsHook4
     rustPlatform.cargoSetupHook
+    libinput
   ];
 
   buildInputs = with pkgs; [
+    systemd
     gtk4
     gnome-desktop
     libadwaita

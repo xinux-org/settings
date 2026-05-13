@@ -48,7 +48,7 @@ pkgs.mkShell {
     pkg-config
     gdk-pixbuf
     libadwaita
-    libudev-zero
+    libinput
     systemd
     pkg-config
     gnome-desktop
@@ -60,7 +60,10 @@ pkgs.mkShell {
     rustPlatform.bindgenHook
   ];
 
-  buildInputs = with pkgs; [ libinput-zero systemd ];
+  buildInputs = with pkgs; [ 
+    systemd 
+    libinput
+  ];
 
   # Set Environment Variables
   RUST_BACKTRACE = "full";

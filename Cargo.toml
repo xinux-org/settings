@@ -63,3 +63,4 @@ nmrs = "2.0.1"
 futures-util = "0.3.32"
 
 input = "0.10.0"
+libc = "0.2.186"

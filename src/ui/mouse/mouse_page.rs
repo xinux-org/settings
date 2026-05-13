@@ -7,7 +7,11 @@ use relm4::gtk;
 use relm4::prelude::*;
 use std::convert::identity;
 
+use input::event::EventTrait;
+use input::{Libinput};
 use crate::ui::mouse::touchpad::Touchpad;
+
+use crate::utils::input::Interface;
 
 use input;
 
@@ -166,13 +170,26 @@ impl SimpleComponent for MouseModal {
         mouse_switcher.set_name(Some("mouse")); // do not translate
         mouse_switcher.set_icon_name(Some("input-mouse"));
 
-        touchpad_swticher.set_title(Some("Touchpad"));
-        touchpad_swticher.set_name(Some("touchpad")); // do not translate
-        touchpad_swticher.set_icon_name(Some("input-touchpad"));
+        let mut input = Libinput::new_with_udev(Interface);
+        input.udev_assign_seat("seat0").unwrap();
+        input.dispatch().unwrap();
 
-        pointing_stick_switcher.set_title(Some("Pointing Stick"));
-        pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
-        pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
+        while let Some(event) = input.next() {
+            let device = event.device();
+
+            if device.has_capability(input::DeviceCapability::Gesture) {
+                touchpad_swticher.set_title(Some("Touchpad"));
+                touchpad_swticher.set_name(Some("touchpad")); // do not translate
+                touchpad_swticher.set_icon_name(Some("input-touchpad"));
+            }
+
+            if device.name().contains("TrackPoint") {
+                pointing_stick_switcher.set_title(Some("Pointing Stick"));
+                pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
+                pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
+            }
+        }
+
 
         ComponentParts { model, widgets }
     }
