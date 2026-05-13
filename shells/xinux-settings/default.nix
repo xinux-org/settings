@@ -49,7 +49,6 @@ pkgs.mkShell {
     gdk-pixbuf
     libadwaita
     libinput
-    systemd
     pkg-config
     gnome-desktop
     appstream
@@ -60,8 +59,7 @@ pkgs.mkShell {
     rustPlatform.bindgenHook
   ];
 
-  buildInputs = with pkgs; [ 
-    systemd 
+  buildInputs = with pkgs; [
     libinput
   ];
 

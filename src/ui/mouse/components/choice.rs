@@ -51,11 +51,10 @@ pub struct ChoiceInit {
 }
 
 #[relm4::component(pub)]
-impl Component for Choice {
+impl SimpleComponent for Choice {
     type Init = ChoiceInit;
     type Input = ChoiceMsg;
     type Output = ChoiceOutput;
-    type CommandOutput = ();
 
     view! {
     adw::PreferencesGroup {

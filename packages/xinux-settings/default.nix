@@ -32,7 +32,6 @@ pkgs.stdenv.mkDerivation {
   ];
 
   buildInputs = with pkgs; [
-    systemd
     gtk4
     gnome-desktop
     libadwaita
