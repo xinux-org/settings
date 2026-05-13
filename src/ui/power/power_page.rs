@@ -136,11 +136,11 @@ impl SimpleComponent for PowerModel {
 
         general_view_switcher.set_title(Some("General"));
         general_view_switcher.set_name(Some("general")); // do not translate
-        general_view_switcher.set_icon_name(Some("preferences-system-symbolic"));
+        general_view_switcher.set_icon_name(Some("gnome-power-manager"));
 
         saving_view_switcher.set_title(Some("Power Saving"));
         saving_view_switcher.set_name(Some("power-saving")); // do not translate
-        saving_view_switcher.set_icon_name(Some("battery-symbolic"));
+        saving_view_switcher.set_icon_name(Some("power-profile-power-saver"));
 
         // please improve logic and add
         if get_battery_path().is_empty() {

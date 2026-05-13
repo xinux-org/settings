@@ -1,5 +1,6 @@
-use crate::ui::appearance::appearance_background::Background;
+use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
 
+use relm4::factory::Position;
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
 
@@ -69,6 +70,7 @@ pub enum AppearanceStyle {
 #[derive(Debug)]
 pub enum AppearanceMsg {
     SetStyle(AppearanceStyle),
+    SetBackground(String),
     SendPick(AccentColorWrapped),
     OpenRequest,
     OpenResponse(PathBuf),
@@ -457,7 +459,13 @@ impl SimpleComponent for AppearanceModel {
                 OpenDialogResponse::Cancel => AppearanceMsg::Ignore,
             });
 
-        let wallpapers = FactoryVecDeque::builder().launch_default().detach();
+        let wallpapers = FactoryVecDeque::builder()
+            .launch(gtk::FlowBox::default())
+            .forward(sender.input_sender(), |output| match output {
+                BackgroundOutput::SetBackgroundPath(path) => {
+                    AppearanceMsg::SetBackground(path.clone())
+                }
+            });
         let recent_wallpapers = FactoryVecDeque::builder().launch_default().detach();
         let settings = AppearanceSettings::new();
         let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
@@ -490,13 +498,6 @@ impl SimpleComponent for AppearanceModel {
                         if path == settings.background.get::<String>("picture-uri") {
                             println!("AXAXXAXAXAXAXAXAAXAXAXAXAXAXAXAXAXA, walpaper found ")
                         }
-
-                        println!(
-                            "CURRENT wallpaper is: {}\nbut current I is: {}",
-                            &settings.background.get::<String>("picture-uri")[51..].to_string(),
-                            path[47..].to_string()
-                        );
-
                         model.wallpapers.guard().push_back(Background {
                             path: path.clone(),
                             group: model.group.clone(),
@@ -577,6 +578,47 @@ impl SimpleComponent for AppearanceModel {
 
                     AppearanceStyle::Default => {
                         settings.interface.set("color-scheme", "default").unwrap();
+                    }
+                }
+            }
+
+            AppearanceMsg::SetBackground(path) => {
+                let _ = settings.background.set(
+                    match settings.interface.get::<String>("color-scheme").as_str() {
+                        "prefer-dark" => "picture-uri-dark",
+                        _ => "picture-uri",
+                    },
+                    format!("file://{}", path),
+                );
+                println!("BACKGROUND: {}", &path.clone());
+
+                self.wallpapers.guard().drop();
+
+                let bg_base_dir = "/run/current-system/sw/share/backgrounds";
+                let folders: [&str; 2] = ["nixos", "gnome"];
+
+                for folder in folders {
+                    let path: PathBuf = Path::new(bg_base_dir).join(folder);
+                    match fs::read_dir(&path) {
+                        Ok(rd) => rd
+                            .map(|x| {
+                                let path = x.unwrap().path().to_str().unwrap().to_string();
+                                if path == settings.background.get::<String>("picture-uri") {
+                                    println!("AXAXXAXAXAXAXAXAAXAXAXAXAXAXAXAXAXA, walpaper found ")
+                                }
+
+                                self.wallpapers.guard().push_back(Background {
+                                    path: path.clone(),
+                                    group: self.group.clone(),
+                                    active: path[47..]
+                                        == settings.background.get::<String>("picture-uri")[51..],
+                                });
+                            })
+                            .collect(),
+                        Err(err) => {
+                            eprintln!("Failed to read '{1}': {0}", err, path.to_str().unwrap());
+                            continue;
+                        }
                     }
                 }
             }

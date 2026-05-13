@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-    <img src=".github/assets/demo-image.png" alt="GN*ME Settings Demo" width=800>
+    <img src=".forgejo/assets/demo-image.png" alt="GN*ME Settings Demo" width=800>
 </p>
 
 <p align="center">
     <img align="center" src="https://img.shields.io/github/languages/top/xinux-org/settings?style=flat&logo=rust&logoColor=5277C3&labelColor=ffffff&color=ffffff" alt="Top Used Language">
-    <a href="https://github.com/xinux-org/e-imzo/actions/workflows/test.yml"><img align="center" src="https://img.shields.io/github/actions/workflow/status/uzinfocom-org/instances/test.yml?style=flat&logo=github&logoColor=5277C3&labelColor=ffffff&color=ffffff" alt="Test CI"></a>
+    <a href="https://github.com/xinux-org/settings/actions/workflows/test.yml"><img align="center" src="https://img.shields.io/github/actions/workflow/status/xinux-org/settings/test.yml?style=flat&logo=github&logoColor=5277C3&labelColor=ffffff&color=ffffff" alt="Test CI"></a>
 </p>
 
 ## About
@@ -19,6 +19,7 @@ Rewritten version of GNOME Control Center for Xinux OS.
 
 Add nix-data to your flake.nix input and configuration.nix. ~/.config/nix-data/ your config locations via json here
 flake.nix input
+
 ```nix
 nix-data = {
   url = "github:xinux-org/nix-data";
@@ -33,20 +34,22 @@ programs.nix-data = {
   enable = true;
   systemconfig = "/home/bahrom/workplace/bahrom04/nix-config/systems/x86_64-linux/dell/default.nix";
   flake = "/home/bahrom/workplace/bahrom04/nix-config/flake.nix";
-  flakearg = "dell"; # your hostname 
+  flakearg = "dell"; # your hostname
 };
 ```
 
 ## Build & run
+
 This application has Linux-only dependencies.
+
 ```bash
 # download dependencies
-nix develop 
+nix develop
 
 just install
 
 cd ..
-./settings/builddir/install/bin/settings 
+./settings/builddir/install/bin/settings
 
 # or with nix when ready for release
 nix build . --show-trace

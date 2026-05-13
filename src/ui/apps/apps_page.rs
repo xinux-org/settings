@@ -6,6 +6,9 @@ use relm4::gtk;
 use relm4::gtk::gio;
 use relm4::prelude::*;
 
+const APP_NOTIF_SCHEMA: &str = "org.gnome.desktop.notifications.application";
+const APP_NOTIF_PATH_PREFIX: &str = "/org/gnome/desktop/notifications/application/";
+
 #[derive(Debug, Clone)]
 pub struct AppEntry {
     pub name: String,
@@ -13,6 +16,8 @@ pub struct AppEntry {
     pub executable: Option<String>,
     pub icon: Option<gio::Icon>,
     pub app_info: gio::AppInfo,
+    pub app_id: Option<String>,
+    pub canonical_id: Option<String>,
 }
 
 #[derive(Debug)]
@@ -106,20 +111,21 @@ impl SimpleComponent for AppModal {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let widgets = view_output!();
-
         let default_apps = DefaultAppsPage::builder().launch(()).detach();
 
         let apps = collect_apps();
         let filtered_apps = apps.clone();
 
-        let model = Self {
-            navigation: widgets.navigation.clone(),
-            apps_list: widgets.apps_list.clone(),
+        let mut model = Self {
+            navigation: adw::NavigationView::new(),
+            apps_list: gtk::ListBox::new(),
             default_apps,
             apps,
             filtered_apps,
         };
+        let widgets = view_output!();
+        model.navigation = widgets.navigation.clone();
+        model.apps_list = widgets.apps_list.clone();
 
         rebuild_apps_list(&model.apps_list, &model.filtered_apps, sender.clone());
 
@@ -174,12 +180,19 @@ fn collect_apps() -> Vec<AppEntry> {
     let mut apps: Vec<AppEntry> = gio::AppInfo::all()
         .into_iter()
         .filter(|app| app.should_show())
-        .map(|app| AppEntry {
-            name: app.display_name().to_string(),
-            description: app.description().map(|s| s.to_string()),
-            executable: Some(app.executable().to_string_lossy().into_owned()),
-            icon: app.icon(),
-            app_info: app,
+        .map(|app| {
+            let app_id = app.id().map(|s| s.to_string());
+            let canonical_id = app_id.as_deref().map(notification_canonical_id);
+
+            AppEntry {
+                name: app.display_name().to_string(),
+                description: app.description().map(|s| s.to_string()),
+                executable: Some(app.executable().to_string_lossy().into_owned()),
+                icon: app.icon(),
+                app_info: app,
+                app_id,
+                canonical_id,
+            }
         })
         .collect();
 
@@ -191,6 +204,27 @@ fn collect_apps() -> Vec<AppEntry> {
     });
 
     apps
+}
+
+fn notification_canonical_id(app_id: &str) -> String {
+    let app_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
+
+    app_id
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect()
+}
+
+fn notification_settings_for_app(app: &AppEntry) -> Option<gio::Settings> {
+    let canonical_id = app.canonical_id.as_deref()?;
+    let path = format!("{APP_NOTIF_PATH_PREFIX}{canonical_id}/");
+    Some(gio::Settings::with_path(APP_NOTIF_SCHEMA, &path))
 }
 
 fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: ComponentSender<AppModal>) {
@@ -260,9 +294,14 @@ fn build_app_details_page(app: &AppEntry) -> adw::NavigationPage {
     content.set_margin_end(24);
 
     let status_group = adw::PreferencesGroup::new();
+
     let banner_row = adw::ActionRow::new();
     banner_row.set_title("App is not sandboxed");
-    banner_row.add_suffix(&gtk::Image::from_icon_name("dialog-information-symbolic"));
+
+    let info_icon = gtk::Image::from_icon_name("dialog-information-symbolic");
+    info_icon.set_valign(gtk::Align::Center);
+    banner_row.add_suffix(&info_icon);
+
     status_group.add(&banner_row);
 
     let hero_box = gtk::Box::new(gtk::Orientation::Vertical, 16);
@@ -302,8 +341,18 @@ fn build_app_details_page(app: &AppEntry) -> adw::NavigationPage {
 
     let notifications_row = adw::SwitchRow::new();
     notifications_row.set_title("Notifications");
-    notifications_row.set_subtitle("Show system notifications");
-    notifications_row.set_active(true);
+
+    if let Some(settings) = notification_settings_for_app(app) {
+        notifications_row.set_subtitle("Show system notifications");
+        settings
+            .bind("enable", &notifications_row, "active")
+            .build();
+        notifications_row.set_sensitive(true);
+    } else {
+        notifications_row.set_subtitle("Notification settings are unavailable for this app");
+        notifications_row.set_active(false);
+        notifications_row.set_sensitive(false);
+    }
 
     permissions_group.add(&notifications_row);
 
@@ -326,8 +375,16 @@ fn build_app_details_page(app: &AppEntry) -> adw::NavigationPage {
     let app_for_dialog = app.clone();
     details_button.connect_clicked(move |button| {
         let details = format!(
-            "Name: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
+            "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
             app_for_dialog.name,
+            app_for_dialog
+                .app_id
+                .clone()
+                .unwrap_or_else(|| "—".to_string()),
+            app_for_dialog
+                .canonical_id
+                .clone()
+                .unwrap_or_else(|| "—".to_string()),
             app_for_dialog
                 .description
                 .clone()

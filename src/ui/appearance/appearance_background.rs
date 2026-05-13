@@ -15,7 +15,7 @@ pub enum BackgroundMsg {
 
 #[derive(Debug)]
 pub enum BackgroundOutput {
-    SetBackground(String),
+    SetBackgroundPath(String),
 }
 
 #[relm4::factory(pub)]
@@ -40,14 +40,14 @@ impl FactoryComponent for Background {
             // set_height_request: 144,
             //
 
-            // #[name="wallpaper_group"]
+            #[name="wallpaper_item"]
             gtk::ToggleButton {
                 set_group: Some(&self.group),
                 add_css_class: "wallpaper-button",
                 set_overflow: gtk::Overflow::Hidden,
-                set_active: self.active,
+                // set_active: self.active,
                 connect_clicked[sender, path = self.path.clone()] => move |_| {
-                    sender.input(BackgroundMsg::SetBackground(path.clone()))
+                    sender.output(BackgroundOutput::SetBackgroundPath(path.clone())).unwrap()
                 },
 
                 gtk::Overlay{
@@ -69,7 +69,7 @@ impl FactoryComponent for Background {
                         add_css_class: "osd",
                         add_css_class: "circular",
                         add_css_class: "remove-button",
-                        set_visible: self.active
+                        set_visible: wallpaper_item.is_active()
                     }
                 }
             }
@@ -86,9 +86,8 @@ impl FactoryComponent for Background {
         }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: FactorySender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
         let settings = AppearanceSettings::new();
-        println!("BACKGROUND: ");
         match message {
             BackgroundMsg::SetBackground(path) => {
                 let _ = settings.background.set(
@@ -98,7 +97,10 @@ impl FactoryComponent for Background {
                     },
                     format!("file://{}", path),
                 );
-                println!("BACKGROUND: {}", &path.clone())
+                println!("BACKGROUND: {}", &path.clone());
+                sender
+                    .output(BackgroundOutput::SetBackgroundPath(path))
+                    .unwrap();
             }
         }
     }
