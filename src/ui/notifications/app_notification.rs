@@ -220,42 +220,15 @@ impl SimpleComponent for AppNotificationsPageModel {
             AppNotificationsPageInput::SetNotifications(value) => {
                 if self.app.enable != value {
                     self.app.enable = value;
-                    save_app_bool(&self.settings, "enable", value);
+                    Self::save_app_bool(&self.settings, "enable", value);
                     changed = true;
-
-                    if !value {
-                        if self.app.enable_sound_alerts {
-                            self.app.enable_sound_alerts = false;
-                            save_app_bool(&self.settings, "enable-sound-alerts", false);
-                        }
-
-                        if self.app.show_banners {
-                            self.app.show_banners = false;
-                            save_app_bool(&self.settings, "show-banners", false);
-                        }
-
-                        if self.app.force_expanded {
-                            self.app.force_expanded = false;
-                            save_app_bool(&self.settings, "force-expanded", false);
-                        }
-
-                        if self.app.show_in_lock_screen {
-                            self.app.show_in_lock_screen = false;
-                            save_app_bool(&self.settings, "show-in-lock-screen", false);
-                        }
-
-                        if self.app.details_in_lock_screen {
-                            self.app.details_in_lock_screen = false;
-                            save_app_bool(&self.settings, "details-in-lock-screen", false);
-                        }
-                    }
                 }
             }
 
             AppNotificationsPageInput::SetSoundAlerts(value) => {
                 if self.app.enable && self.app.enable_sound_alerts != value {
                     self.app.enable_sound_alerts = value;
-                    save_app_bool(&self.settings, "enable-sound-alerts", value);
+                    Self::save_app_bool(&self.settings, "enable-sound-alerts", value);
                     changed = true;
                 }
             }
@@ -263,12 +236,12 @@ impl SimpleComponent for AppNotificationsPageModel {
             AppNotificationsPageInput::SetShowBanners(value) => {
                 if self.app.enable && !self.do_not_disturb && self.app.show_banners != value {
                     self.app.show_banners = value;
-                    save_app_bool(&self.settings, "show-banners", value);
+                    Self::save_app_bool(&self.settings, "show-banners", value);
                     changed = true;
 
                     if !value && self.app.force_expanded {
                         self.app.force_expanded = false;
-                        save_app_bool(&self.settings, "force-expanded", false);
+                        Self::save_app_bool(&self.settings, "force-expanded", false);
                     }
                 }
             }
@@ -280,7 +253,7 @@ impl SimpleComponent for AppNotificationsPageModel {
                     && self.app.force_expanded != value
                 {
                     self.app.force_expanded = value;
-                    save_app_bool(&self.settings, "force-expanded", value);
+                    Self::save_app_bool(&self.settings, "force-expanded", value);
                     changed = true;
                 }
             }
@@ -291,12 +264,12 @@ impl SimpleComponent for AppNotificationsPageModel {
                     && self.app.show_in_lock_screen != value
                 {
                     self.app.show_in_lock_screen = value;
-                    save_app_bool(&self.settings, "show-in-lock-screen", value);
+                    Self::save_app_bool(&self.settings, "show-in-lock-screen", value);
                     changed = true;
 
                     if !value && self.app.details_in_lock_screen {
                         self.app.details_in_lock_screen = false;
-                        save_app_bool(&self.settings, "details-in-lock-screen", false);
+                        Self::save_app_bool(&self.settings, "details-in-lock-screen", false);
                     }
                 }
             }
@@ -308,7 +281,7 @@ impl SimpleComponent for AppNotificationsPageModel {
                     && self.app.details_in_lock_screen != value
                 {
                     self.app.details_in_lock_screen = value;
-                    save_app_bool(&self.settings, "details-in-lock-screen", value);
+                    Self::save_app_bool(&self.settings, "details-in-lock-screen", value);
                     changed = true;
                 }
             }
@@ -332,6 +305,14 @@ impl SimpleComponent for AppNotificationsPageModel {
 
         if changed {
             let _ = sender.output(AppNotificationsPageOutput::Changed(self.app.clone()));
+        }
+    }
+}
+
+impl AppNotificationsPageModel {
+    fn save_app_bool(settings: &gio::Settings, key: &str, value: bool) {
+        if settings.boolean(key) != value {
+            let _ = settings.set_boolean(key, value);
         }
     }
 }
@@ -367,12 +348,6 @@ pub fn app_settings_for_canonical(canonical_id: &str) -> gio::Settings {
 pub fn app_bool_from_canonical(canonical_id: &str, key: &str) -> bool {
     let settings = app_settings_for_canonical(canonical_id);
     settings.boolean(key)
-}
-
-fn save_app_bool(settings: &gio::Settings, key: &str, value: bool) {
-    if settings.boolean(key) != value {
-        let _ = settings.set_boolean(key, value);
-    }
 }
 
 fn reload_app_from_settings(app: &mut AppNotificationItem, settings: &gio::Settings) {
