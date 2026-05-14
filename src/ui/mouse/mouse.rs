@@ -176,7 +176,7 @@ impl SimpleComponent for Mouse {
                                     set_height_request: 128,
 
                                     // #[name(default_option_mask)]
-                                    set_filename: Some("/home/bahrom/workplace/xinux/settings/src/ui/mouse/assets/scroll-traditional.webm"),
+                                    set_filename: Some(format!("{}/src/ui/mouse/assets/scroll_natural.webm", std::env::current_dir().unwrap().to_str().unwrap())),
                                 },
                             },
                             gtk::Box {
@@ -192,26 +192,42 @@ impl SimpleComponent for Mouse {
                                 gtk::Box {
                                     set_valign: gtk::Align::Center,
                                     set_margin_start: 6,
-                                    set_orientation: gtk::Orientation::Vertical,
+                                    set_orientation: gtk::Orientation::Horizontal,
                                     add_css_class: "title",
 
-                                    #[name(default_option_title)]
-                                    gtk::Label {
-                                        set_use_underline: true,
-                                        set_xalign: 0.0,
-                                        set_wrap: true,
-                                        set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: "aaaaaaaaaaaaah",
-                                        add_css_class: "title",
+                                    #[name = "traditional"]
+                                    gtk::CheckButton {
+                                        #[watch]
+                                        set_active: !model.natural_scroll,
+                                        connect_toggled[sender] => move |btn| {
+                                            if  btn.is_active() {
+                                                sender.input(MousePageMsg::ScrollDirection(!btn.is_active()));
+                                            }
+                                        },
                                     },
-                                    #[name(default_option_subtitle)]
-                                    gtk::Label {
-                                        set_xalign: 0.0,
-                                        set_wrap: true,
-                                        set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: "aaaaaaaaaaaaah subtitle",
-                                        add_css_class: "subtitle",
+
+                                    gtk::Box {
+                                        set_orientation: gtk::Orientation::Vertical,
+
+                                        #[name(default_option_title)]
+                                        gtk::Label {
+                                            set_use_underline: true,
+                                            set_xalign: 0.0,
+                                            set_wrap: true,
+                                            set_wrap_mode: pango::WrapMode::WordChar,
+                                            set_label: "Traditional",
+                                            add_css_class: "title",
+                                        },
+                                        #[name(default_option_subtitle)]
+                                        gtk::Label {
+                                            set_xalign: 0.0,
+                                            set_wrap: true,
+                                            set_wrap_mode: pango::WrapMode::WordChar,
+                                            set_label: "Scrolling moves the view",
+                                            add_css_class: "subtitle",
+                                        },
                                     },
+
                                 }
                             },
                         },
@@ -276,25 +292,42 @@ impl SimpleComponent for Mouse {
                                 gtk::Box {
                                     set_valign: gtk::Align::Center,
                                     set_margin_start: 6,
-                                    set_orientation: gtk::Orientation::Vertical,
+                                    set_orientation: gtk::Orientation::Horizontal,
                                     add_css_class: "title",
 
-                                    #[name(alternative_option_title)]
-                                    gtk::Label {
-                                        set_use_underline: true,
-                                        set_xalign: 0.0,
-                                        set_wrap: true,
-                                        set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: "aaaaaaaaaaaaah",
-                                        add_css_class: "title",
+                                    #[name = "natural"]
+                                    gtk::CheckButton {
+                                        set_group: Some(&traditional),
+
+                                        #[watch]
+                                        set_active: model.natural_scroll,
+                                        connect_toggled[sender] => move |btn| {
+                                            if  btn.is_active() {
+                                                sender.input(MousePageMsg::ScrollDirection(btn.is_active()));
+                                            }
+                                        },
                                     },
-                                    #[name(alternative_option_subtitle)]
-                                    gtk::Label {
-                                        set_xalign: 0.0,
-                                        set_wrap: true,
-                                        set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: "aaaaaaaaaaaaah subtitle",
-                                        add_css_class: "subtitle",
+                                    
+                                    gtk::Box {
+                                        set_orientation: gtk::Orientation::Vertical,
+
+                                        #[name(alternative_option_title)]
+                                        gtk::Label {
+                                            set_use_underline: true,
+                                            set_xalign: 0.0,
+                                            set_wrap: true,
+                                            set_wrap_mode: pango::WrapMode::WordChar,
+                                            set_label: "Natural",
+                                            add_css_class: "title",
+                                        },
+                                        #[name(alternative_option_subtitle)]
+                                        gtk::Label {
+                                            set_xalign: 0.0,
+                                            set_wrap: true,
+                                            set_wrap_mode: pango::WrapMode::WordChar,
+                                            set_label: "Scrolling moves the content",
+                                            add_css_class: "subtitle",
+                                        },
                                     },
                                 }
                             },
@@ -337,8 +370,6 @@ impl SimpleComponent for Mouse {
             .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
             .map(|device| device.has_capability(input::DeviceCapability::Gesture))
             .collect();
-
-        let show_header = events.is_empty();
 
         let speed_controller = PointerSpeed::builder()
             .launch(PointerSpeedInit {

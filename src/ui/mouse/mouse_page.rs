@@ -182,24 +182,38 @@ impl SimpleComponent for MouseModal {
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
-        let events: Vec<bool> = input
+        let events: Vec<String> = input
             .clone()
             .collect::<Vec<input::Event>>()
             .into_iter()
             .map(|event| event.device())
             .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
-            .map(|device| device.has_capability(input::DeviceCapability::Gesture))
+            .map(|device| device.name().to_string())
+            .collect();
+
+        let trackpoints: Vec<String> = 
+            events
+            .clone()
+            .iter()
+            .filter(|name| name.contains("TrackPoint"))
+            .map(|name| name.to_string())
             .collect();
 
         println!("Events: {:#?}", events);
 
         if events.is_empty() {
             touchpad_swticher.set_visible(false);
-            pointing_stick_switcher.set_visible(false);
+        }
 
+        if trackpoints.is_empty() {
+            pointing_stick_switcher.set_visible(false);
+        }
+
+        if events.is_empty() && trackpoints.is_empty() {
             let title_stack = widgets.title_stack.clone();
             title_stack.set_visible_child_name("window_title");
         }
+
         // if device.name().contains("TrackPoint") {
         // }
 

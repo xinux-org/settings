@@ -57,6 +57,8 @@ impl SimpleComponent for Touchpad {
                 },
 
                 add = &adw::PreferencesGroup {
+                    #[watch]
+                    set_sensitive: model.send_events,
                     set_title: "General",
 
                     add = &adw::SwitchRow {
@@ -72,6 +74,8 @@ impl SimpleComponent for Touchpad {
                 },
 
                 add = &adw::PreferencesGroup {
+                    #[watch]
+                    set_sensitive: model.send_events,
                     set_title: "Secondary Click",
 
                     add = &adw::ActionRow {
@@ -182,6 +186,8 @@ impl SimpleComponent for Touchpad {
                 },
 
                 add = &adw::PreferencesGroup {
+                    #[watch]
+                    set_sensitive: model.send_events,
                     set_title: "Tap to Click",
 
                     add = &adw::ActionRow {
@@ -217,6 +223,8 @@ impl SimpleComponent for Touchpad {
                 },
 
                 add = &adw::PreferencesGroup {
+                    #[watch]
+                    set_sensitive: model.send_events,
                     set_title: "Scroll Method",
 
                     add = &adw::ActionRow {
@@ -327,6 +335,8 @@ impl SimpleComponent for Touchpad {
                 },
 
                 add = &adw::PreferencesGroup {
+                    #[watch]
+                    set_sensitive: model.send_events,
                     set_title: "Scroll Direction",
 
                     add = &adw::ActionRow {
