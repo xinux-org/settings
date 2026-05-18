@@ -270,14 +270,12 @@ impl SimpleAsyncComponent for WifiModel {
     async fn update(&mut self, message: Self::Input, sender: AsyncComponentSender<Self>) {
         match message {
             WifiInput::LoadNetworks => {
-                if self.wifi_enabled {
-                    sender.input(WifiInput::ClearNetworksList);
+                sender.input(WifiInput::ClearNetworksList);
 
-                    match load_networks(&self.client).await {
-                        Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
-                        Err(e) => {
-                            eprintln!("nmrs error: {e}");
-                        }
+                match load_networks(&self.client).await {
+                    Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
+                    Err(e) => {
+                        eprintln!("nmrs error: {e}");
                     }
                 }
             }
@@ -289,22 +287,19 @@ impl SimpleAsyncComponent for WifiModel {
                     .collect();
             }
             // The user clicked a button to turn Wi-Fi on/off
-            WifiInput::ToggleWifi(enable) => {
-                self.wifi_enabled = enable;
+            WifiInput::ToggleWifi(enabled) => {
+                self.wifi_enabled = enabled;
                 // Immediate UI cleanup
-                match enable {
-                    true => {
-                        self.loading = true;
-                        self.wifi_stack_page = WifiStack::WifiOn;
-                    }
-                    false => {
-                        self.loading = false;
-                        sender.input(WifiInput::ClearNetworksList);
-                        self.wifi_stack_page = WifiStack::WifiOff;
-                    }
+                if enabled {
+                    self.loading = true;
+                    self.wifi_stack_page = WifiStack::WifiOn;
+                } else {
+                    self.loading = false;
+                    sender.input(WifiInput::ClearNetworksList);
+                    self.wifi_stack_page = WifiStack::WifiOff;
                 }
             }
-            WifiInput::HandleWifiState(enable) => {
+            WifiInput::HandleWifiState(enabled) => {
                 // drop spawned load_networks async task and run fresh task
                 if let Some(handle) = self.active_toggle_task.take() {
                     handle.abort();
@@ -312,11 +307,9 @@ impl SimpleAsyncComponent for WifiModel {
                 // spawn task on background and let finish WifiInput::ToggleWifi
                 let clinet_clone = self.client.clone();
                 let handle = relm4::spawn_local(async move {
-                    if let Err(e) = set_wifi_enabled(clinet_clone, enable).await {
-                        debug!("Could not toggle Wi-Fi: {e}");
-                        return;
-                    }
-                    if enable {
+                    let wifi_enabled = set_wifi_enabled(clinet_clone, enabled).await.is_ok();
+
+                    if wifi_enabled {
                         glib::timeout_future(std::time::Duration::from_secs(5)).await;
                         sender.input(WifiInput::LoadNetworks);
                     }
@@ -324,7 +317,7 @@ impl SimpleAsyncComponent for WifiModel {
                 self.active_toggle_task = Some(handle);
             }
             WifiInput::ConnectResult(res) => match res {
-                Ok(_) => {
+                Ok(()) => {
                     debug!("Connected successfully");
                     sender.input(WifiInput::LoadNetworks);
                 }
@@ -353,10 +346,7 @@ impl SimpleAsyncComponent for WifiModel {
 }
 
 async fn is_wifi_enabled(client: &nmrs::NetworkManager) -> bool {
-    client
-        .wifi_enabled()
-        .await
-        .expect("cannot get whather wifi_enabled")
+    client.wifi_enabled().await.is_ok()
 }
 
 async fn load_networks(client: &nmrs::NetworkManager) -> nmrs::Result<Vec<WifiNetwork>> {
