@@ -1,4 +1,5 @@
 use crate::ui::apps::default_apps::DefaultAppsPage;
+use crate::ui::notifications::app_notification::app_settings_for_canonical;
 use crate::ui::window::AppMsg;
 use relm4::adw;
 use relm4::adw::prelude::*;
@@ -6,8 +7,8 @@ use relm4::gtk;
 use relm4::gtk::gio;
 use relm4::prelude::*;
 
-const APP_NOTIF_SCHEMA: &str = "org.gnome.desktop.notifications.application";
-const APP_NOTIF_PATH_PREFIX: &str = "/org/gnome/desktop/notifications/application/";
+// const APP_NOTIF_SCHEMA: &str = "org.gnome.desktop.notifications.application";
+// const APP_NOTIF_PATH_PREFIX: &str = "/org/gnome/desktop/notifications/application/";
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {
@@ -223,8 +224,7 @@ fn notification_canonical_id(app_id: &str) -> String {
 
 fn notification_settings_for_app(app: &AppEntry) -> Option<gio::Settings> {
     let canonical_id = app.canonical_id.as_deref()?;
-    let path = format!("{APP_NOTIF_PATH_PREFIX}{canonical_id}/");
-    Some(gio::Settings::with_path(APP_NOTIF_SCHEMA, &path))
+    Some(app_settings_for_canonical(canonical_id))
 }
 
 fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: ComponentSender<AppModal>) {
@@ -344,10 +344,31 @@ fn build_app_details_page(app: &AppEntry) -> adw::NavigationPage {
 
     if let Some(settings) = notification_settings_for_app(app) {
         notifications_row.set_subtitle("Show system notifications");
-        settings
-            .bind("enable", &notifications_row, "active")
-            .build();
         notifications_row.set_sensitive(true);
+        let current_value = settings.boolean("enable");
+        notifications_row.set_active(current_value);
+
+        let settings_for_toggle = settings.clone();
+
+        notifications_row.connect_active_notify(move |row| {
+            let value = row.is_active();
+
+            if settings_for_toggle.boolean("enable") != value {
+                let _ = settings_for_toggle.set_boolean("enable", value);
+            }
+        });
+
+        let row_weak = notifications_row.downgrade();
+
+        settings.connect_changed(Some("enable"), move |settings, _key| {
+            if let Some(row) = row_weak.upgrade() {
+                let value = settings.boolean("enable");
+
+                if row.is_active() != value {
+                    row.set_active(value);
+                }
+            }
+        });
     } else {
         notifications_row.set_subtitle("Notification settings are unavailable for this app");
         notifications_row.set_active(false);
