@@ -113,7 +113,6 @@ impl SimpleComponent for MouseModal {
                             add: model.pointing_stick.widget(),
                         },
                     },
-
                 },
 
                 #[name(view_switcher_bar)]
@@ -191,8 +190,7 @@ impl SimpleComponent for MouseModal {
             .map(|device| device.name().to_string())
             .collect();
 
-        let trackpoints: Vec<String> = 
-            events
+        let trackpoints: Vec<String> = events
             .clone()
             .iter()
             .filter(|name| name.contains("TrackPoint"))

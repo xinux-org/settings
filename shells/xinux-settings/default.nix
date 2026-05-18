@@ -61,6 +61,7 @@ pkgs.mkShell {
 
   buildInputs = with pkgs; [
     libinput
+    gtk4
   ];
 
   # Set Environment Variables
