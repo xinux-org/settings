@@ -225,8 +225,6 @@ impl SimpleAsyncComponent for WifiModel {
         } else {
             WifiStack::WifiOff
         };
-        // 1. Monitor network changes (e.g., signal strength, SSID)
-        let clinet_clone = nm.clone();
 
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
