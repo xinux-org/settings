@@ -2,10 +2,7 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::Alternate;
-use crate::ui::mouse::components::choice::ChoiceOutput;
-use crate::ui::mouse::components::choice::Default;
-use crate::ui::mouse::components::choice::{Choice, ChoiceInit};
+use crate::ui::mouse::components::choice::{Alternate, ChoiceOutput, Default, Choice, ChoiceInit};
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
@@ -38,7 +35,6 @@ pub struct Mouse {
 pub enum MousePageMsg {
     PrimaryButton(bool),
     MouseAcceleration(bool),
-    ScrollDirection(bool),
     Noop,
 }
 
@@ -169,10 +165,6 @@ impl SimpleComponent for Mouse {
         let natural_scroll_component = Choice::builder()
             .launch(ChoiceInit {
                 title: "Scroll Direction".to_string(),
-                subtitles: vec![
-                    "Scrolling moves the view".to_string(),
-                    "Scrolling moves the view".to_string(),
-                ],
                 key: "natural-scroll".to_string(),
                 settings: settings.mouse.clone(),
 
@@ -182,6 +174,9 @@ impl SimpleComponent for Mouse {
                         "{}/src/ui/mouse/assets/scroll-traditional.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
                     ),
+                    title: "Traditional".to_string(),
+                    subtitle: 
+                    "Scrolling moves the view".to_string(),
 
                     enabled: false.to_variant() == value,
                 },
@@ -189,9 +184,12 @@ impl SimpleComponent for Mouse {
                 alternate: Alternate {
                     value: true.to_variant(),
                     media: format!(
-                        "{}/src/ui/mouse/assets/scroll-traditional.webm",
+                        "{}/src/ui/mouse/assets/scroll-natural.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
                     ),
+                    title: "Natural".to_string(),
+                    subtitle: 
+                    "Scrolling moves the view".to_string(),
 
                     enabled: true.to_variant() == value,
                 },
@@ -246,16 +244,15 @@ impl SimpleComponent for Mouse {
 
                 let _ = self.settings.mouse.set_string("accel-profile", profile);
             }
-            MousePageMsg::ScrollDirection(state) => {
-                self.natural_scroll = state;
-
-                // let _ = self.settings.mouse.set_boolean("natural-scroll", state);
-                let _ = self
-                    .settings
-                    .mouse
-                    .set_value("natural-scroll", &state.to_variant());
-            }
-
+            // MousePageMsg::ScrollDirection(state) => {
+            //     self.natural_scroll = state;
+            //
+            //     // let _ = self.settings.mouse.set_boolean("natural-scroll", state);
+            //     let _ = self
+            //         .settings
+            //         .mouse
+            //         .set_value("natural-scroll", &state.to_variant());
+            // }
             MousePageMsg::Noop => {}
         }
     }

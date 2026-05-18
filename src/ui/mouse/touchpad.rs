@@ -1,8 +1,9 @@
 use relm4::adw::prelude::*;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::pointer_speed::PointerSpeed;
-use crate::ui::mouse::components::pointer_speed::PointerSpeedInit;
+use crate::ui::mouse::components::choice::{Alternate, ChoiceOutput, Default, Choice, ChoiceInit};
+
+use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug)]
@@ -14,12 +15,15 @@ pub struct Touchpad {
 
     // click-method: "areas"; "fingers"
     secondary_click: bool,
+    secondary_click_controller: Controller<Choice>,
 
     tap_to_click: bool,
 
     scroll_method: bool,
+    scroll_method_controller: Controller<Choice>,
 
     natural_scroll: bool,
+    natural_scroll_controller: Controller<Choice>,
 }
 
 #[derive(Debug)]
@@ -30,6 +34,8 @@ pub enum TouchpadMsg {
     TapToClick(bool),
     ScrollMethod(bool),
     ScrollDirection(bool),
+
+    Noop,
 }
 
 #[relm4::component(pub)]
@@ -78,111 +84,7 @@ impl SimpleComponent for Touchpad {
                     set_sensitive: model.send_events,
                     set_title: "Secondary Click",
 
-                    add = &adw::ActionRow {
-
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 12,
-                            set_homogeneous: true,
-                            set_hexpand: true,
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    #[name = "fingers"]
-                                    append = &gtk::CheckButton {
-                                        #[watch]
-                                        set_active: model.secondary_click,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::SecondaryClick(btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Two Finger Push",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Push anywhere with 2 fingers",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    append = &gtk::CheckButton {
-                                        set_group: Some(&fingers),
-
-                                        #[watch]
-                                        set_active: !model.secondary_click,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::SecondaryClick(!btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Corner Push",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Push with a single finger in the corner",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-                        }
-                    },
+                    add = model.secondary_click_controller.widget(),
                 },
 
                 add = &adw::PreferencesGroup {
@@ -209,13 +111,16 @@ impl SimpleComponent for Touchpad {
                                     },
                                 },
 
-                                append = &gtk::Frame {
+                                append = &gtk::Picture {
                                     set_hexpand: true,
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
+                                    set_halign: gtk::Align::Center,
+                                    set_margin_top: 6,
+                                    set_margin_bottom: 6,
+                                    set_margin_start: 6,
+                                    set_margin_end: 6,
+                                    set_height_request: 128,
+
+                                    set_paintable: Some(&tap_to_click_media),
                                 },
                             },
                         }
@@ -227,111 +132,7 @@ impl SimpleComponent for Touchpad {
                     set_sensitive: model.send_events,
                     set_title: "Scroll Method",
 
-                    add = &adw::ActionRow {
-
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 12,
-                            set_homogeneous: true,
-                            set_hexpand: true,
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    #[name = "two_finger"]
-                                    append = &gtk::CheckButton {
-                                        #[watch]
-                                        set_active: model.scroll_method,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::ScrollMethod(btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Two Finger",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Drag two fingers on the touchpad",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    append = &gtk::CheckButton {
-                                        set_group: Some(&two_finger),
-
-                                        #[watch]
-                                        set_active: !model.scroll_method,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::ScrollMethod(!btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Edge",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Drag one finger on the edge",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-                        }
-                    },
+                    add = model.scroll_method_controller.widget(),
                 },
 
                 add = &adw::PreferencesGroup {
@@ -339,111 +140,7 @@ impl SimpleComponent for Touchpad {
                     set_sensitive: model.send_events,
                     set_title: "Scroll Direction",
 
-                    add = &adw::ActionRow {
-
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 12,
-                            set_homogeneous: true,
-                            set_hexpand: true,
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    #[name = "traditional"]
-                                    append = &gtk::CheckButton {
-                                        #[watch]
-                                        set_active: !model.natural_scroll,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::ScrollDirection(!btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Traditional",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the view",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &gtk::Frame {
-                                    set_hexpand: true,
-                                    #[wrap(Some)]
-                                    set_child = &gtk::Image {
-                                        set_icon_name: Some("input-mouse-symbolic"),
-                                        set_pixel_size: 64,
-                                    },
-                                },
-
-                                append = &gtk::Box {
-                                    set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 6,
-                                    set_halign: gtk::Align::Start,
-
-                                    append = &gtk::CheckButton {
-                                        set_group: Some(&traditional),
-
-                                        #[watch]
-                                        set_active: model.natural_scroll,
-                                        connect_toggled[sender] => move |btn| {
-                                            if  btn.is_active() {
-                                                sender.input(TouchpadMsg::ScrollDirection(btn.is_active()));
-                                            }
-                                        },
-                                    },
-
-                                    append = &gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-
-                                        append = &gtk::Label {
-                                            set_label: "Natural",
-                                            set_halign: gtk::Align::Start,
-                                        },
-
-                                        append = &gtk::Label {
-                                            set_label: "Scrolling moves the content",
-                                            set_halign: gtk::Align::Start,
-                                            add_css_class: "dim-label",
-                                            add_css_class: "caption",
-                                        },
-                                    },
-                                },
-                            },
-                        }
-                    },
+                    add = model.natural_scroll_controller.widget(),
                 },
 
             }
@@ -456,6 +153,14 @@ impl SimpleComponent for Touchpad {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let settings = MouseSettings::new();
+
+        let tap_to_click_media = gtk::MediaFile::for_filename(format!(
+                        "{}/src/ui/mouse/assets/tap-to-click.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    )
+);
+        tap_to_click_media.set_loop(true);
+        tap_to_click_media.play();
 
         let events = settings.touchpad.string("send-events");
         let send_events = events == String::from("enabled");
@@ -471,12 +176,118 @@ impl SimpleComponent for Touchpad {
 
         let click_method = settings.touchpad.string("click-method").to_string();
         let secondary_click = click_method == "fingers";
+        let secondary_click_controller = Choice::builder()
+            .launch(ChoiceInit {
+                title: "Secondary Click".to_string(),
+                key: "click-method".to_string(),
+                settings: settings.touchpad.clone(),
+
+                default: Default {
+                    value: "fingers".to_variant(),
+                    media: format!(
+                        "{}/src/ui/mouse/assets/push-to-click-anywhere.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    ),
+                    title: "Two Finger Push".to_string(),
+                    subtitle: 
+                    "Push anywhere with 2 fingers".to_string(),
+
+                    enabled: "fingers".to_variant() == click_method.to_variant(),
+                },
+
+                alternate: Alternate {
+                    value: "areas".to_variant(),
+                    media: format!(
+                        "{}/src/ui/mouse/assets/push-areas.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    ),
+                    title: "Corner Push".to_string(),
+                    subtitle: 
+                    "Push with a single finger in the corner".to_string(),
+
+                    enabled: "areas".to_variant() == click_method.to_variant(),
+                },
+            })
+            .forward(sender.input_sender(), |out| match out {
+                ChoiceOutput::Noop => TouchpadMsg::Noop,
+            });
 
         let tap_to_click = settings.touchpad.boolean("tap-to-click");
 
         let scroll_method = settings.touchpad.boolean("two-finger-scrolling-enabled");
+        let scroll_method_controller = Choice::builder()
+            .launch(ChoiceInit {
+                title: "Scroll Method".to_string(),
+                key: "natural-scroll".to_string(),
+                settings: settings.touchpad.clone(),
+
+                default: Default {
+                    value: false.to_variant(),
+                    media: format!(
+                        "{}/src/ui/mouse/assets/scroll-2finger.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    ),
+                    title: "Two Finger".to_string(),
+                    subtitle: 
+                    "Drag two fingers on the touchpad".to_string(),
+
+                    enabled: false.to_variant() == scroll_method.to_variant(),
+                },
+
+                alternate: Alternate {
+                    value: true.to_variant(),
+                    media: format!(
+                        "{}/src/ui/mouse/assets/edge-scroll.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    ),
+                    title: "Edge".to_string(),
+                    subtitle: 
+                    "Drag one finger on the edge".to_string(),
+
+                    enabled: true.to_variant() == scroll_method.to_variant()
+                },
+            })
+            .forward(sender.input_sender(), |out| match out {
+                ChoiceOutput::Noop => TouchpadMsg::Noop,
+            });
 
         let natural_scroll = settings.touchpad.boolean("natural-scroll");
+        let natural_scroll_controller = Choice::builder()
+            .launch(ChoiceInit {
+                title: "Scroll Direction".to_string(),
+                key: "natural-scroll".to_string(),
+                settings: settings.touchpad.clone(),
+
+                default: Default {
+                    value: false.to_variant(),
+                    media: format!(
+                        "{}/src/ui/mouse/assets/touch-scroll-traditional.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    ),
+                    title: "Traditional".to_string(),
+                    subtitle: 
+                    "Scrolling moves the view".to_string(),
+
+                    enabled: false.to_variant() == natural_scroll.to_variant(),
+                },
+
+                alternate: Alternate {
+                    value: true.to_variant(),
+                    media: format!(
+                        "{}/src/ui/mouse/assets/touch-scroll-natural.webm",
+                        std::env::current_dir().unwrap().to_str().unwrap()
+                    ),
+                    title: "Natural".to_string(),
+                    subtitle: 
+                    "Scrolling moves the view".to_string(),
+
+                    enabled: true.to_variant() == natural_scroll.to_variant(),
+                },
+            })
+            .forward(sender.input_sender(), |out| match out {
+                ChoiceOutput::Noop => TouchpadMsg::Noop,
+            });
+
 
         let model = Self {
             settings,
@@ -486,12 +297,15 @@ impl SimpleComponent for Touchpad {
             speed_controller,
 
             secondary_click,
+            secondary_click_controller,
 
             tap_to_click,
 
             scroll_method,
+            scroll_method_controller,
 
             natural_scroll,
+            natural_scroll_controller,
         };
 
         let widgets = view_output!();
@@ -572,6 +386,7 @@ impl SimpleComponent for Touchpad {
                     .touchpad
                     .set_value("natural-scroll", &state.to_variant());
             }
+            TouchpadMsg::Noop => {},
         }
     }
 }

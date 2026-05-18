@@ -10,6 +10,8 @@ use relm4::{
 pub struct Default {
     pub value: Variant,
     pub media: String,
+    pub title: String,
+    pub subtitle: String,
 
     pub enabled: bool,
 }
@@ -18,6 +20,8 @@ pub struct Default {
 pub struct Alternate {
     pub value: Variant,
     pub media: String,
+    pub title: String,
+    pub subtitle: String,
 
     pub enabled: bool,
 }
@@ -30,8 +34,7 @@ pub struct Choice {
     pub default: Default,
     pub alternate: Alternate,
 
-    pub title: String,
-    pub subtitles: Vec<String>,
+    title: String,
 }
 
 #[derive(Debug)]
@@ -54,7 +57,6 @@ pub struct ChoiceInit {
     pub alternate: Alternate,
 
     pub title: String,
-    pub subtitles: Vec<String>,
 }
 
 #[relm4::component(pub)]
@@ -136,7 +138,7 @@ impl SimpleComponent for Choice {
                                 set_xalign: 0.0,
                                 set_wrap: true,
                                 set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: "Traditional",
+                                set_label: model.default.title.as_str(),
                                 add_css_class: "title",
                             },
                             #[name(default_option_subtitle)]
@@ -144,7 +146,7 @@ impl SimpleComponent for Choice {
                                 set_xalign: 0.0,
                                 set_wrap: true,
                                 set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: "Scrolling moves the view",
+                                set_label: model.default.subtitle.as_str(),
                                 add_css_class: "subtitle",
                             },
                         },
@@ -182,6 +184,17 @@ impl SimpleComponent for Choice {
                         set_height_request: 128,
 
                         set_paintable: Some(&alternate_media),
+
+                        // WIP
+                        // add_controller = gtk::EventControllerMotion {
+                        //     connect_enter => move |_,_,_| {
+                        //         alternate_media.play();           
+                        //     },
+                        //
+                        //     connect_leave => move |_| {
+                        //         &alternate_media.pause();           
+                        //     },
+                        // },
                     },
                 },
                 gtk::Box {
@@ -220,7 +233,7 @@ impl SimpleComponent for Choice {
                                 set_xalign: 0.0,
                                 set_wrap: true,
                                 set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: "Natural",
+                                set_label: model.alternate.title.as_str(),
                                 add_css_class: "title",
                             },
                             #[name(alternative_option_subtitle)]
@@ -228,7 +241,7 @@ impl SimpleComponent for Choice {
                                 set_xalign: 0.0,
                                 set_wrap: true,
                                 set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: "Scrolling moves the content",
+                                set_label: model.alternate.subtitle.as_str(),
                                 add_css_class: "subtitle",
                             },
                         },
@@ -243,19 +256,11 @@ impl SimpleComponent for Choice {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let default_media = gtk::MediaFile::for_filename(format!(
-            "{}/src/ui/mouse/assets/scroll-traditional.webm",
-            std::env::current_dir().unwrap().to_str().unwrap()
-        ));
-
+        let default_media = gtk::MediaFile::for_filename(init.default.media.clone());
         default_media.set_loop(true);
         default_media.play();
 
-        let alternate_media = gtk::MediaFile::for_filename(format!(
-            "{}/src/ui/mouse/assets/scroll-natural.webm",
-            std::env::current_dir().unwrap().to_str().unwrap()
-        ));
-
+        let alternate_media = gtk::MediaFile::for_filename(init.alternate.media.clone());
         alternate_media.set_loop(true);
         alternate_media.play();
 
@@ -263,7 +268,6 @@ impl SimpleComponent for Choice {
             key: init.key,
             settings: init.settings,
             title: init.title,
-            subtitles: init.subtitles,
 
             default: init.default,
             alternate: init.alternate,
