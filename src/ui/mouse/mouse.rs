@@ -2,7 +2,7 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::{Alternate, ChoiceOutput, Default, Choice, ChoiceInit};
+use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
@@ -162,6 +162,18 @@ impl SimpleComponent for Mouse {
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
+        let natural_scroll_default_media = gtk::MediaFile::for_filename(format!(
+            "{}/src/ui/mouse/assets/scroll-traditional.webm",
+            std::env::current_dir().unwrap().to_str().unwrap()
+        ));
+        // natural_scroll_default_media.set_playing(true);
+
+        let natural_scroll_alternate_media = gtk::MediaFile::for_filename(format!(
+            "{}/src/ui/mouse/assets/scroll-natural.webm",
+            std::env::current_dir().unwrap().to_str().unwrap()
+        ));
+        // natural_scroll_alternate_media.set_playing(true);
+
         let natural_scroll_component = Choice::builder()
             .launch(ChoiceInit {
                 title: "Scroll Direction".to_string(),
@@ -170,26 +182,18 @@ impl SimpleComponent for Mouse {
 
                 default: Default {
                     value: false.to_variant(),
-                    media: format!(
-                        "{}/src/ui/mouse/assets/scroll-traditional.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    media: natural_scroll_default_media,
                     title: "Traditional".to_string(),
-                    subtitle: 
-                    "Scrolling moves the view".to_string(),
+                    subtitle: "Scrolling moves the view".to_string(),
 
                     enabled: false.to_variant() == value,
                 },
 
                 alternate: Alternate {
                     value: true.to_variant(),
-                    media: format!(
-                        "{}/src/ui/mouse/assets/scroll-natural.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    media: natural_scroll_alternate_media,
                     title: "Natural".to_string(),
-                    subtitle: 
-                    "Scrolling moves the view".to_string(),
+                    subtitle: "Scrolling moves the view".to_string(),
 
                     enabled: true.to_variant() == value,
                 },
@@ -222,7 +226,7 @@ impl SimpleComponent for Mouse {
             accel_profile,
             natural_scroll,
 
-            natural_scroll_component
+            natural_scroll_component,
         };
 
         let widgets = view_output!();

@@ -1,7 +1,7 @@
 use relm4::adw::prelude::*;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::{Alternate, ChoiceOutput, Default, Choice, ChoiceInit};
+use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
 
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
@@ -155,10 +155,9 @@ impl SimpleComponent for Touchpad {
         let settings = MouseSettings::new();
 
         let tap_to_click_media = gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/tap-to-click.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
-                    )
-);
+            "{}/src/ui/mouse/assets/tap-to-click.webm",
+            std::env::current_dir().unwrap().to_str().unwrap()
+        ));
         tap_to_click_media.set_loop(true);
         tap_to_click_media.play();
 
@@ -184,26 +183,24 @@ impl SimpleComponent for Touchpad {
 
                 default: Default {
                     value: "fingers".to_variant(),
-                    media: format!(
+                    media: gtk::MediaFile::for_filename(format!(
                         "{}/src/ui/mouse/assets/push-to-click-anywhere.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    )),
                     title: "Two Finger Push".to_string(),
-                    subtitle: 
-                    "Push anywhere with 2 fingers".to_string(),
+                    subtitle: "Push anywhere with 2 fingers".to_string(),
 
                     enabled: "fingers".to_variant() == click_method.to_variant(),
                 },
 
                 alternate: Alternate {
                     value: "areas".to_variant(),
-                    media: format!(
+                    media: gtk::MediaFile::for_filename(format!(
                         "{}/src/ui/mouse/assets/push-areas.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    )),
                     title: "Corner Push".to_string(),
-                    subtitle: 
-                    "Push with a single finger in the corner".to_string(),
+                    subtitle: "Push with a single finger in the corner".to_string(),
 
                     enabled: "areas".to_variant() == click_method.to_variant(),
                 },
@@ -223,28 +220,26 @@ impl SimpleComponent for Touchpad {
 
                 default: Default {
                     value: false.to_variant(),
-                    media: format!(
+                    media: gtk::MediaFile::for_filename(format!(
                         "{}/src/ui/mouse/assets/scroll-2finger.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    )),
                     title: "Two Finger".to_string(),
-                    subtitle: 
-                    "Drag two fingers on the touchpad".to_string(),
+                    subtitle: "Drag two fingers on the touchpad".to_string(),
 
                     enabled: false.to_variant() == scroll_method.to_variant(),
                 },
 
                 alternate: Alternate {
                     value: true.to_variant(),
-                    media: format!(
+                    media: gtk::MediaFile::for_filename(format!(
                         "{}/src/ui/mouse/assets/edge-scroll.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    )),
                     title: "Edge".to_string(),
-                    subtitle: 
-                    "Drag one finger on the edge".to_string(),
+                    subtitle: "Drag one finger on the edge".to_string(),
 
-                    enabled: true.to_variant() == scroll_method.to_variant()
+                    enabled: true.to_variant() == scroll_method.to_variant(),
                 },
             })
             .forward(sender.input_sender(), |out| match out {
@@ -260,26 +255,24 @@ impl SimpleComponent for Touchpad {
 
                 default: Default {
                     value: false.to_variant(),
-                    media: format!(
+                    media: gtk::MediaFile::for_filename(format!(
                         "{}/src/ui/mouse/assets/touch-scroll-traditional.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    )),
                     title: "Traditional".to_string(),
-                    subtitle: 
-                    "Scrolling moves the view".to_string(),
+                    subtitle: "Scrolling moves the view".to_string(),
 
                     enabled: false.to_variant() == natural_scroll.to_variant(),
                 },
 
                 alternate: Alternate {
                     value: true.to_variant(),
-                    media: format!(
+                    media: gtk::MediaFile::for_filename(format!(
                         "{}/src/ui/mouse/assets/touch-scroll-natural.webm",
                         std::env::current_dir().unwrap().to_str().unwrap()
-                    ),
+                    )),
                     title: "Natural".to_string(),
-                    subtitle: 
-                    "Scrolling moves the view".to_string(),
+                    subtitle: "Scrolling moves the view".to_string(),
 
                     enabled: true.to_variant() == natural_scroll.to_variant(),
                 },
@@ -287,7 +280,6 @@ impl SimpleComponent for Touchpad {
             .forward(sender.input_sender(), |out| match out {
                 ChoiceOutput::Noop => TouchpadMsg::Noop,
             });
-
 
         let model = Self {
             settings,
@@ -386,7 +378,7 @@ impl SimpleComponent for Touchpad {
                     .touchpad
                     .set_value("natural-scroll", &state.to_variant());
             }
-            TouchpadMsg::Noop => {},
+            TouchpadMsg::Noop => {}
         }
     }
 }

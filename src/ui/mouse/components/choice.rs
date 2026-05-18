@@ -9,7 +9,7 @@ use relm4::{
 #[derive(Debug)]
 pub struct Default {
     pub value: Variant,
-    pub media: String,
+    pub media: gtk::MediaFile,
     pub title: String,
     pub subtitle: String,
 
@@ -19,7 +19,7 @@ pub struct Default {
 #[derive(Debug)]
 pub struct Alternate {
     pub value: Variant,
-    pub media: String,
+    pub media: gtk::MediaFile,
     pub title: String,
     pub subtitle: String,
 
@@ -41,6 +41,8 @@ pub struct Choice {
 pub enum ChoiceMsg {
     Default(bool),
     Alternate(bool),
+    DefaultMedia(bool),
+    AlternateMedia(bool),
 }
 
 #[derive(Debug)]
@@ -101,7 +103,7 @@ impl SimpleComponent for Choice {
                         set_margin_end: 6,
                         set_height_request: 128,
 
-                        set_paintable: Some(&default_media),
+                        set_paintable: Some(&model.default.media),
                     },
                 },
                 gtk::Box {
@@ -183,18 +185,18 @@ impl SimpleComponent for Choice {
                         set_margin_end: 6,
                         set_height_request: 128,
 
-                        set_paintable: Some(&alternate_media),
+                        set_paintable: Some(&model.alternate.media),
 
                         // WIP
-                        // add_controller = gtk::EventControllerMotion {
-                        //     connect_enter => move |_,_,_| {
-                        //         alternate_media.play();           
-                        //     },
-                        //
-                        //     connect_leave => move |_| {
-                        //         &alternate_media.pause();           
-                        //     },
-                        // },
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter => move |_,_,_| {
+                                ChoiceMsg::AlternateMedia(true);
+                            },
+
+                            connect_leave => move |_| {
+                                ChoiceMsg::AlternateMedia(false);
+                            },
+                        },
                     },
                 },
                 gtk::Box {
@@ -256,14 +258,6 @@ impl SimpleComponent for Choice {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let default_media = gtk::MediaFile::for_filename(init.default.media.clone());
-        default_media.set_loop(true);
-        default_media.play();
-
-        let alternate_media = gtk::MediaFile::for_filename(init.alternate.media.clone());
-        alternate_media.set_loop(true);
-        alternate_media.play();
-
         let model = Self {
             key: init.key,
             settings: init.settings,
@@ -272,6 +266,9 @@ impl SimpleComponent for Choice {
             default: init.default,
             alternate: init.alternate,
         };
+
+        model.default.media.set_loop(true);
+        model.alternate.media.set_loop(true);
 
         let widgets = view_output!();
 
@@ -296,6 +293,20 @@ impl SimpleComponent for Choice {
                 let _ = self
                     .settings
                     .set_value(self.key.as_str(), &self.alternate.value);
+            }
+            ChoiceMsg::DefaultMedia(state) => {
+                if state {
+                    self.default.media.play();
+                } else {
+                    self.default.media.pause();
+                }
+            }
+            ChoiceMsg::AlternateMedia(state) => {
+                if state {
+                    self.alternate.media.play();
+                } else {
+                    self.alternate.media.pause();
+                }
             }
         }
     }
