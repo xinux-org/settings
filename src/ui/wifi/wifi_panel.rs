@@ -95,6 +95,7 @@ impl SimpleAsyncComponent for WifiModel {
             },
             adw::PreferencesPage {
                 adw::PreferencesGroup {
+                    #[name(wifi_toggle)]
                     adw::SwitchRow {
                         set_title: "Wi-Fi",
                         set_activatable: true,
@@ -271,7 +272,7 @@ impl SimpleAsyncComponent for WifiModel {
         match message {
             // The user clicked a button to turn Wi-Fi on/off
             WifiInput::ToggleWifi(enabled) => {
-                self.wifi_enabled = enabled;
+                // self.wifi_enabled = enabled;
                 self.loading = enabled;
                 println!(
                     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
@@ -301,7 +302,7 @@ impl SimpleAsyncComponent for WifiModel {
                     let wifi_enabled = set_wifi_enabled(clinet_clone, enabled).await.is_ok();
 
                     if wifi_enabled {
-                        glib::timeout_future(std::time::Duration::from_secs(5)).await;
+                        glib::timeout_future(std::time::Duration::from_secs(4)).await;
                         sender.input(WifiInput::LoadNetworks);
                     }
                 });
