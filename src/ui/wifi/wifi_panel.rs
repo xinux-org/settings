@@ -63,6 +63,7 @@ pub enum WifiInput {
     ToggleWifi(bool),
     ToggleAirplaneMode(bool),
     HandleWifiState(bool),
+    HandleWifiStateZBUS,
     // Received update from System D-Bus
     // AirplaneModeChanged(bool),
     // ProxyInitialized(RfkillProxy<'static>),
@@ -95,15 +96,16 @@ impl SimpleAsyncComponent for WifiModel {
             },
             adw::PreferencesPage {
                 adw::PreferencesGroup {
-                    #[name(wifi_toggle)]
+                    // #[name(wifi_toggle)]
                     adw::SwitchRow {
                         set_title: "Wi-Fi",
                         set_activatable: true,
                         #[watch]
+                        #[block_signal(wifi_toggle)]
                         set_active: model.wifi_enabled,
                         connect_active_notify[sender] => move |row| {
                             sender.input(WifiInput::HandleWifiState(row.is_active()));
-                        }
+                        } @wifi_toggle,
                     }
                 },
                 adw::PreferencesGroup {
@@ -260,7 +262,9 @@ impl SimpleAsyncComponent for WifiModel {
             while let Some(change) = wireless_enabled_changed.next().await {
                 if let Ok(enable) = change.get().await {
                     sender_clone.input(WifiInput::ToggleWifi(enable));
-                    // sender_clone.input(WifiInput::HandleWifiState(enable));
+                    if enable {
+                        sender_clone.input(WifiInput::HandleWifiStateZBUS);
+                    }
                 }
             }
         });
@@ -272,12 +276,9 @@ impl SimpleAsyncComponent for WifiModel {
         match message {
             // The user clicked a button to turn Wi-Fi on/off
             WifiInput::ToggleWifi(enabled) => {
-                // self.wifi_enabled = enabled;
+                self.wifi_enabled = enabled;
                 self.loading = enabled;
-                println!(
-                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
-                    enabled
-                );
+
                 // Immediate UI cleanup
                 if self.wifi_enabled {
                     self.wifi_stack_page = WifiStack::WifiOn;
@@ -288,10 +289,6 @@ impl SimpleAsyncComponent for WifiModel {
             }
             WifiInput::HandleWifiState(enabled) => {
                 self.wifi_enabled = enabled;
-                println!(
-                    "Connectedaaaaaaaaaaaaaaaaaa successfully {}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
-                    enabled
-                );
                 // drop spawned load_networks async task and run fresh task
                 if let Some(handle) = self.active_toggle_task.take() {
                     handle.abort();
@@ -305,6 +302,17 @@ impl SimpleAsyncComponent for WifiModel {
                         glib::timeout_future(std::time::Duration::from_secs(4)).await;
                         sender.input(WifiInput::LoadNetworks);
                     }
+                });
+                self.active_toggle_task = Some(handle);
+            }
+            WifiInput::HandleWifiStateZBUS => {
+                // drop spawned load_networks async task and run fresh task
+                if let Some(handle) = self.active_toggle_task.take() {
+                    handle.abort();
+                }
+                let handle = relm4::spawn_local(async move {
+                    glib::timeout_future(std::time::Duration::from_secs(4)).await;
+                    sender.input(WifiInput::LoadNetworks);
                 });
                 self.active_toggle_task = Some(handle);
             }
