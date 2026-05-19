@@ -1,6 +1,6 @@
 use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
 
-use relm4::factory::Position;
+use anyhow::Context;
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
 
@@ -10,6 +10,8 @@ use relm4::adw::AccentColor;
 use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
+
+const BG_BASE_DIR: &str = "/run/current-system/sw/share/backgrounds";
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
@@ -486,28 +488,35 @@ impl SimpleComponent for AppearanceModel {
             group,
         };
 
-        let bg_base_dir = "/run/current-system/sw/share/backgrounds";
         let folders: [&str; 2] = ["nixos", "gnome"];
 
         for folder in folders {
-            let path: PathBuf = Path::new(bg_base_dir).join(folder);
+            let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
             match fs::read_dir(&path) {
-                Ok(rd) => rd
-                    .map(|x| {
-                        let path = x.unwrap().path().to_str().unwrap().to_string();
-                        if path == settings.background.get::<String>("picture-uri") {
-                            println!("AXAXXAXAXAXAXAXAAXAXAXAXAXAXAXAXAXA, walpaper found ")
-                        }
-                        model.wallpapers.guard().push_back(Background {
-                            path: path.clone(),
-                            group: model.group.clone(),
-                            active: path[47..]
-                                == settings.background.get::<String>("picture-uri")[51..],
-                        });
-                    })
-                    .collect(),
+                Ok(rd) => {
+                    let _ = rd
+                        .filter(|x| x.is_ok())
+                        .map(|x| {
+                            x.and_then(|y| {
+                                let path = y.path().to_string_lossy().to_string();
+
+                                model.wallpapers.guard().push_back(Background {
+                                    path: path.clone(),
+                                    group: model.group.clone(),
+                                    active: path[47..]
+                                        == settings.background.get::<String>("picture-uri")[51..],
+                                });
+                                Ok(y)
+                            })
+                        })
+                        .collect::<Vec<_>>();
+                }
                 Err(err) => {
-                    eprintln!("Failed to read '{1}': {0}", err, path.to_str().unwrap());
+                    eprintln!(
+                        "Failed to read '{1}': {0}",
+                        err,
+                        path.to_str().unwrap_or_default()
+                    );
                     continue;
                 }
             }
@@ -542,11 +551,6 @@ impl SimpleComponent for AppearanceModel {
 
         match msg {
             AppearanceMsg::OpenRequest => self.open_dialog.emit(OpenDialogMsg::Open),
-            // AppearanceMsg::OpenResponse(path) => match std::fs::read_to_string(&path) {
-            //     Ok(content) => self.recent_wallpapers.guard().push_back(content),
-            //     Err(e) => println!("{}", e),
-            //     _ => {}
-            // },
             AppearanceMsg::OpenResponse(path) => {
                 self.recent_wallpapers.guard().push_back(Background {
                     path: path.to_str().unwrap().to_string(),
@@ -554,16 +558,14 @@ impl SimpleComponent for AppearanceModel {
                     active: false,
                 });
 
-                std::fs::copy(
-                    path.clone(),
-                    Path::new(&format!(
-                        "/home/{}/.local/share/backgrounds/{}",
-                        user.name().to_string_lossy(),
-                        // file_name().unwrap() will never be None, in this case
-                        path.file_name().unwrap().to_str().unwrap()
-                    )),
-                )
-                .unwrap();
+                let f_name = path.file_name().context("extract filename failed");
+
+                let dest = PathBuf::from("/home")
+                    .join(user.name())
+                    .join(".local/share/backgrounds")
+                    .join(f_name.unwrap_or_default());
+
+                std::fs::copy(&path, &dest).unwrap_or_default();
             }
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
@@ -591,36 +593,6 @@ impl SimpleComponent for AppearanceModel {
                     format!("file://{}", path),
                 );
                 println!("BACKGROUND: {}", &path.clone());
-
-                self.wallpapers.guard().drop();
-
-                let bg_base_dir = "/run/current-system/sw/share/backgrounds";
-                let folders: [&str; 2] = ["nixos", "gnome"];
-
-                for folder in folders {
-                    let path: PathBuf = Path::new(bg_base_dir).join(folder);
-                    match fs::read_dir(&path) {
-                        Ok(rd) => rd
-                            .map(|x| {
-                                let path = x.unwrap().path().to_str().unwrap().to_string();
-                                if path == settings.background.get::<String>("picture-uri") {
-                                    println!("AXAXXAXAXAXAXAXAAXAXAXAXAXAXAXAXAXA, walpaper found ")
-                                }
-
-                                self.wallpapers.guard().push_back(Background {
-                                    path: path.clone(),
-                                    group: self.group.clone(),
-                                    active: path[47..]
-                                        == settings.background.get::<String>("picture-uri")[51..],
-                                });
-                            })
-                            .collect(),
-                        Err(err) => {
-                            eprintln!("Failed to read '{1}': {0}", err, path.to_str().unwrap());
-                            continue;
-                        }
-                    }
-                }
             }
             AppearanceMsg::SendPick(color) => {
                 settings
