@@ -82,6 +82,14 @@ impl SimpleComponent for SingleChoice {
                         },
                     },
 
+                    // TODO:
+                    // FIX: row_option.enabled is not changed when clicked
+                    add_controller = gtk::GestureClick {
+                        connect_pressed[sender] => move |_,_,_,_| {
+                            let _ = sender.input_sender().send(SingleChoiceMsg::Switch(!model.row_option.enabled));
+                        },
+                    },
+
                     append = &gtk::Picture {
                         set_hexpand: true,
                         set_halign: gtk::Align::Center,

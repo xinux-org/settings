@@ -99,6 +99,12 @@ impl SimpleComponent for Choice {
                             },
                         },
 
+                        add_controller = gtk::GestureClick {
+                            connect_pressed[sender] => move |_,_,_,_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::Default(true));
+                            },
+                        },
+
                         #[name(default_option_picture)]
                         gtk::Picture {
                             set_hexpand: true,
@@ -188,6 +194,12 @@ impl SimpleComponent for Choice {
 
                             connect_leave[sender] => move |_| {
                                 let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
+                            },
+                        },
+
+                        add_controller = gtk::GestureClick {
+                            connect_pressed[sender] => move |_,_,_,_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::Alternate(true));
                             },
                         },
 
