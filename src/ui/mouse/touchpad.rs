@@ -4,7 +4,9 @@ use relm4::prelude::*;
 use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
 
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
-use crate::ui::mouse::components::single_choice::{RowOption, SingleChoice, SingleChoiceInit, SingleChoiceOutput};
+use crate::ui::mouse::components::single_choice::{
+    RowOption, SingleChoice, SingleChoiceInit, SingleChoiceOutput,
+};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug)]
@@ -42,7 +44,7 @@ pub enum TouchpadMsg {
 
 #[relm4::component(pub)]
 impl SimpleComponent for Touchpad {
-    type Init = ();
+    type Init = MouseSettings;
     type Input = TouchpadMsg;
     type Output = MouseMsg;
 
@@ -118,11 +120,11 @@ impl SimpleComponent for Touchpad {
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let settings = MouseSettings::new();
+        let settings = init;
 
         let tap_to_click_media = gtk::MediaFile::for_filename(format!(
             "{}/src/ui/mouse/assets/tap-to-click.webm",
@@ -177,18 +179,20 @@ impl SimpleComponent for Touchpad {
             });
 
         let tap_to_click = settings.touchpad.boolean("tap-to-click");
-        let tap_to_click_controller = SingleChoice::builder().launch(SingleChoiceInit{
-            key: "tap-to-click".to_string(),
-            settings: settings.touchpad.clone(),
-            row_option: RowOption {
-                value: tap_to_click.to_variant(),
-                media: tap_to_click_media.clone(),
-                title: "Tap to Click".to_string(),
-                subtitle: "Quickly touch the touchpad to click".to_string(),
+        let tap_to_click_controller = SingleChoice::builder()
+            .launch(SingleChoiceInit {
+                key: "tap-to-click".to_string(),
+                settings: settings.touchpad.clone(),
+                row_option: RowOption {
+                    value: tap_to_click.to_variant(),
+                    media: tap_to_click_media.clone(),
+                    title: "Tap to Click".to_string(),
+                    subtitle: "Quickly touch the touchpad to click".to_string(),
 
-                enabled: tap_to_click
-            }
-        }).forward(sender.input_sender(), |out| match out {
+                    enabled: tap_to_click,
+                },
+            })
+            .forward(sender.input_sender(), |out| match out {
                 SingleChoiceOutput::Switch(state) => TouchpadMsg::TapToClick(state),
             });
 
@@ -196,7 +200,7 @@ impl SimpleComponent for Touchpad {
         let scroll_method_controller = Choice::builder()
             .launch(ChoiceInit {
                 // TODO: this component changes two dconf keys
-                // FIX: 
+                // FIX:
                 key: "scroll method".to_string(),
                 settings: settings.touchpad.clone(),
 

@@ -2,6 +2,7 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
+use crate::ui::mouse::MouseModal;
 use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
@@ -40,7 +41,7 @@ pub enum MousePageMsg {
 
 #[relm4::component(pub)]
 impl SimpleComponent for Mouse {
-    type Init = ();
+    type Init = MouseSettings;
     type Input = MousePageMsg;
     type Output = MouseMsg;
 
@@ -144,11 +145,11 @@ impl SimpleComponent for Mouse {
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let settings = MouseSettings::new();
+        let settings = init;
         let key = "natural-scroll".to_string();
         let value = settings.mouse.value(key.as_str());
 

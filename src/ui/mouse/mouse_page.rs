@@ -21,15 +21,6 @@ pub struct MouseSettings {
     pub touchpad: Settings,
 }
 
-impl MouseSettings {
-    pub fn new() -> Self {
-        Self {
-            mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
-            touchpad: Settings::new("org.gnome.desktop.peripherals.touchpad"),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct MouseModal {
     view_stack: adw::ViewStack,
@@ -37,6 +28,15 @@ pub struct MouseModal {
     touchpad: Controller<Touchpad>,
     pointing_stick: Controller<PointingStick>,
     show_view_stack_bar: bool,
+}
+
+impl MouseModal {
+    pub fn gsettings() -> MouseSettings {
+        MouseSettings {
+            mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
+            touchpad: Settings::new("org.gnome.desktop.peripherals.touchpad"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -137,13 +137,15 @@ impl SimpleComponent for MouseModal {
         root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let settings = Self::gsettings();
+
         let view_stack = adw::ViewStack::new();
         let mouse = Mouse::builder()
-            .launch(())
+            .launch(settings.clone())
             .forward(_sender.input_sender(), identity);
 
         let touchpad = Touchpad::builder()
-            .launch(())
+            .launch(settings.clone())
             .forward(_sender.input_sender(), identity);
 
         let pointing_stick = PointingStick::builder()
