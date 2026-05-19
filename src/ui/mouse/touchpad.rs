@@ -4,6 +4,7 @@ use relm4::prelude::*;
 use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
 
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
+use crate::ui::mouse::components::single_choice::{RowOption, SingleChoice, SingleChoiceInit, SingleChoiceOutput};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug)]
@@ -18,6 +19,7 @@ pub struct Touchpad {
     secondary_click_controller: Controller<Choice>,
 
     tap_to_click: bool,
+    tap_to_click_controller: Controller<SingleChoice>,
 
     scroll_method: bool,
     scroll_method_controller: Controller<Choice>,
@@ -92,39 +94,7 @@ impl SimpleComponent for Touchpad {
                     set_sensitive: model.send_events,
                     set_title: "Tap to Click",
 
-                    add = &adw::ActionRow {
-
-                        add_suffix = &gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 12,
-                            set_hexpand: true,
-
-                            append = &gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-
-                                append = &adw::SwitchRow {
-                                    #[watch]
-                                    set_active: model.tap_to_click,
-                                    connect_active_notify[sender] => move |btn| {
-                                        sender.input(TouchpadMsg::TapToClick(btn.is_active()));
-                                    },
-                                },
-
-                                append = &gtk::Picture {
-                                    set_hexpand: true,
-                                    set_halign: gtk::Align::Center,
-                                    set_margin_top: 6,
-                                    set_margin_bottom: 6,
-                                    set_margin_start: 6,
-                                    set_margin_end: 6,
-                                    set_height_request: 128,
-
-                                    set_paintable: Some(&tap_to_click_media),
-                                },
-                            },
-                        }
-                    },
+                    add = model.tap_to_click_controller.widget(),
                 },
 
                 add = &adw::PreferencesGroup {
@@ -158,8 +128,6 @@ impl SimpleComponent for Touchpad {
             "{}/src/ui/mouse/assets/tap-to-click.webm",
             std::env::current_dir().unwrap().to_str().unwrap()
         ));
-        tap_to_click_media.set_loop(true);
-        tap_to_click_media.play();
 
         let events = settings.touchpad.string("send-events");
         let send_events = events == String::from("enabled");
@@ -177,7 +145,6 @@ impl SimpleComponent for Touchpad {
         let secondary_click = click_method == "fingers";
         let secondary_click_controller = Choice::builder()
             .launch(ChoiceInit {
-                title: "Secondary Click".to_string(),
                 key: "click-method".to_string(),
                 settings: settings.touchpad.clone(),
 
@@ -210,12 +177,27 @@ impl SimpleComponent for Touchpad {
             });
 
         let tap_to_click = settings.touchpad.boolean("tap-to-click");
+        let tap_to_click_controller = SingleChoice::builder().launch(SingleChoiceInit{
+            key: "tap-to-click".to_string(),
+            settings: settings.touchpad.clone(),
+            row_option: RowOption {
+                value: tap_to_click.to_variant(),
+                media: tap_to_click_media.clone(),
+                title: "Tap to Click".to_string(),
+                subtitle: "Quickly touch the touchpad to click".to_string(),
+
+                enabled: tap_to_click
+            }
+        }).forward(sender.input_sender(), |out| match out {
+                SingleChoiceOutput::Switch(state) => TouchpadMsg::TapToClick(state),
+            });
 
         let scroll_method = settings.touchpad.boolean("two-finger-scrolling-enabled");
         let scroll_method_controller = Choice::builder()
             .launch(ChoiceInit {
-                title: "Scroll Method".to_string(),
-                key: "natural-scroll".to_string(),
+                // TODO: this component changes two dconf keys
+                // FIX: 
+                key: "scroll method".to_string(),
                 settings: settings.touchpad.clone(),
 
                 default: Default {
@@ -249,7 +231,6 @@ impl SimpleComponent for Touchpad {
         let natural_scroll = settings.touchpad.boolean("natural-scroll");
         let natural_scroll_controller = Choice::builder()
             .launch(ChoiceInit {
-                title: "Scroll Direction".to_string(),
                 key: "natural-scroll".to_string(),
                 settings: settings.touchpad.clone(),
 
@@ -292,6 +273,7 @@ impl SimpleComponent for Touchpad {
             secondary_click_controller,
 
             tap_to_click,
+            tap_to_click_controller,
 
             scroll_method,
             scroll_method_controller,

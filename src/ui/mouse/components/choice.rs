@@ -33,8 +33,6 @@ pub struct Choice {
 
     pub default: Default,
     pub alternate: Alternate,
-
-    title: String,
 }
 
 #[derive(Debug)]
@@ -57,8 +55,6 @@ pub struct ChoiceInit {
 
     pub default: Default,
     pub alternate: Alternate,
-
-    pub title: String,
 }
 
 #[relm4::component(pub)]
@@ -93,6 +89,16 @@ impl SimpleComponent for Choice {
                         #[iterate]
                         add_css_class: ["background","frame"],
 
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter[sender] => move |_,_,_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(true));
+                            },
+
+                            connect_leave[sender] => move |_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(false));
+                            },
+                        },
+
                         #[name(default_option_picture)]
                         gtk::Picture {
                             set_hexpand: true,
@@ -104,16 +110,6 @@ impl SimpleComponent for Choice {
                             set_height_request: 128,
 
                             set_paintable: Some(&model.default.media),
-
-                            add_controller = gtk::EventControllerMotion {
-                                connect_enter[sender] => move |_,_,_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(true));
-                                },
-
-                                connect_leave[sender] => move |_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(false));
-                                },
-                            },
                         },
                     },
                     gtk::Box {
@@ -185,6 +181,16 @@ impl SimpleComponent for Choice {
                         #[iterate]
                         add_css_class: ["background","frame"],
 
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter[sender] => move |_,_,_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(true));
+                            },
+
+                            connect_leave[sender] => move |_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
+                            },
+                        },
+
                         #[name(alternative_option_picture)]
                         gtk::Picture {
                             set_hexpand: true,
@@ -196,16 +202,6 @@ impl SimpleComponent for Choice {
                             set_height_request: 128,
 
                             set_paintable: Some(&model.alternate.media),
-
-                            add_controller = gtk::EventControllerMotion {
-                                connect_enter[sender] => move |_,_,_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(true));
-                                },
-
-                                connect_leave[sender] => move |_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
-                                },
-                            },
                         },
                     },
 
@@ -271,7 +267,6 @@ impl SimpleComponent for Choice {
         let model = Self {
             key: init.key,
             settings: init.settings,
-            title: init.title,
 
             default: init.default,
             alternate: init.alternate,

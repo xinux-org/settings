@@ -176,7 +176,6 @@ impl SimpleComponent for Mouse {
 
         let natural_scroll_component = Choice::builder()
             .launch(ChoiceInit {
-                title: "Scroll Direction".to_string(),
                 key: "natural-scroll".to_string(),
                 settings: settings.mouse.clone(),
 
