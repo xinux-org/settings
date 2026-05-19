@@ -461,14 +461,17 @@ impl SimpleComponent for AppearanceModel {
                 OpenDialogResponse::Cancel => AppearanceMsg::Ignore,
             });
 
-        let wallpapers = FactoryVecDeque::builder()
-            .launch(gtk::FlowBox::default())
-            .forward(sender.input_sender(), |output| match output {
-                BackgroundOutput::SetBackgroundPath(path) => {
-                    AppearanceMsg::SetBackground(path.clone())
-                }
-            });
-        let recent_wallpapers = FactoryVecDeque::builder().launch_default().detach();
+        let background_factory = || {
+            FactoryVecDeque::<Background>::builder()
+                .launch(gtk::FlowBox::default())
+                .forward(sender.input_sender(), |output| match output {
+                    BackgroundOutput::SetBackgroundPath(path) => {
+                        AppearanceMsg::SetBackground(path.clone())
+                    }
+                })
+        };
+        let (wallpapers, recent_wallpapers) = (background_factory(), background_factory());
+
         let settings = AppearanceSettings::new();
         let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
         let accent_color =
@@ -585,6 +588,7 @@ impl SimpleComponent for AppearanceModel {
             }
 
             AppearanceMsg::SetBackground(path) => {
+                println!("setting wallapaper");
                 let _ = settings.background.set(
                     match settings.interface.get::<String>("color-scheme").as_str() {
                         "prefer-dark" => "picture-uri-dark",

@@ -1,4 +1,3 @@
-use crate::ui::appearance::appearance::AppearanceSettings;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 
 #[derive(Debug, Clone)]
@@ -9,11 +8,6 @@ pub struct Background {
 }
 
 #[derive(Debug)]
-pub enum BackgroundMsg {
-    SetBackground(String),
-}
-
-#[derive(Debug)]
 pub enum BackgroundOutput {
     SetBackgroundPath(String),
 }
@@ -21,7 +15,7 @@ pub enum BackgroundOutput {
 #[relm4::factory(pub)]
 impl FactoryComponent for Background {
     type Init = Background;
-    type Input = BackgroundMsg;
+    type Input = ();
     type Output = BackgroundOutput;
     type CommandOutput = ();
     type ParentWidget = gtk::FlowBox;
@@ -47,7 +41,10 @@ impl FactoryComponent for Background {
                 set_overflow: gtk::Overflow::Hidden,
                 // set_active: self.active,
                 connect_clicked[sender, path = self.path.clone()] => move |_| {
-                    sender.output(BackgroundOutput::SetBackgroundPath(path.clone())).unwrap()
+                    match sender.output(BackgroundOutput::SetBackgroundPath(path.clone())) {
+                        Ok(_) => (),
+                        Err(e) => eprintln!("{e:?}")
+                    }
                 },
 
                 gtk::Overlay{
@@ -83,25 +80,6 @@ impl FactoryComponent for Background {
             path: init.path,
             group: init.group,
             active: init.active,
-        }
-    }
-
-    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
-        let settings = AppearanceSettings::new();
-        match message {
-            BackgroundMsg::SetBackground(path) => {
-                let _ = settings.background.set(
-                    match settings.interface.get::<String>("color-scheme").as_str() {
-                        "prefer-dark" => "picture-uri-dark",
-                        _ => "picture-uri",
-                    },
-                    format!("file://{}", path),
-                );
-                println!("BACKGROUND: {}", &path.clone());
-                sender
-                    .output(BackgroundOutput::SetBackgroundPath(path))
-                    .unwrap();
-            }
         }
     }
 }
