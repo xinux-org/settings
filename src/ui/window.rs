@@ -37,7 +37,7 @@ pub struct App {
     #[allow(dead_code)]
     display: Controller<DisplayModel>,
     #[allow(dead_code)]
-    appearance: Controller<AppearanceModel>,
+    appearance: AsyncController<AppearanceModel>,
     #[allow(dead_code)]
     sound: Controller<SoundModel>,
     #[allow(dead_code)]

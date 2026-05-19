@@ -1,13 +1,16 @@
 use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
 
 use anyhow::Context;
+use relm4::loading_widgets::LoadingWidgets;
+use std::thread;
+use std::time::Duration;
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
 use relm4::adw::AccentColor;
-use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*};
+use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
 
@@ -83,18 +86,19 @@ pub enum AppearanceMsg {
 pub struct AppearanceModel {
     style: AppearanceStyle,
     wallpaper: String,
-    wallpapers: FactoryVecDeque<Background>,
-    recent_wallpapers: FactoryVecDeque<Background>,
+    wallpapers: AsyncFactoryVecDeque<Background>,
+    recent_wallpapers: AsyncFactoryVecDeque<Background>,
     accent_color: AccentColorWrapped,
     open_dialog: Controller<OpenDialog>,
     group: gtk::ToggleButton,
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for AppearanceModel {
+#[relm4::component(pub, async)]
+impl AsyncComponent for AppearanceModel {
     type Init = ();
     type Input = AppearanceMsg;
     type Output = AppMsg;
+    type CommandOutput = ();
 
     view! {
         #[root]
@@ -448,11 +452,32 @@ impl SimpleComponent for AppearanceModel {
         }
     }
 
-    fn init(
+    fn init_loading_widgets(root: Self::Root) -> Option<LoadingWidgets> {
+        view! {
+            #[local]
+            root {
+                // set_title: Some("Simple app"),
+                // set_default_size: (300, 100),
+
+                // This will be removed automatically by
+                // LoadingWidgets when the full view has loaded
+                #[name(spinner)]
+                gtk::Spinner {
+                    start: (),
+                    set_halign: gtk::Align::Center,
+                }
+            }
+        }
+        Some(LoadingWidgets::new(root, spinner))
+    }
+
+    async fn init(
         _init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
         let open_dialog = OpenDialog::builder()
             .transient_for_native(&root)
             .launch(OpenDialogSettings::default())
@@ -462,7 +487,7 @@ impl SimpleComponent for AppearanceModel {
             });
 
         let background_factory = || {
-            FactoryVecDeque::<Background>::builder()
+            AsyncFactoryVecDeque::<Background>::builder()
                 .launch(gtk::FlowBox::default())
                 .forward(sender.input_sender(), |output| match output {
                     BackgroundOutput::SetBackgroundPath(path) => {
@@ -509,6 +534,7 @@ impl SimpleComponent for AppearanceModel {
                                     active: path[47..]
                                         == settings.background.get::<String>("picture-uri")[51..],
                                 });
+
                                 Ok(y)
                             })
                         })
@@ -545,10 +571,17 @@ impl SimpleComponent for AppearanceModel {
         let recent_wallpaper_box = model.recent_wallpapers.widget();
 
         let widgets = view_output!();
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+    async fn update(
+        &mut self,
+        msg: Self::Input,
+        _sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
         let settings = AppearanceSettings::new();
         let user = get_user_by_uid(get_current_uid()).unwrap();
 

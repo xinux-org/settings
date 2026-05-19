@@ -1,4 +1,7 @@
-use relm4::{adw::prelude::*, gtk, prelude::*};
+use std::time::Duration;
+
+use relm4::loading_widgets::LoadingWidgets;
+use relm4::{adw::prelude::*, gtk, prelude::*, view};
 
 #[derive(Debug, Clone)]
 pub struct Background {
@@ -12,8 +15,8 @@ pub enum BackgroundOutput {
     SetBackgroundPath(String),
 }
 
-#[relm4::factory(pub)]
-impl FactoryComponent for Background {
+#[relm4::factory(pub, async)]
+impl AsyncFactoryComponent for Background {
     type Init = Background;
     type Input = ();
     type Output = BackgroundOutput;
@@ -66,7 +69,8 @@ impl FactoryComponent for Background {
                         add_css_class: "osd",
                         add_css_class: "circular",
                         add_css_class: "remove-button",
-                        set_visible: wallpaper_item.is_active()
+                        // set_visible: wallpaper_item.is_active(),
+                        set_visible: self.active
                     }
                 }
             }
@@ -75,11 +79,41 @@ impl FactoryComponent for Background {
 
     }
 
-    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
+    fn init_loading_widgets(root: Self::Root) -> Option<LoadingWidgets> {
+        view! {
+            #[local]
+            root {
+                // set_orientation: gtk::Orientation::Horizontal,
+                // set_spacing: 10,
+
+                #[name(spinner)]
+                gtk::Spinner {
+                    start: (),
+                    set_hexpand: true,
+                    set_halign: gtk::Align::Center,
+                    // Reserve vertical space
+                    set_height_request: 34,
+                }
+            }
+        }
+        Some(LoadingWidgets::new(root, spinner))
+    }
+
+    async fn init_model(
+        init: Self::Init,
+        _index: &DynamicIndex,
+        _sender: AsyncFactorySender<Self>,
+    ) -> Self {
+        // tokio::time::sleep(Duration::from_secs(1)).await;
+
         Self {
             path: init.path,
             group: init.group,
             active: init.active,
         }
+    }
+
+    fn shutdown(&mut self, _widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
+        println!("Wallpaper with path {} was destroyed", self.path);
     }
 }
