@@ -50,72 +50,61 @@ impl SimpleComponent for Touchpad {
 
     view! {
         #[root]
-        adw::ToolbarView {
-            set_top_bar_style: adw::ToolbarStyle::Flat,
+        adw::PreferencesPage {
+            add = &adw::PreferencesGroup {
+                add = &adw::SwitchRow {
+                    set_title: "Touchpad",
+                    set_active: model.send_events,
 
-            #[wrap(Some)]
-            set_content = &adw::PreferencesPage {
-                add = &adw::PreferencesGroup {
-                    add = &adw::SwitchRow {
-                        set_title: "Touchpad",
-                        set_active: model.send_events,
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(TouchpadMsg::SendEvents(row.is_active()));
+                    }
+                },
+            },
+            add = &adw::PreferencesGroup {
+                #[watch]
+                set_sensitive: model.send_events,
+                set_title: "General",
 
-                        connect_active_notify[sender] => move |row| {
-                            sender.input(TouchpadMsg::SendEvents(row.is_active()));
-                        }
-                    },
+                add = &adw::SwitchRow {
+                    set_title: "Disable Touchpad While Typing",
+                    set_active: model.disable_while_typing,
+
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(TouchpadMsg::DisableWhileTyping(row.is_active()));
+                    }
                 },
 
-                add = &adw::PreferencesGroup {
-                    #[watch]
-                    set_sensitive: model.send_events,
-                    set_title: "General",
+                add = model.speed_controller.widget(),
+            },
+            add = &adw::PreferencesGroup {
+                #[watch]
+                set_sensitive: model.send_events,
+                set_title: "Secondary Click",
 
-                    add = &adw::SwitchRow {
-                        set_title: "Disable Touchpad While Typing",
-                        set_active: model.disable_while_typing,
+                add = model.secondary_click_controller.widget(),
+            },
+            add = &adw::PreferencesGroup {
+                #[watch]
+                set_sensitive: model.send_events,
+                set_title: "Tap to Click",
 
-                        connect_active_notify[sender] => move |row| {
-                            sender.input(TouchpadMsg::DisableWhileTyping(row.is_active()));
-                        }
-                    },
+                add = model.tap_to_click_controller.widget(),
+            },
+            add = &adw::PreferencesGroup {
+                #[watch]
+                set_sensitive: model.send_events,
+                set_title: "Scroll Method",
 
-                    add = model.speed_controller.widget(),
-                },
+                add = model.scroll_method_controller.widget(),
+            },
+            add = &adw::PreferencesGroup {
+                #[watch]
+                set_sensitive: model.send_events,
+                set_title: "Scroll Direction",
 
-                add = &adw::PreferencesGroup {
-                    #[watch]
-                    set_sensitive: model.send_events,
-                    set_title: "Secondary Click",
-
-                    add = model.secondary_click_controller.widget(),
-                },
-
-                add = &adw::PreferencesGroup {
-                    #[watch]
-                    set_sensitive: model.send_events,
-                    set_title: "Tap to Click",
-
-                    add = model.tap_to_click_controller.widget(),
-                },
-
-                add = &adw::PreferencesGroup {
-                    #[watch]
-                    set_sensitive: model.send_events,
-                    set_title: "Scroll Method",
-
-                    add = model.scroll_method_controller.widget(),
-                },
-
-                add = &adw::PreferencesGroup {
-                    #[watch]
-                    set_sensitive: model.send_events,
-                    set_title: "Scroll Direction",
-
-                    add = model.natural_scroll_controller.widget(),
-                },
-
-            }
+                add = model.natural_scroll_controller.widget(),
+            },
         }
     }
 

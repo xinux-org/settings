@@ -64,210 +64,305 @@ impl SimpleComponent for Choice {
     type Output = ChoiceOutput;
 
     view! {
-        gtk::Box {
-            set_hexpand: true,
-            set_homogeneous: true,
-            set_spacing: 3,
+        adw::PreferencesRow {
+            set_activatable: false,
 
-            #[name(default_option_box)]
-            gtk::Box {
-                set_accessible_role: gtk::AccessibleRole::Radio,
+            // accessibility {
+            //   labelled-by: [
+            //     title,
+            //   ];
+
+            //   described-by: [
+            //     subtitle,
+            //   ];
+            // }
+
+            // styles [
+            //   "content",
+            // ]
+            #[wrap(Some)]
+            set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
-                set_can_focus: true,
-                set_focusable: true,
-                set_receives_default: true,
+                set_hexpand: false,
 
-                #[iterate]
-                add_css_class: ["activatable","card"],
+                #[name(header)]
+                gtk::Box {
+                    set_valign: gtk::Align::Center,
 
-                adw::Bin {
-                    set_margin_top: 9,
-                    set_margin_bottom: 9,
-                    set_margin_start: 9,
-                    set_margin_end: 9,
+                    // styles [
+                    //   "header",
+                    // ]
 
-                    #[iterate]
-                    add_css_class: ["background","frame"],
-
-                    add_controller = gtk::EventControllerMotion {
-                        connect_enter[sender] => move |_,_,_| {
-                            let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(true));
-                        },
-
-                        connect_leave[sender] => move |_| {
-                            let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(false));
-                        },
+                    #[name(prefixes)]
+                    gtk::Box {
+                      set_visible: false,
+                      // styles [
+                      //   "prefixes",
+                      // ]
                     },
 
-                    add_controller = gtk::GestureClick {
-                        connect_pressed[sender] => move |_,_,_,_| {
-                            let _ = sender.input_sender().send(ChoiceMsg::Default(true));
-                        },
-                    },
-
-                    #[name(default_option_picture)]
-                    gtk::Picture {
+                    #[name(title_box)]
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_valign: gtk::Align::Center,
                         set_hexpand: true,
-                        set_halign: gtk::Align::Center,
-                        set_margin_top: 6,
-                        set_margin_bottom: 6,
-                        set_margin_start: 6,
-                        set_margin_end: 6,
-                        set_height_request: 128,
 
-                        set_paintable: Some(&model.default.media),
+                        // styles [
+                        //   "title",
+                        // ]
+
+                        #[name(title)]
+                        gtk::Label {
+                            // visible: bind $string_is_not_empty(title.label) as <bool>;
+                            // ellipsize: none;
+                            set_label: "this is label",
+                            // lines: 0;
+                            // mnemonic-widget: template;
+                            // use-underline: bind template.use-underline;
+                            // selectable: bind template.title-selectable;
+                            // wrap: true;
+                            // wrap-mode: word_char;
+                            // xalign: 0;
+                            // use-markup: bind template.use-markup;
+
+                            // styles [
+                            //   "title",
+                            // ]
+                        },
+
+                        // Label subtitle {
+                        //   visible: bind $string_is_not_empty(subtitle.label) as <bool>;
+                        //   ellipsize: none;
+                        //   lines: 0;
+                        //   selectable: bind template.subtitle-selectable;
+                        //   wrap: true;
+                        //   wrap-mode: word_char;
+                        //   xalign: 0;
+                        //   use-markup: bind template.use-markup;
+
+                        //   styles [
+                        //     "subtitle",
+                        //   ]
+                        // }
+                    },
+
+                    #[name(suffixes)]
+                    gtk::Box {
+                        set_visible: false,
+                        add_css_class: "suffixes",
                     },
                 },
-                gtk::Box {
-                    set_margin_start: 15,
-                    set_margin_bottom: 9,
-                    #[name(default_checkbutton_image)]
-                    adw::Bin {
-                        add_css_class: "radio",
-                        set_can_target: false,
-                        set_valign: gtk::Align::Center,
-                        set_halign: gtk::Align::Center
-                    },
-                    gtk::Box {
-                        set_valign: gtk::Align::Center,
-                        set_margin_start: 6,
-                        set_orientation: gtk::Orientation::Horizontal,
-                        add_css_class: "title",
 
-                        #[name = "traditional"]
-                        gtk::CheckButton {
-                            #[watch]
-                            set_active: model.default.enabled,
-                            connect_toggled[sender] => move |btn| {
-                                sender.input(ChoiceMsg::Default(btn.is_active()));
+                // gif starts from here
+                #[name(contents)]
+                gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_hexpand: true,
+                    set_homogeneous: true,
+                    set_spacing: 3,
+
+                    #[name(default_option_box)]
+                    gtk::Box {
+                        set_accessible_role: gtk::AccessibleRole::Radio,
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_can_focus: true,
+                        set_focusable: true,
+                        set_receives_default: true,
+
+                        #[iterate]
+                        add_css_class: ["activatable","card"],
+
+                        adw::Bin {
+                            set_margin_top: 9,
+                            set_margin_bottom: 9,
+                            set_margin_start: 9,
+                            set_margin_end: 9,
+
+                            #[iterate]
+                            add_css_class: ["background","frame"],
+
+                            add_controller = gtk::EventControllerMotion {
+                                connect_enter[sender] => move |_,_,_| {
+                                    let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(true));
+                                },
+
+                                connect_leave[sender] => move |_| {
+                                    let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(false));
+                                },
+                            },
+
+                            add_controller = gtk::GestureClick {
+                                connect_pressed[sender] => move |_,_,_,_| {
+                                    let _ = sender.input_sender().send(ChoiceMsg::Default(true));
+                                },
+                            },
+
+                            #[name(default_option_picture)]
+                            gtk::Picture {
+                                set_hexpand: true,
+                                set_halign: gtk::Align::Center,
+                                set_margin_top: 6,
+                                set_margin_bottom: 6,
+                                set_margin_start: 6,
+                                set_margin_end: 6,
+                                set_height_request: 128,
+
+                                set_paintable: Some(&model.default.media),
+                            },
+                        },
+                        gtk::Box {
+                            set_margin_start: 15,
+                            set_margin_bottom: 9,
+                            #[name(default_checkbutton_image)]
+                            adw::Bin {
+                                add_css_class: "radio",
+                                set_can_target: false,
+                                set_valign: gtk::Align::Center,
+                                set_halign: gtk::Align::Center
+                            },
+                            gtk::Box {
+                                set_valign: gtk::Align::Center,
+                                set_margin_start: 6,
+                                set_orientation: gtk::Orientation::Horizontal,
+                                add_css_class: "title",
+
+                                #[name = "traditional"]
+                                gtk::CheckButton {
+                                    #[watch]
+                                    set_active: model.default.enabled,
+                                    connect_toggled[sender] => move |btn| {
+                                        sender.input(ChoiceMsg::Default(btn.is_active()));
+                                    },
+                                },
+
+                                gtk::Box {
+                                    set_orientation: gtk::Orientation::Vertical,
+
+                                    #[name(default_option_title)]
+                                    gtk::Label {
+                                        set_use_underline: true,
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: model.default.title.as_str(),
+                                        add_css_class: "title",
+                                    },
+                                    #[name(default_option_subtitle)]
+                                    gtk::Label {
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: model.default.subtitle.as_str(),
+                                        add_css_class: "subtitle",
+                                    },
+                                },
+                            }
+                        },
+                    },
+                    #[name(alternative_option_box)]
+                    gtk::Box {
+                        set_accessible_role: gtk::AccessibleRole::Radio,
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_can_focus: true,
+                        set_focusable: true,
+                        set_receives_default: true,
+
+                        #[iterate]
+                        add_css_class: ["activatable","card"],
+
+                        adw::Bin {
+                            set_margin_top: 9,
+                            set_margin_bottom: 9,
+                            set_margin_start: 9,
+                            set_margin_end: 9,
+
+                            #[iterate]
+                            add_css_class: ["background","frame"],
+
+                            add_controller = gtk::EventControllerMotion {
+                                connect_enter[sender] => move |_,_,_| {
+                                    let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(true));
+                                },
+
+                                connect_leave[sender] => move |_| {
+                                    let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
+                                },
+                            },
+
+                            add_controller = gtk::GestureClick {
+                                connect_pressed[sender] => move |_,_,_,_| {
+                                    let _ = sender.input_sender().send(ChoiceMsg::Alternate(true));
+                                },
+                            },
+
+                            #[name(alternative_option_picture)]
+                            gtk::Picture {
+                                set_hexpand: true,
+                                set_halign: gtk::Align::Center,
+                                set_margin_top: 6,
+                                set_margin_bottom: 6,
+                                set_margin_start: 6,
+                                set_margin_end: 6,
+                                set_height_request: 128,
+
+                                set_paintable: Some(&model.alternate.media),
                             },
                         },
 
                         gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-
-                            #[name(default_option_title)]
-                            gtk::Label {
-                                set_use_underline: true,
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: model.default.title.as_str(),
-                                add_css_class: "title",
+                            set_margin_start: 15,
+                            set_margin_bottom: 9,
+                            #[name(alternative_checkbutton_image)]
+                            adw::Bin {
+                                add_css_class: "radio",
+                                set_can_target: false,
+                                set_valign: gtk::Align::Center,
+                                set_halign: gtk::Align::Center
                             },
-                            #[name(default_option_subtitle)]
-                            gtk::Label {
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: model.default.subtitle.as_str(),
-                                add_css_class: "subtitle",
+                            gtk::Box {
+                                set_valign: gtk::Align::Center,
+                                set_margin_start: 6,
+                                set_orientation: gtk::Orientation::Horizontal,
+                                add_css_class: "title",
+
+                                #[name = "natural"]
+                                gtk::CheckButton {
+                                    set_group: Some(&traditional),
+
+                                    #[watch]
+                                    set_active: model.alternate.enabled,
+                                    connect_toggled[sender] => move |btn| {
+                                        sender.input(ChoiceMsg::Alternate(btn.is_active()));
+                                    },
+                                },
+
+                                gtk::Box {
+                                    set_orientation: gtk::Orientation::Vertical,
+
+                                    #[name(alternative_option_title)]
+                                    gtk::Label {
+                                        set_use_underline: true,
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: model.alternate.title.as_str(),
+                                        add_css_class: "title",
+                                    },
+                                    #[name(alternative_option_subtitle)]
+                                    gtk::Label {
+                                        set_xalign: 0.0,
+                                        set_wrap: true,
+                                        set_wrap_mode: pango::WrapMode::WordChar,
+                                        set_label: model.alternate.subtitle.as_str(),
+                                        add_css_class: "subtitle",
+                                    },
+                                },
                             },
                         },
-                    }
+                    },
                 },
             },
-            #[name(alternative_option_box)]
-            gtk::Box {
-                set_accessible_role: gtk::AccessibleRole::Radio,
-                set_orientation: gtk::Orientation::Vertical,
-                set_can_focus: true,
-                set_focusable: true,
-                set_receives_default: true,
 
-                #[iterate]
-                add_css_class: ["activatable","card"],
-
-                adw::Bin {
-                    set_margin_top: 9,
-                    set_margin_bottom: 9,
-                    set_margin_start: 9,
-                    set_margin_end: 9,
-
-                    #[iterate]
-                    add_css_class: ["background","frame"],
-
-                    add_controller = gtk::EventControllerMotion {
-                        connect_enter[sender] => move |_,_,_| {
-                            let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(true));
-                        },
-
-                        connect_leave[sender] => move |_| {
-                            let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
-                        },
-                    },
-
-                    add_controller = gtk::GestureClick {
-                        connect_pressed[sender] => move |_,_,_,_| {
-                            let _ = sender.input_sender().send(ChoiceMsg::Alternate(true));
-                        },
-                    },
-
-                    #[name(alternative_option_picture)]
-                    gtk::Picture {
-                        set_hexpand: true,
-                        set_halign: gtk::Align::Center,
-                        set_margin_top: 6,
-                        set_margin_bottom: 6,
-                        set_margin_start: 6,
-                        set_margin_end: 6,
-                        set_height_request: 128,
-
-                        set_paintable: Some(&model.alternate.media),
-                    },
-                },
-
-                gtk::Box {
-                    set_margin_start: 15,
-                    set_margin_bottom: 9,
-                    #[name(alternative_checkbutton_image)]
-                    adw::Bin {
-                        add_css_class: "radio",
-                        set_can_target: false,
-                        set_valign: gtk::Align::Center,
-                        set_halign: gtk::Align::Center
-                    },
-                    gtk::Box {
-                        set_valign: gtk::Align::Center,
-                        set_margin_start: 6,
-                        set_orientation: gtk::Orientation::Horizontal,
-                        add_css_class: "title",
-
-                        #[name = "natural"]
-                        gtk::CheckButton {
-                            set_group: Some(&traditional),
-
-                            #[watch]
-                            set_active: model.alternate.enabled,
-                            connect_toggled[sender] => move |btn| {
-                                sender.input(ChoiceMsg::Alternate(btn.is_active()));
-                            },
-                        },
-
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-
-                            #[name(alternative_option_title)]
-                            gtk::Label {
-                                set_use_underline: true,
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: model.alternate.title.as_str(),
-                                add_css_class: "title",
-                            },
-                            #[name(alternative_option_subtitle)]
-                            gtk::Label {
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: pango::WrapMode::WordChar,
-                                set_label: model.alternate.subtitle.as_str(),
-                                add_css_class: "subtitle",
-                            },
-                        },
-                    }
-                },
-            },
         },
     }
 

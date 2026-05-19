@@ -118,7 +118,6 @@ impl SimpleComponent for MouseModal {
                 #[name(view_switcher_bar)]
                 add_bottom_bar = &adw::ViewSwitcherBar {
                     set_stack: Some(&view_stack),
-
                 },
             }
         },

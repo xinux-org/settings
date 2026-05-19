@@ -2,7 +2,6 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::MouseModal;
 use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
@@ -47,100 +46,93 @@ impl SimpleComponent for Mouse {
 
     view! {
         #[root]
-        adw::ToolbarView {
-            set_top_bar_style: adw::ToolbarStyle::Flat,
+        #[name(mouse_stack_page)]
+        adw::PreferencesPage {
+            add = &adw::PreferencesGroup {
+                set_title: "General",
+                #[name(primary_button_row)]
+                add = &adw::ActionRow {
+                    set_title: "Primary Button",
+                    set_subtitle: "Order of physical buttons on mice and touchpads",
 
-            #[wrap(Some)]
-            set_content = &adw::PreferencesPage {
-                add = &adw::PreferencesGroup {
-                    set_title: "General",
+                    // TODO: use adw::ToggleGroup instead of ToggleButton.
+                    // See more: https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/mouse/cc-mouse-panel.blp?ref_type=heads#L64
+                    add_suffix = &gtk::Box {
+                        set_spacing: 0,
+                        set_halign: gtk::Align::End,
+                        set_valign: gtk::Align::Center,
+                        add_css_class: "linked",
 
-                    add = &adw::ActionRow {
-                        set_title: "Primary Button",
-                        set_subtitle: "Order of physical buttons on mice and touchpads",
-
-                        add_suffix = &gtk::Box {
-                            set_spacing: 0,
-                            set_halign: gtk::Align::End,
-                            set_valign: gtk::Align::Center,
-                            add_css_class: "linked",
-
-                            #[name= "left" ]
-                            append = &gtk::ToggleButton {
-                                set_group: Some(&right),
-                                set_label: "Left",
-                                #[watch]
-                                set_active: !model.left_handed,
-
-                                connect_toggled[sender] => move |btn| {
-                                    if btn.is_active() {
-                                        sender.input(MousePageMsg::PrimaryButton(!btn.is_active()));
-                                    }
-                                },
-                            },
-
-                            #[name= "right" ]
-                            append = &gtk::ToggleButton {
-                                set_label: "Right",
-                                #[watch]
-                                set_active: model.left_handed,
-
-                                connect_toggled[sender] => move |btn| {
-                                    if btn.is_active() {
-                                        sender.input(MousePageMsg::PrimaryButton(btn.is_active()));
-                                    }
-                                },
-                            },
-                        }
-                    },
-                },
-
-
-                add = &adw::PreferencesGroup {
-                    set_title: "Mouse",
-
-                    add = model.speed_controller.widget(),
-
-                    add = &adw::ActionRow {
-                        set_title: "Mouse Acceleration",
-                        set_subtitle: "Recommended for most users and applications",
-                        set_activatable_widget: Some(&mouse_acceleration),
-
-                        add_suffix = &gtk::Box {
-                            gtk::MenuButton {
-                                set_icon_name: "help-about",
-                                set_direction: gtk::ArrowType::Down,
-                                #[wrap(Some)]
-                                set_popover = &gtk::Popover {
-                                    set_valign: gtk::Align::Center,
-                                    gtk::Label {
-                                        set_label: "Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
-                                    },
-                                },
-                            },
-                        },
-                        #[name = "mouse_acceleration"]
-                        add_suffix = &gtk::Switch {
-                            set_valign: gtk::Align::Center,
+                        #[name= "left" ]
+                        append = &gtk::ToggleButton {
+                            set_group: Some(&right),
+                            set_label: "Left",
                             #[watch]
-                            set_active: model.accel_profile,
-                            connect_state_set[sender] => move |_, state| {
-                                sender.input(MousePageMsg::MouseAcceleration(state));
-                                gtk::glib::Propagation::Proceed
+                            set_active: !model.left_handed,
+                            connect_toggled[sender] => move |btn| {
+                                if btn.is_active() {
+                                    sender.input(MousePageMsg::PrimaryButton(!btn.is_active()));
+                                }
+                            },
+                        },
+
+                        #[name= "right" ]
+                        append = &gtk::ToggleButton {
+                            set_label: "Right",
+                            #[watch]
+                            set_active: model.left_handed,
+                            connect_toggled[sender] => move |btn| {
+                                if btn.is_active() {
+                                    sender.input(MousePageMsg::PrimaryButton(btn.is_active()));
+                                }
+                            },
+                        },
+                    }
+                },
+            },
+            #[name(mouse_group)]
+            add = &adw::PreferencesGroup {
+                set_title: "Mouse",
+
+                add = model.speed_controller.widget(),
+
+                add = &adw::ActionRow {
+                    set_title: "Mouse Acceleration",
+                    set_subtitle: "Recommended for most users and applications",
+                    set_activatable_widget: Some(&mouse_acceleration),
+                    add_suffix = &gtk::Box {
+                        gtk::MenuButton {
+                            set_icon_name: "help-about",
+                            set_direction: gtk::ArrowType::Down,
+                            #[wrap(Some)]
+                            set_popover = &gtk::Popover {
+                                set_valign: gtk::Align::Center,
+                                gtk::Label {
+                                    set_label: "Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
+                                },
                             },
                         },
                     },
-
-                    add = model.natural_scroll_component.widget(),
-                },
-
-                add = &adw::PreferencesGroup {
-                    add = &adw::ButtonRow {
-                        set_title: "Test Settings",
-                        set_end_icon_name: Some("go-next-symbolic"),
+                    #[name = "mouse_acceleration"]
+                    add_suffix = &gtk::Switch {
+                        set_valign: gtk::Align::Center,
+                        #[watch]
+                        set_active: model.accel_profile,
+                        connect_state_set[sender] => move |_, state| {
+                            sender.input(MousePageMsg::MouseAcceleration(state));
+                            gtk::glib::Propagation::Proceed
+                        },
                     },
                 },
-            }
+
+                add = model.natural_scroll_component.widget(),
+            },
+            add = &adw::PreferencesGroup {
+                add = &adw::ButtonRow {
+                    set_title: "Test Settings",
+                    set_end_icon_name: Some("go-next-symbolic"),
+                },
+            },
         }
     }
 
