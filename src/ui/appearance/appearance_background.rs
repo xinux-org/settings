@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use relm4::loading_widgets::LoadingWidgets;
 use relm4::{adw::prelude::*, gtk, prelude::*, view};
 

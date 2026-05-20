@@ -1,8 +1,10 @@
 use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
+use crate::ui::appearance::components::accent_box::{
+    self, AccentColorInit, AccentColorModel, AccentColorOutput, AccentColorWrapped,
+};
 
 use anyhow::Context;
 use relm4::loading_widgets::LoadingWidgets;
-use std::thread;
 use std::time::Duration;
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
@@ -37,39 +39,87 @@ impl Default for AppearanceSettings {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct AccentColorWrapped(pub AccentColor);
-
-impl AccentColorWrapped {
-    pub fn iterator() -> impl Iterator<Item = AccentColor> {
-        use relm4::adw::AccentColor::*;
-        [Blue, Teal, Green, Yellow, Orange, Red, Pink, Purple, Slate]
-            .iter()
-            .copied()
-    }
+#[derive(Debug)]
+pub struct AppearanceModel {
+    style: AppearanceStyle,
+    wallpaper: String,
+    wallpapers: AsyncFactoryVecDeque<Background>,
+    recent_wallpapers: AsyncFactoryVecDeque<Background>,
+    accent_color: AccentColorWrapped,
+    open_dialog: Controller<OpenDialog>,
+    background_group: gtk::ToggleButton,
+    accent_box_group: gtk::ToggleButton,
+    accent_color_box: FactoryVecDeque<AccentColorModel>,
 }
 
-impl From<String> for AccentColorWrapped {
-    fn from(value: String) -> Self {
-        match value.to_lowercase().as_str() {
-            "blue" => AccentColorWrapped(AccentColor::Blue),
-            "teal" => AccentColorWrapped(AccentColor::Teal),
-            "green" => AccentColorWrapped(AccentColor::Green),
-            "yellow" => AccentColorWrapped(AccentColor::Yellow),
-            "orange" => AccentColorWrapped(AccentColor::Orange),
-            "red" => AccentColorWrapped(AccentColor::Red),
-            "pink" => AccentColorWrapped(AccentColor::Pink),
-            "purple" => AccentColorWrapped(AccentColor::Purple),
-            "slate" => AccentColorWrapped(AccentColor::Slate),
-            _ => AccentColorWrapped(AccentColor::Blue),
-        }
+impl AppearanceModel {
+    fn setup_accent_color(model: &mut AppearanceModel) {
+        // TODO: We need to remove code dublications!
+        // use .guard().extend() and put iterator on it.
+        let blue = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Blue)),
+            group: model.accent_box_group.clone(),
+            color: "blue".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Blue),
+        };
+        let teal = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Teal)),
+            group: model.accent_box_group.clone(),
+            color: "teal".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Teal),
+        };
+        let green = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Green)),
+            group: model.accent_box_group.clone(),
+            color: "green".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Green),
+        };
+        let yellow = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Yellow)),
+            group: model.accent_box_group.clone(),
+            color: "yellow".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Yellow),
+        };
+        let orange = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Orange)),
+            group: model.accent_box_group.clone(),
+            color: "orange".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Orange),
+        };
+        let red = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Red)),
+            group: model.accent_box_group.clone(),
+            color: "red".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Red),
+        };
+        let pink = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Pink)),
+            group: model.accent_box_group.clone(),
+            color: "pink".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Pink),
+        };
+        let purple = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Purple)),
+            group: model.accent_box_group.clone(),
+            color: "purple".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Purple),
+        };
+        let slate = AccentColorInit {
+            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Slate)),
+            group: model.accent_box_group.clone(),
+            color: "slate".to_string(),
+            accent_color: AccentColorWrapped(AccentColor::Slate),
+        };
+        model.accent_color_box.guard().push_back(blue);
+        model.accent_color_box.guard().push_back(teal);
+        model.accent_color_box.guard().push_back(green);
+        model.accent_color_box.guard().push_back(yellow);
+        model.accent_color_box.guard().push_back(orange);
+        model.accent_color_box.guard().push_back(red);
+        model.accent_color_box.guard().push_back(pink);
+        model.accent_color_box.guard().push_back(purple);
+        model.accent_color_box.guard().push_back(slate);
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum AppearanceStyle {
-    Default,
-    Dark,
 }
 
 #[derive(Debug)]
@@ -82,15 +132,10 @@ pub enum AppearanceMsg {
     Ignore,
 }
 
-#[derive(Debug)]
-pub struct AppearanceModel {
-    style: AppearanceStyle,
-    wallpaper: String,
-    wallpapers: AsyncFactoryVecDeque<Background>,
-    recent_wallpapers: AsyncFactoryVecDeque<Background>,
-    accent_color: AccentColorWrapped,
-    open_dialog: Controller<OpenDialog>,
-    group: gtk::ToggleButton,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AppearanceStyle {
+    Default,
+    Dark,
 }
 
 #[relm4::component(pub, async)]
@@ -113,23 +158,23 @@ impl AsyncComponent for AppearanceModel {
                     adw::LengthUnit::Px,
                 )
             ) {
-                add_setters: &[
-                    (
-                        &accent_box,
-                        "spacing",
-                        &6
-                    ),
-                    (
-                        &accent_box,
-                        "margin-top",
-                        &6
-                    ),
-                    (
-                        &accent_box,
-                        "margin-bottom",
-                        &6
-                    ),
-                ],
+                // add_setters: &[
+                //     (
+                //         &accent_box,
+                //         "spacing",
+                //         &6
+                //     ),
+                //     (
+                //         &accent_box,
+                //         "margin-top",
+                //         &6
+                //     ),
+                //     (
+                //         &accent_box,
+                //         "margin-bottom",
+                //         &6
+                //     ),
+                // ],
 
                 add_setters: &[
                     (recent_wallpaper_box, "min_children_per_line", &1),
@@ -149,23 +194,23 @@ impl AsyncComponent for AppearanceModel {
                     adw::LengthUnit::Px,
                 )
             ) {
-                add_setters: &[
-                    (
-                        &accent_box,
-                        "spacing",
-                        &12
-                    ),
-                    (
-                        &accent_box,
-                        "margin-top",
-                        &12
-                    ),
-                    (
-                        &accent_box,
-                        "margin-bottom",
-                        &12
-                    ),
-                ],
+                // add_setters: &[
+                //     (
+                //         &accent_color_box,
+                //         "spacing",
+                //         &12
+                //     ),
+                //     (
+                //         &accent_color_box,
+                //         "margin-top",
+                //         &12
+                //     ),
+                //     (
+                //         &accent_color_box,
+                //         "margin-bottom",
+                //         &12
+                //     ),
+                // ],
 
                 add_setters: &[
                     (recent_wallpaper_box, "min_children_per_line", &3),
@@ -268,104 +313,110 @@ impl AsyncComponent for AppearanceModel {
                                 set_activatable: false,
                                 set_focusable: false,
 
-                                #[name = "accent_box"]
+                                // #[name = "accent_box"]
+                                #[local_ref]
                                 #[wrap(Some)]
-                                set_child = &gtk::Box {
+                                set_child = accent_color_box -> gtk::Box {
                                     set_orientation: gtk::Orientation::Horizontal,
                                     set_spacing: 12,
                                     set_margin_top: 12,
                                     set_margin_bottom: 12,
 
-                                    #[name = "accent_color"]
-                                    gtk::ToggleButton {
-                                        add_css_class: "accent-button",
-                                        add_css_class: "blue",
+                                    // #[local_ref]
+                                    // accent_color_box -> gtk::Box {
+                                    //     set_orientation: gtk::Orientation::Horizontal,
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Blue)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "teal",
+                                    // }
+                                    // #[name = "accent_color"]
+                                    // gtk::ToggleButton {
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "blue",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Teal)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "green",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Blue)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "teal",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Green)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "yellow",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Teal)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "green",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Yellow)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "orange",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Green)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "yellow",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Orange)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "red",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Yellow)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "orange",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Red)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "pink",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Orange)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "red",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Pink)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "purple",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Red)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "pink",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Purple)
-                                    },
-                                    gtk::ToggleButton {
-                                        set_group: Some(&accent_color),
-                                        add_css_class: "accent-button",
-                                        add_css_class: "slate",
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Pink)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "purple",
 
-                                        connect_clicked[sender] => move |_| {
-                                            sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
-                                        },
-                                        set_active: model.accent_color == AccentColorWrapped(AccentColor::Slate)
-                                    },
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Purple)
+                                    // },
+                                    // gtk::ToggleButton {
+                                    //     set_group: Some(&accent_color),
+                                    //     add_css_class: "accent-button",
+                                    //     add_css_class: "slate",
+
+                                    //     connect_clicked[sender] => move |_| {
+                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
+                                    //     },
+                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Slate)
+                                    // },
                                 },
                             },
                         },
@@ -441,15 +492,15 @@ impl AsyncComponent for AppearanceModel {
                                         #[name="wallpaper_group"]
                                         gtk::ToggleButton {
                                             // set_group: Some(&wallpaper_group),
-                                        }
+                                        },
                                     },
                                 },
                             },
-                        }
-                    }
-                }
-            }
-        }
+                        },
+                    },
+                },
+            },
+        },
     }
 
     fn init_loading_widgets(root: Self::Root) -> Option<LoadingWidgets> {
@@ -476,8 +527,7 @@ impl AsyncComponent for AppearanceModel {
         root: Self::Root,
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
-        tokio::time::sleep(Duration::from_secs(1)).await;
-
+        // tokio::time::sleep(Duration::from_secs(1)).await;
         let open_dialog = OpenDialog::builder()
             .transient_for_native(&root)
             .launch(OpenDialogSettings::default())
@@ -485,17 +535,13 @@ impl AsyncComponent for AppearanceModel {
                 OpenDialogResponse::Accept(path) => AppearanceMsg::OpenResponse(path),
                 OpenDialogResponse::Cancel => AppearanceMsg::Ignore,
             });
-
-        let background_factory = || {
-            AsyncFactoryVecDeque::<Background>::builder()
-                .launch(gtk::FlowBox::default())
-                .forward(sender.input_sender(), |output| match output {
-                    BackgroundOutput::SetBackgroundPath(path) => {
-                        AppearanceMsg::SetBackground(path.clone())
-                    }
-                })
-        };
-        let (wallpapers, recent_wallpapers) = (background_factory(), background_factory());
+        let accent_color_box = FactoryVecDeque::builder()
+            .launch(gtk::Box::default())
+            .forward(sender.input_sender(), |output| match output {
+                AccentColorOutput::SendPick(accent_color_wrapped) => {
+                    AppearanceMsg::SendPick(accent_color_wrapped)
+                }
+            });
 
         let settings = AppearanceSettings::new();
         let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
@@ -505,19 +551,34 @@ impl AsyncComponent for AppearanceModel {
             "prefer-dark" => AppearanceStyle::Dark,
             _ => AppearanceStyle::Default,
         };
-        let group = gtk::ToggleButton::new();
-        let mut model = AppearanceModel {
+
+        let mut model = Self {
             style,
             wallpaper,
-            wallpapers,
-            recent_wallpapers,
+            wallpapers: AsyncFactoryVecDeque::<Background>::builder()
+                .launch(gtk::FlowBox::default())
+                .forward(sender.input_sender(), |output| match output {
+                    BackgroundOutput::SetBackgroundPath(path) => {
+                        AppearanceMsg::SetBackground(path.clone())
+                    }
+                }),
+            recent_wallpapers: AsyncFactoryVecDeque::<Background>::builder()
+                .launch(gtk::FlowBox::default())
+                .forward(sender.input_sender(), |output| match output {
+                    BackgroundOutput::SetBackgroundPath(path) => {
+                        AppearanceMsg::SetBackground(path.clone())
+                    }
+                }),
             accent_color,
             open_dialog,
-            group,
+            background_group: gtk::ToggleButton::new(),
+            accent_box_group: gtk::ToggleButton::new(),
+            accent_color_box,
         };
+        Self::setup_accent_color(&mut model);
+        let accent_color_box = model.accent_color_box.widget();
 
         let folders: [&str; 2] = ["nixos", "gnome"];
-
         for folder in folders {
             let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
             match fs::read_dir(&path) {
@@ -525,17 +586,17 @@ impl AsyncComponent for AppearanceModel {
                     let _ = rd
                         .filter(|x| x.is_ok())
                         .map(|x| {
-                            x.and_then(|y| {
+                            x.map(|y| {
                                 let path = y.path().to_string_lossy().to_string();
 
                                 model.wallpapers.guard().push_back(Background {
                                     path: path.clone(),
-                                    group: model.group.clone(),
+                                    group: model.background_group.clone(),
                                     active: path[47..]
                                         == settings.background.get::<String>("picture-uri")[51..],
                                 });
 
-                                Ok(y)
+                                y
                             })
                         })
                         .collect::<Vec<_>>();
@@ -561,7 +622,7 @@ impl AsyncComponent for AppearanceModel {
         .map(|x| {
             model.recent_wallpapers.guard().push_back(Background {
                 path: x.unwrap().path().to_str().unwrap().to_string(),
-                group: model.group.clone(),
+                group: model.background_group.clone(),
                 active: false,
             });
         })
@@ -580,8 +641,6 @@ impl AsyncComponent for AppearanceModel {
         _sender: AsyncComponentSender<Self>,
         _root: &Self::Root,
     ) {
-        tokio::time::sleep(Duration::from_secs(1)).await;
-
         let settings = AppearanceSettings::new();
         let user = get_user_by_uid(get_current_uid()).unwrap();
 
@@ -590,7 +649,7 @@ impl AsyncComponent for AppearanceModel {
             AppearanceMsg::OpenResponse(path) => {
                 self.recent_wallpapers.guard().push_back(Background {
                     path: path.to_str().unwrap().to_string(),
-                    group: self.group.clone(),
+                    group: self.background_group.clone(),
                     active: false,
                 });
 
