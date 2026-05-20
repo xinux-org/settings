@@ -30,6 +30,7 @@ pub struct Alternate {
 pub struct Choice {
     pub key: String,
     pub settings: Settings,
+    pub title: String,
 
     pub default: Default,
     pub alternate: Alternate,
@@ -52,6 +53,7 @@ pub enum ChoiceOutput {
 pub struct ChoiceInit {
     pub key: String,
     pub settings: Settings,
+    pub title: String,
 
     pub default: Default,
     pub alternate: Alternate,
@@ -84,6 +86,7 @@ impl SimpleComponent for Choice {
             set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: false,
+                
 
                 #[name(header)]
                 gtk::Box {
@@ -115,7 +118,9 @@ impl SimpleComponent for Choice {
                         gtk::Label {
                             // visible: bind $string_is_not_empty(title.label) as <bool>;
                             // ellipsize: none;
-                            set_label: "this is label",
+                            set_margin_all: 16,
+                            set_label: model.title.as_str(),
+                            set_align: gtk::Align::Start,
                             // lines: 0;
                             // mnemonic-widget: template;
                             // use-underline: bind template.use-underline;
@@ -166,11 +171,12 @@ impl SimpleComponent for Choice {
                         set_accessible_role: gtk::AccessibleRole::Radio,
                         set_orientation: gtk::Orientation::Vertical,
                         set_can_focus: true,
-                        set_focusable: true,
+                        set_focus_on_click: false,
+                        set_focusable: false,
                         set_receives_default: true,
 
                         #[iterate]
-                        add_css_class: ["activatable","card"],
+                        add_css_class: ["activatable"],
 
                         adw::Bin {
                             set_margin_top: 9,
@@ -268,7 +274,7 @@ impl SimpleComponent for Choice {
                         set_receives_default: true,
 
                         #[iterate]
-                        add_css_class: ["activatable","card"],
+                        add_css_class: ["activatable"],
 
                         adw::Bin {
                             set_margin_top: 9,
@@ -374,6 +380,7 @@ impl SimpleComponent for Choice {
         let model = Self {
             key: init.key,
             settings: init.settings,
+            title: init.title,
 
             default: init.default,
             alternate: init.alternate,
@@ -406,7 +413,6 @@ impl SimpleComponent for Choice {
                     .set_value(self.key.as_str(), &self.alternate.value);
             }
             ChoiceMsg::DefaultMedia(state) => {
-                println!("{:?}", state);
                 if state {
                     self.default.media.play();
                 } else {
@@ -414,7 +420,6 @@ impl SimpleComponent for Choice {
                 }
             }
             ChoiceMsg::AlternateMedia(state) => {
-                println!("{:?}", state);
                 if state {
                     self.alternate.media.play();
                 } else {

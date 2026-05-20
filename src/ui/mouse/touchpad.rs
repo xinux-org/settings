@@ -138,6 +138,7 @@ impl SimpleComponent for Touchpad {
             .launch(ChoiceInit {
                 key: "click-method".to_string(),
                 settings: settings.touchpad.clone(),
+                title: "Secondary Click".to_string(),
 
                 default: Default {
                     value: "fingers".to_variant(),
@@ -192,6 +193,7 @@ impl SimpleComponent for Touchpad {
                 // FIX:
                 key: "scroll method".to_string(),
                 settings: settings.touchpad.clone(),
+                title: "Scroll Method".to_string(),
 
                 default: Default {
                     value: false.to_variant(),
@@ -226,6 +228,7 @@ impl SimpleComponent for Touchpad {
             .launch(ChoiceInit {
                 key: "natural-scroll".to_string(),
                 settings: settings.touchpad.clone(),
+                title: "Scroll Direction".to_string(),
 
                 default: Default {
                     value: false.to_variant(),

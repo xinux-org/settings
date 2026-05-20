@@ -171,6 +171,7 @@ impl SimpleComponent for Mouse {
             .launch(ChoiceInit {
                 key: "natural-scroll".to_string(),
                 settings: settings.mouse.clone(),
+                title: "Scroll Direction".to_string(),
 
                 default: Default {
                     value: false.to_variant(),
@@ -193,15 +194,6 @@ impl SimpleComponent for Mouse {
             .forward(sender.input_sender(), |out| match out {
                 ChoiceOutput::Noop => MousePageMsg::Noop,
             });
-
-        let events: Vec<bool> = input
-            .clone()
-            .collect::<Vec<input::Event>>()
-            .into_iter()
-            .map(|event| event.device())
-            .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
-            .map(|device| device.has_capability(input::DeviceCapability::Gesture))
-            .collect();
 
         let speed_controller = PointerSpeed::builder()
             .launch(PointerSpeedInit {
