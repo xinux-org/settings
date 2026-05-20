@@ -147,8 +147,8 @@ impl AsyncComponent for AppearanceModel {
     view! {
         #[root]
         adw::BreakpointBin {
-            set_width_request: 346,
             set_height_request: 200,
+            set_width_request: 346,
 
             add_breakpoint = adw::Breakpoint::new(
                 adw::BreakpointCondition::new_length(
@@ -238,13 +238,14 @@ impl AsyncComponent for AppearanceModel {
                     adw::PreferencesPage {
                         adw::PreferencesGroup {
                             set_title: "Style",
-
                             adw::PreferencesRow {
+                                set_accessible_role: gtk::AccessibleRole::Group,
+                                set_activatable: false,
+                                set_focusable: false,
                                 #[wrap(Some)]
                                 set_child = &adw::Clamp {
                                     set_maximum_size: 400,
                                     set_tightening_threshold: 300,
-
                                     gtk::Grid {
                                         set_focusable: false,
                                         set_orientation: gtk::Orientation::Horizontal,
@@ -305,7 +306,6 @@ impl AsyncComponent for AppearanceModel {
                         },
                         adw::PreferencesGroup {
                             set_title: "Accent Color",
-
                             adw::PreferencesRow {
                                 set_halign: gtk::Align::Center,
                                 set_accessible_role: gtk::AccessibleRole::Group,
@@ -320,130 +320,31 @@ impl AsyncComponent for AppearanceModel {
                                     set_spacing: 12,
                                     set_margin_top: 12,
                                     set_margin_bottom: 12,
-
-                                    // #[local_ref]
-                                    // accent_color_box -> gtk::Box {
-                                    //     set_orientation: gtk::Orientation::Horizontal,
-
-                                    // }
-                                    // #[name = "accent_color"]
-                                    // gtk::ToggleButton {
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "blue",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Blue)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Blue)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "teal",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Teal)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Teal)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "green",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Green)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Green)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "yellow",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Yellow)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Yellow)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "orange",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Orange)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Orange)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "red",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Red)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Red)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "pink",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Pink)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Pink)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "purple",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Purple)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Purple)
-                                    // },
-                                    // gtk::ToggleButton {
-                                    //     set_group: Some(&accent_color),
-                                    //     add_css_class: "accent-button",
-                                    //     add_css_class: "slate",
-
-                                    //     connect_clicked[sender] => move |_| {
-                                    //         sender.input(AppearanceMsg::SendPick(AccentColorWrapped(AccentColor::Slate)));
-                                    //     },
-                                    //     set_active: model.accent_color == AccentColorWrapped(AccentColor::Slate)
-                                    // },
                                 },
                             },
                         },
                         adw::PreferencesGroup {
                             set_title: "Background",
-
+                            set_accessible_role: gtk::AccessibleRole::Group,
                             #[wrap(Some)]
                             set_header_suffix = &gtk::Button {
                                 add_css_class: "flat",
-
                                 connect_clicked => AppearanceMsg::OpenRequest,
-
                                 adw::ButtonContent {
                                     set_icon_name: "list-add-symbolic",
                                     set_label: "Add Picture",
                                     set_use_underline: true,
                                 }
                             },
-
                             adw::Bin {
                                 add_css_class: "card",
                                 set_accessible_role: gtk::AccessibleRole::Group,
+                                // set_toast_overlay: toast_overlay,
 
                                 #[name = "background_chooser"]
                                 gtk::Box {
                                     set_orientation: gtk::Orientation::Vertical,
                                     set_hexpand: true,
-                                    // set_toast_overlay: toast_overlay,
 
                                     #[name="recent_box"]
                                     gtk::Box {
