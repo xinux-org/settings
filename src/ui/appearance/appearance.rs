@@ -147,8 +147,8 @@ impl AsyncComponent for AppearanceModel {
     view! {
         #[root]
         adw::BreakpointBin {
+            set_width_request: 346,
             set_height_request: 200,
-            set_width_request: 200,
 
             add_breakpoint = adw::Breakpoint::new(
                 adw::BreakpointCondition::new_length(
