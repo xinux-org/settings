@@ -1,11 +1,10 @@
 use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
 use crate::ui::appearance::components::accent_box::{
-    self, AccentColorInit, AccentColorModel, AccentColorOutput, AccentColorWrapped,
+    AccentColorInit, AccentColorModel, AccentColorOutput, AccentColorWrapped,
 };
 
 use anyhow::Context;
 use relm4::loading_widgets::LoadingWidgets;
-use std::time::Duration;
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
 
