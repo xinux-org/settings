@@ -1,4 +1,4 @@
-use adw::glib::Variant;
+use adw::glib::{Variant, property::PropertyGet};
 use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
@@ -6,7 +6,7 @@ use relm4::{
     prelude::*,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RowOption {
     pub value: Variant,
     pub media: gtk::MediaFile,
@@ -16,7 +16,7 @@ pub struct RowOption {
     pub enabled: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SingleChoice {
     pub key: String,
     pub settings: Settings,
@@ -64,6 +64,7 @@ impl SimpleComponent for SingleChoice {
                     set_orientation: gtk::Orientation::Vertical,
                     set_spacing: 6,
 
+                    #[name(enable_row_option)]
                     append = &adw::SwitchRow {
                         #[watch]
                         set_active: model.row_option.enabled,
@@ -82,11 +83,10 @@ impl SimpleComponent for SingleChoice {
                         },
                     },
 
-                    // TODO:
-                    // FIX: row_option.enabled is not changed when clicked
                     add_controller = gtk::GestureClick {
-                        connect_pressed[sender] => move |_,_,_,_| {
-                            let _ = sender.input_sender().send(SingleChoiceMsg::Switch(!model.row_option.enabled));
+                        connect_pressed[sender, enable_row_option] => move |_,_,_,_| {
+                            let enabled = enable_row_option.is_active();   
+                            let _ = sender.input_sender().send(SingleChoiceMsg::Switch(!enabled));
                         },
                     },
 
