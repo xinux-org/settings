@@ -5,7 +5,7 @@ use relm4::{
     prelude::*,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WifiNetwork {
     pub client: nmrs::NetworkManager,
     pub ssid: String,

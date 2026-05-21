@@ -54,6 +54,7 @@ pub struct WifiModel {
     client: nmrs::NetworkManager,
     active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
     wifi_saved_networks: Controller<WifiSavedNetworkModel>,
+    wifi_saved_networks_list: Option<Vec<String>>,
     // Store the proxy to call methods later
     // proxy: Option<RfkillProxy<'static>>,
 }
@@ -223,8 +224,6 @@ impl SimpleAsyncComponent for WifiModel {
                 NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
-        let wifi_saved_networks = WifiSavedNetworkModel::builder().launch(()).detach();
-
         let nm = NetworkManager::new()
             .await
             .expect("cannot connect to NetworkManager in is_wifi_enabled");
@@ -234,6 +233,10 @@ impl SimpleAsyncComponent for WifiModel {
         } else {
             WifiStack::WifiOff
         };
+        let wifi_saved_networks_list = nm.list_saved_connections().await.ok();
+        let wifi_saved_networks = WifiSavedNetworkModel::builder()
+            .launch(wifi_saved_networks_list.clone())
+            .detach();
 
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
@@ -246,6 +249,7 @@ impl SimpleAsyncComponent for WifiModel {
             client: nm,
             active_toggle_task: None,
             wifi_saved_networks,
+            wifi_saved_networks_list,
             // proxy: None,
         };
         let networks_group = model.networks.widget();
