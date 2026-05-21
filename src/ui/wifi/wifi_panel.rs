@@ -1,5 +1,8 @@
 use crate::ui::{
-    wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
+    wifi::{
+        components::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
+        wifi_saved_networks::WifiSavedNetworkModel,
+    },
     window::AppMsg,
 };
 use futures_util::stream::StreamExt;
@@ -50,6 +53,7 @@ pub struct WifiModel {
     airplane_mode: bool,
     client: nmrs::NetworkManager,
     active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
+    wifi_saved_networks: Controller<WifiSavedNetworkModel>,
     // Store the proxy to call methods later
     // proxy: Option<RfkillProxy<'static>>,
 }
@@ -64,6 +68,7 @@ pub enum WifiInput {
     ToggleAirplaneMode(bool),
     HandleWifiState(bool),
     HandleWifiStateZBUS,
+    ShowWifiSavedNetworks,
     // Received update from System D-Bus
     // AirplaneModeChanged(bool),
     // ProxyInitialized(RfkillProxy<'static>),
@@ -115,7 +120,9 @@ impl SimpleAsyncComponent for WifiModel {
                         add_suffix = &gtk::Image {
                             set_icon_name: Some("go-next-symbolic"),
                             set_pixel_size: 16,
-                        }
+                        },
+                        connect_activated => WifiInput::ShowWifiSavedNetworks,
+
                     },
                     adw::ActionRow {
                         set_title: "Connect to Hidden Network...",
@@ -216,6 +223,8 @@ impl SimpleAsyncComponent for WifiModel {
                 NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
             });
 
+        let wifi_saved_networks = WifiSavedNetworkModel::builder().launch(()).detach();
+
         let nm = NetworkManager::new()
             .await
             .expect("cannot connect to NetworkManager in is_wifi_enabled");
@@ -236,6 +245,7 @@ impl SimpleAsyncComponent for WifiModel {
             airplane_mode: false,
             client: nm,
             active_toggle_task: None,
+            wifi_saved_networks,
             // proxy: None,
         };
         let networks_group = model.networks.widget();
@@ -272,6 +282,11 @@ impl SimpleAsyncComponent for WifiModel {
 
     async fn update(&mut self, message: Self::Input, sender: AsyncComponentSender<Self>) {
         match message {
+            WifiInput::ShowWifiSavedNetworks => {
+                self.wifi_saved_networks
+                    .widget()
+                    .present(relm4::main_application().active_window().as_ref());
+            }
             // The user clicked a button to turn Wi-Fi on/off
             WifiInput::ToggleWifi(enabled) => {
                 self.wifi_enabled = enabled;
