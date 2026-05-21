@@ -13,8 +13,23 @@
 
 .wallpaper-button {
     padding: 0px;
-    background-color: rgba(0, 0, 0, 0);
 }
+
+
+.selected-icon{
+    opacity: 0%;
+    border-radius: 50%;
+    background-color: var(--accent-bg-color);
+}
+
+
+.wallpaper-button:checked .selected-icon{
+    opacity: 100%
+}
+
+/* .style-toggle:checked .ocd { */
+    /* opacity: 0% */
+/* } */
 
 /* below copied from: gnome-control-center/shell/style.css */
 

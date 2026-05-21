@@ -38,10 +38,12 @@ impl Default for AppearanceSettings {
     }
 }
 
+// #[tracker::track]
 #[derive(Debug)]
 pub struct AppearanceModel {
     style: AppearanceStyle,
-    wallpaper: String,
+    wallpaper_default: String,
+    wallpaper_dark: String,
     wallpapers: AsyncFactoryVecDeque<Background>,
     recent_wallpapers: AsyncFactoryVecDeque<Background>,
     accent_color: AccentColorWrapped,
@@ -268,7 +270,8 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Cover,
-                                                set_filename: Some(&model.wallpaper)
+                                                #[watch]
+                                                set_filename: Some(&model.wallpaper_default)
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -289,7 +292,8 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
-                                                set_filename: Some(&model.wallpaper)
+                                                #[watch]
+                                                set_filename: Some(&model.wallpaper_dark)
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
@@ -391,6 +395,7 @@ impl AsyncComponent for AppearanceModel {
 
                                         #[name="wallpaper_group"]
                                         gtk::ToggleButton {
+                                            set_visible: false,
                                             // set_group: Some(&wallpaper_group),
                                         },
                                     },
@@ -444,7 +449,8 @@ impl AsyncComponent for AppearanceModel {
             });
 
         let settings = AppearanceSettings::new();
-        let wallpaper = parse_dconf(settings.background.get::<String>("picture-uri"));
+        let wallpaper_default = parse_dconf(settings.background.get::<String>("picture-uri"));
+        let wallpaper_dark = parse_dconf(settings.background.get::<String>("picture-uri-dark"));
         let accent_color =
             AccentColorWrapped::from(settings.interface.get::<String>("accent-color"));
         let style = match settings.interface.get::<String>("color-scheme").as_str() {
@@ -454,7 +460,8 @@ impl AsyncComponent for AppearanceModel {
 
         let mut model = Self {
             style,
-            wallpaper,
+            wallpaper_default,
+            wallpaper_dark,
             wallpapers: AsyncFactoryVecDeque::<Background>::builder()
                 .launch(gtk::FlowBox::default())
                 .forward(sender.input_sender(), |output| match output {
@@ -493,7 +500,17 @@ impl AsyncComponent for AppearanceModel {
                                     path: path.clone(),
                                     group: model.background_group.clone(),
                                     active: path[47..]
-                                        == settings.background.get::<String>("picture-uri")[51..],
+                                        == settings.background.get::<String>(
+                                            match settings
+                                                .interface
+                                                .get::<String>("color-scheme")
+                                                .as_str()
+                                            {
+                                                "prefer-dark" => "picture-uri-dark",
+                                                _ => "picture-uri",
+                                            },
+                                        )
+                                            [(if path.contains("gnome") { 57 } else { 54 })..],
                                 });
 
                                 y
@@ -580,15 +597,19 @@ impl AsyncComponent for AppearanceModel {
             }
 
             AppearanceMsg::SetBackground(path) => {
-                println!("setting wallapaper");
                 let _ = settings.background.set(
-                    match settings.interface.get::<String>("color-scheme").as_str() {
-                        "prefer-dark" => "picture-uri-dark",
-                        _ => "picture-uri",
+                    match settings.interface.string("color-scheme").as_str() {
+                        "prefer-dark" => {
+                            self.wallpaper_dark = path.clone();
+                            "picture-uri-dark"
+                        }
+                        _ => {
+                            self.wallpaper_default = path.clone();
+                            "picture-uri"
+                        }
                     },
                     format!("file://{}", path),
                 );
-                println!("BACKGROUND: {}", &path.clone());
             }
             AppearanceMsg::SendPick(color) => {
                 settings
