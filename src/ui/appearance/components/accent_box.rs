@@ -73,7 +73,7 @@ impl FactoryComponent for AccentColorModel {
             set_active: self.is_active,
 
             connect_clicked[sender, accent_color = self.accent_color.clone()] => move |_| {
-                sender.output(AccentColorOutput::SendPick(accent_color.clone()));
+                let _ = sender.output(AccentColorOutput::SendPick(accent_color.clone()));
             },
         },
     }
