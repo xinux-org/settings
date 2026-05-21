@@ -53,14 +53,11 @@ impl AsyncFactoryComponent for Background {
                     },
 
                     add_overlay = &gtk::Image {
-                        // set_icon_name: "emblem-default",
                         set_icon_name: Some("check-icon-symbolic"),
                         set_halign: gtk::Align::End,
                         set_valign: gtk::Align::End,
                         add_css_class: "remove-button",
                         add_css_class: "selected-icon",
-                        // #[watch]
-                        // set_visible: self.active
                     }
                 }
             }
@@ -73,9 +70,6 @@ impl AsyncFactoryComponent for Background {
         view! {
             #[local]
             root {
-                // set_orientation: gtk::Orientation::Horizontal,
-                // set_spacing: 10,
-
                 #[name(spinner)]
                 gtk::Spinner {
                     start: (),
@@ -94,8 +88,6 @@ impl AsyncFactoryComponent for Background {
         _index: &DynamicIndex,
         _sender: AsyncFactorySender<Self>,
     ) -> Self {
-        // tokio::time::sleep(Duration::from_secs(1)).await;
-
         Self {
             path: init.path,
             group: init.group,

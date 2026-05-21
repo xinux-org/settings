@@ -159,24 +159,6 @@ impl AsyncComponent for AppearanceModel {
                     adw::LengthUnit::Px,
                 )
             ) {
-                // add_setters: &[
-                //     (
-                //         &accent_box,
-                //         "spacing",
-                //         &6
-                //     ),
-                //     (
-                //         &accent_box,
-                //         "margin-top",
-                //         &6
-                //     ),
-                //     (
-                //         &accent_box,
-                //         "margin-bottom",
-                //         &6
-                //     ),
-                // ],
-
                 add_setters: &[
                     (recent_wallpaper_box, "min_children_per_line", &1),
                     (recent_wallpaper_box, "max_children_per_line", &1)
@@ -195,25 +177,8 @@ impl AsyncComponent for AppearanceModel {
                     adw::LengthUnit::Px,
                 )
             ) {
-                // add_setters: &[
-                //     (
-                //         &accent_color_box,
-                //         "spacing",
-                //         &12
-                //     ),
-                //     (
-                //         &accent_color_box,
-                //         "margin-top",
-                //         &12
-                //     ),
-                //     (
-                //         &accent_color_box,
-                //         "margin-bottom",
-                //         &12
-                //     ),
-                // ],
 
-                add_setters: &[
+               add_setters: &[
                     (recent_wallpaper_box, "min_children_per_line", &3),
                     (recent_wallpaper_box, "max_children_per_line", &3)
                 ],
@@ -390,7 +355,6 @@ impl AsyncComponent for AppearanceModel {
                                         #[name="wallpaper_group"]
                                         gtk::ToggleButton {
                                             set_visible: false,
-                                            // set_group: Some(&wallpaper_group),
                                         },
                                     },
                                 },
@@ -406,9 +370,6 @@ impl AsyncComponent for AppearanceModel {
         view! {
             #[local]
             root {
-                // set_title: Some("Simple app"),
-                // set_default_size: (300, 100),
-
                 // This will be removed automatically by
                 // LoadingWidgets when the full view has loaded
                 #[name(spinner)]
@@ -426,7 +387,6 @@ impl AsyncComponent for AppearanceModel {
         root: Self::Root,
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
-        // tokio::time::sleep(Duration::from_secs(1)).await;
         let open_dialog = OpenDialog::builder()
             .transient_for_native(&root)
             .launch(OpenDialogSettings::default())
