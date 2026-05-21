@@ -149,8 +149,8 @@ impl AsyncComponent for AppearanceModel {
     view! {
         #[root]
         adw::BreakpointBin {
-            set_height_request: 200,
             set_width_request: 346,
+            set_height_request: 200,
 
             add_breakpoint = adw::Breakpoint::new(
                 adw::BreakpointCondition::new_length(
@@ -343,7 +343,6 @@ impl AsyncComponent for AppearanceModel {
                             adw::Bin {
                                 add_css_class: "card",
                                 set_accessible_role: gtk::AccessibleRole::Group,
-                                // set_toast_overlay: toast_overlay,
 
                                 #[name = "background_chooser"]
                                 gtk::Box {
@@ -370,15 +369,11 @@ impl AsyncComponent for AppearanceModel {
                                             set_activate_on_single_click: true,
                                             set_selection_mode: gtk::SelectionMode::Single
                                         },
-
                                         gtk::Separator {
                                             set_margin_top: 12,
                                             set_margin_bottom: 12,
                                         }
                                     },
-                                    ////////////////////////////////////////////////////////////
-
-                                    // #[name = "flowbox"]
                                     #[local_ref]
                                     wallpaper_box -> gtk::FlowBox {
                                         add_css_class: "background-flowbox",
@@ -391,7 +386,6 @@ impl AsyncComponent for AppearanceModel {
                                         set_max_children_per_line: 3,
                                         set_activate_on_single_click: true,
                                         set_selection_mode: gtk::SelectionMode::Single,
-
 
                                         #[name="wallpaper_group"]
                                         gtk::ToggleButton {
