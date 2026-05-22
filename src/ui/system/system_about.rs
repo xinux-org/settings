@@ -103,12 +103,6 @@ impl AsyncComponent for SystemAboutPage {
                             set_subtitle_selectable: true,
                             set_subtitle: &model.desktop_environment,
                         },
-                        adw::ActionRow {
-                            set_title: "Windowing system",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.windowing_system,
-                        },
                     },
                     adw::PreferencesGroup {
                         set_title: "Hardware",
@@ -129,6 +123,7 @@ impl AsyncComponent for SystemAboutPage {
                             add_css_class: "property",
                             set_subtitle_selectable: true,
                             set_subtitle: &model.graphics.join(", "),
+                            set_visible: !model.graphics.is_empty(),
                         },
                         adw::ActionRow {
                             set_title: "Memory",
