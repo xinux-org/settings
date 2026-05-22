@@ -15,6 +15,9 @@
     padding: 0px;
 }
 
+.wallpaper-button + .circular {
+    border-radius: 50%;
+}
 
 .selected-icon{
     opacity: 0%;
@@ -23,8 +26,7 @@
     color: #fff;
 }
 
-
-.wallpaper-button:checked .selected-icon{
+.wallpaper-button:checked + .selected-icon{
     opacity: 100%
 }
 

@@ -28,22 +28,21 @@ impl AsyncFactoryComponent for Background {
             set_halign: gtk::Align::Center,
             set_accessible_role: gtk::AccessibleRole::ToggleButton,
 
+            gtk::Overlay{
+                add_css_class: "background-thumbnail",
 
-            #[name="wallpaper_item"]
-            gtk::ToggleButton {
-                set_group: Some(&self.group),
-                add_css_class: "wallpaper-button",
-                set_overflow: gtk::Overflow::Hidden,
-                set_active: self.active,
-                connect_clicked[sender, path = self.path.clone()] => move |_| {
-                    match sender.output(BackgroundOutput::SetBackgroundPath(path.clone())) {
-                        Ok(_) => (),
-                        Err(e) => eprintln!("{e:?}")
-                    }
-                },
-
-                gtk::Overlay{
-                    add_css_class: "background-thumbnail",
+                #[name="wallpaper_item"]
+                gtk::ToggleButton {
+                    set_group: Some(&self.group),
+                    add_css_class: "wallpaper-button",
+                    set_overflow: gtk::Overflow::Hidden,
+                    set_active: self.active,
+                    connect_clicked[sender, path = self.path.clone()] => move |_| {
+                        match sender.output(BackgroundOutput::SetBackgroundPath(path.clone())) {
+                            Ok(_) => (),
+                            Err(e) => eprintln!("{e:?}")
+                        }
+                    },
 
                     gtk::Picture {
                         set_content_fit: gtk::ContentFit::Fill,
@@ -51,19 +50,30 @@ impl AsyncFactoryComponent for Background {
                         set_can_shrink: true,
                         set_size_request: (200, 150),
                     },
+                },
 
-                    add_overlay = &gtk::Image {
-                        set_icon_name: Some("check-icon-symbolic"),
-                        set_halign: gtk::Align::End,
-                        set_valign: gtk::Align::End,
-                        add_css_class: "remove-button",
-                        add_css_class: "selected-icon",
-                    }
-                }
+
+                add_overlay = &gtk::Image {
+                    set_icon_name: Some("check-icon-symbolic"),
+                    set_halign: gtk::Align::End,
+                    set_valign: gtk::Align::End,
+                    add_css_class: "remove-button",
+                    add_css_class: "selected-icon",
+                },
+
+                add_overlay = &gtk::Image {
+                    set_icon_name: Some("window-close"),
+                    set_halign: gtk::Align::End,
+                    set_valign: gtk::Align::Start,
+                    add_css_class: "remove-button",
+                    add_css_class: "osd",
+                    add_css_class: "circular",
+                    add_css_class: "image-button",
+
+                    set_visible: if self.path.contains("/home") {true} else {false}
+                },
             }
-
         },
-
     }
 
     fn init_loading_widgets(root: Self::Root) -> Option<LoadingWidgets> {
