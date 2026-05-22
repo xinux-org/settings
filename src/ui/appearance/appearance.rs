@@ -127,6 +127,7 @@ impl AppearanceModel {
 pub enum AppearanceMsg {
     SetStyle(AppearanceStyle),
     SetBackground(String),
+    RemoveBackground(DynamicIndex, String),
     SendPick(AccentColorWrapped),
     OpenRequest,
     OpenResponse(PathBuf),
@@ -337,6 +338,8 @@ impl AsyncComponent for AppearanceModel {
                                         gtk::Separator {
                                             set_margin_top: 12,
                                             set_margin_bottom: 12,
+                                            #[watch]
+                                            set_visible: !model.recent_wallpapers.is_empty()
                                         }
                                     },
                                     #[local_ref]
@@ -402,6 +405,19 @@ impl AsyncComponent for AppearanceModel {
                 }
             });
 
+        let create_wallpaper_box = || {
+            AsyncFactoryVecDeque::<Background>::builder()
+                .launch(gtk::FlowBox::default())
+                .forward(sender.input_sender(), |output| match output {
+                    BackgroundOutput::SetBackground(path) => {
+                        AppearanceMsg::SetBackground(path.clone())
+                    }
+                    BackgroundOutput::RemoveBackground(index, path) => {
+                        AppearanceMsg::RemoveBackground(index, path)
+                    }
+                })
+        };
+
         let settings = AppearanceSettings::new();
         let wallpaper_default = parse_dconf(settings.background.get::<String>("picture-uri"));
         let wallpaper_dark = parse_dconf(settings.background.get::<String>("picture-uri-dark"));
@@ -416,20 +432,8 @@ impl AsyncComponent for AppearanceModel {
             style,
             wallpaper_default,
             wallpaper_dark,
-            wallpapers: AsyncFactoryVecDeque::<Background>::builder()
-                .launch(gtk::FlowBox::default())
-                .forward(sender.input_sender(), |output| match output {
-                    BackgroundOutput::SetBackgroundPath(path) => {
-                        AppearanceMsg::SetBackground(path.clone())
-                    }
-                }),
-            recent_wallpapers: AsyncFactoryVecDeque::<Background>::builder()
-                .launch(gtk::FlowBox::default())
-                .forward(sender.input_sender(), |output| match output {
-                    BackgroundOutput::SetBackgroundPath(path) => {
-                        AppearanceMsg::SetBackground(path.clone())
-                    }
-                }),
+            wallpapers: create_wallpaper_box(),
+            recent_wallpapers: create_wallpaper_box(),
             accent_color,
             open_dialog,
             background_group: gtk::ToggleButton::new(),
@@ -509,7 +513,7 @@ impl AsyncComponent for AppearanceModel {
     async fn update(
         &mut self,
         msg: Self::Input,
-        _sender: AsyncComponentSender<Self>,
+        sender: AsyncComponentSender<Self>,
         _root: &Self::Root,
     ) {
         let settings = AppearanceSettings::new();
@@ -518,12 +522,6 @@ impl AsyncComponent for AppearanceModel {
         match msg {
             AppearanceMsg::OpenRequest => self.open_dialog.emit(OpenDialogMsg::Open),
             AppearanceMsg::OpenResponse(path) => {
-                self.recent_wallpapers.guard().push_back(Background {
-                    path: path.to_str().unwrap().to_string(),
-                    group: self.background_group.clone(),
-                    active: false,
-                });
-
                 let f_name = path.file_name().context("extract filename failed");
 
                 let dest = PathBuf::from("/home")
@@ -531,7 +529,18 @@ impl AsyncComponent for AppearanceModel {
                     .join(".local/share/backgrounds")
                     .join(f_name.unwrap_or_default());
 
-                std::fs::copy(&path, &dest).unwrap_or_default();
+                match std::fs::copy(&path, &dest) {
+                    Ok(x) => {
+                        self.recent_wallpapers.guard().push_back(Background {
+                            path: dest.to_string_lossy().to_string(),
+                            group: self.background_group.clone(),
+                            active: false,
+                        });
+
+                        println!("COPIED: {x:?}")
+                    }
+                    Err(e) => eprintln!("{e:?}"),
+                };
             }
             AppearanceMsg::SetStyle(style) => {
                 self.style = style;
@@ -564,6 +573,27 @@ impl AsyncComponent for AppearanceModel {
                     },
                     format!("file://{}", path),
                 );
+            }
+
+            AppearanceMsg::RemoveBackground(index, path) => {
+                self.recent_wallpapers.guard().remove(index.current_index());
+
+                let set_wallpaper = |x: &Background| {
+                    sender
+                        .input_sender()
+                        .emit(AppearanceMsg::SetBackground(x.path.clone()))
+                };
+
+                if self.recent_wallpapers.is_empty()
+                    && let Some(x) = self.wallpapers.get(0)
+                {
+                    set_wallpaper(x)
+                } else if let Some(x) = self.recent_wallpapers.get(self.recent_wallpapers.len() - 1)
+                {
+                    set_wallpaper(x)
+                }
+
+                relm4::spawn(async move { std::fs::remove_file(path) });
             }
             AppearanceMsg::SendPick(color) => {
                 settings

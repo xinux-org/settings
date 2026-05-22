@@ -10,7 +10,8 @@ pub struct Background {
 
 #[derive(Debug)]
 pub enum BackgroundOutput {
-    SetBackgroundPath(String),
+    SetBackground(String),
+    RemoveBackground(DynamicIndex, String),
 }
 
 #[relm4::factory(pub, async)]
@@ -36,9 +37,10 @@ impl AsyncFactoryComponent for Background {
                     set_group: Some(&self.group),
                     add_css_class: "wallpaper-button",
                     set_overflow: gtk::Overflow::Hidden,
+                    #[watch]
                     set_active: self.active,
                     connect_clicked[sender, path = self.path.clone()] => move |_| {
-                        match sender.output(BackgroundOutput::SetBackgroundPath(path.clone())) {
+                        match sender.output(BackgroundOutput::SetBackground(path.clone())) {
                             Ok(_) => (),
                             Err(e) => eprintln!("{e:?}")
                         }
@@ -61,16 +63,23 @@ impl AsyncFactoryComponent for Background {
                     add_css_class: "selected-icon",
                 },
 
-                add_overlay = &gtk::Image {
-                    set_icon_name: Some("window-close"),
+                add_overlay = &gtk::Button {
+                    set_icon_name: "window-close",
                     set_halign: gtk::Align::End,
                     set_valign: gtk::Align::Start,
                     add_css_class: "remove-button",
                     add_css_class: "osd",
                     add_css_class: "circular",
                     add_css_class: "image-button",
+                    set_visible: if self.path.contains("/home") {true} else {false},
 
-                    set_visible: if self.path.contains("/home") {true} else {false}
+                    connect_clicked[sender, index, path = self.path.clone()] => move |_| {
+                        match sender.output(BackgroundOutput::RemoveBackground(index.clone(), path.clone())) {
+                            Ok(_) => (),
+                            Err(e) => eprintln!("{e:?}")
+                        }
+                    },
+
                 },
             }
         },
