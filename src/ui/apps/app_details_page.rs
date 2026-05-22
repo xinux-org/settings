@@ -163,7 +163,7 @@ impl SimpleComponent for AppDetailsPage {
             }
 
             AppDetailsMsg::ShowDetails(button) => {
-                show_app_details_dialog(&self.app, &button);
+                self.show_app_details_dialog(&button);
             }
         }
     }
@@ -205,42 +205,51 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
 
 fn notification_settings_for_app(app: &AppEntry) -> Option<gio::Settings> {
     let canonical_id = app.canonical_id.as_deref()?;
+
     Some(app_settings_for_canonical(canonical_id))
 }
 
-fn show_app_details_dialog(app: &AppEntry, button: &gtk::Button) {
-    let details = format!(
-        "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
-        app.name,
-        app.app_id.clone().unwrap_or_else(|| "—".to_string()),
-        app.canonical_id.clone().unwrap_or_else(|| "—".to_string()),
-        app.description.clone().unwrap_or_else(|| "—".to_string()),
-        app.executable.clone().unwrap_or_else(|| "—".to_string()),
-        if app.app_info.supports_files() {
-            "Yes"
-        } else {
-            "No"
-        },
-        if app.app_info.supports_uris() {
-            "Yes"
-        } else {
-            "No"
-        },
-    );
+impl AppEntry {
+    fn show_app_details_dialog(&self, button: &gtk::Button) {
+        let details = format!(
+            "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
+            self.name,
+            self.app_id.clone().unwrap_or_else(|| "—".to_string()),
+            self.canonical_id.clone().unwrap_or_else(|| "—".to_string()),
+            self.description.clone().unwrap_or_else(|| "—".to_string()),
+            self.executable.clone().unwrap_or_else(|| "—".to_string()),
+            if self.app_info.supports_files() {
+                "Yes"
+            } else {
+                "No"
+            },
+            if self.app_info.supports_uris() {
+                "Yes"
+            } else {
+                "No"
+            },
+        );
 
-    let dialog = gtk::AlertDialog::builder()
-        .modal(true)
-        .message(&app.name)
-        .detail(&details)
-        .build();
+        let dialog = gtk::AlertDialog::builder()
+            .modal(true)
+            .message(&self.name)
+            .detail(&details)
+            .build();
 
-    dialog.set_buttons(&["Close"]);
-    dialog.set_cancel_button(0);
-    dialog.set_default_button(0);
+        dialog.set_buttons(&["Close"]);
+        dialog.set_cancel_button(0);
+        dialog.set_default_button(0);
 
-    if let Some(root) = button.root() {
-        if let Ok(window) = root.downcast::<gtk::Window>() {
-            dialog.show(Some(&window));
+        if let Some(root) = button.root() {
+            if let Ok(window) = root.downcast::<gtk::Window>() {
+                dialog.show(Some(&window));
+            }
         }
+    }
+}
+
+impl AppDetailsPage {
+    fn show_app_details_dialog(&self, button: &gtk::Button) {
+        self.app.show_app_details_dialog(button);
     }
 }
