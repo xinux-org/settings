@@ -1,13 +1,7 @@
 use crate::ui::system::system_page::SystemPageMsg;
 use relm4::{
     adw::{self, prelude::*},
-    gtk::{
-        self,
-        gdk::Texture,
-        gdk_pixbuf::Pixbuf,
-        gio::{Cancellable, MemoryInputStream},
-        glib,
-    },
+    gtk::{self, gdk::Texture, glib},
     prelude::*,
 };
 use std::{collections::HashMap, collections::HashSet, ffi::OsStr, process::Command};
@@ -28,15 +22,24 @@ pub struct SystemAboutPage {
     pub windowing_system: String,
 }
 
+impl SystemAboutPage {
+    async fn embedded_logo(&self) -> Texture {
+        let bytes = include_bytes!("../../../.forgejo/assets/logo.png");
+        let g_bytes = glib::Bytes::from(&bytes.to_vec());
+        Texture::from_bytes(&g_bytes).unwrap()
+    }
+}
+
 // Second page message
 #[derive(Debug)]
 pub enum SystemAboutMsg {}
 
-#[relm4::component(pub)]
-impl SimpleComponent for SystemAboutPage {
+#[relm4::component(pub, async)]
+impl AsyncComponent for SystemAboutPage {
     type Init = ();
     type Input = SystemAboutMsg;
     type Output = SystemPageMsg;
+    type CommandOutput = ();
 
     view! {
         adw::NavigationPage {
@@ -50,7 +53,7 @@ impl SimpleComponent for SystemAboutPage {
                         add = &adw::Clamp {
                             gtk::Image {
                                 set_pixel_size: 220,
-                                set_paintable: Some(&embedded_logo()),
+                                set_paintable: Some(&model.embedded_logo().await),
                             },
                         },
                     },
@@ -72,6 +75,39 @@ impl SimpleComponent for SystemAboutPage {
                             set_use_underline: true,
                             set_text: &model.device_name,
                             set_show_apply_button: true,
+                        },
+                    },
+                    adw::PreferencesGroup {
+                        set_title: "Software",
+                        adw::ActionRow {
+                            set_title: "Operating System",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.operating_system,
+                        },
+                        adw::ActionRow {
+                            set_title: "Operating System architecture",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.os_architecture,
+                        },
+                        adw::ActionRow {
+                            set_title: "Kernel version",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.kernel_version,
+                        },
+                        adw::ActionRow {
+                            set_title: "Desktop environment",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.desktop_environment,
+                        },
+                        adw::ActionRow {
+                            set_title: "Windowing system",
+                            add_css_class: "property",
+                            set_subtitle_selectable: true,
+                            set_subtitle: &model.windowing_system,
                         },
                     },
                     adw::PreferencesGroup {
@@ -107,49 +143,16 @@ impl SimpleComponent for SystemAboutPage {
                             set_subtitle: &model.disk_capacity,
                         },
                     },
-                    adw::PreferencesGroup {
-                        set_title: "Software",
-                        adw::ActionRow {
-                            set_title: "Operating System",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.operating_system,
-                        },
-                        adw::ActionRow {
-                            set_title: "Operating System architecture",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.os_architecture,
-                        },
-                        adw::ActionRow {
-                            set_title: "Kernel version",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.kernel_version,
-                        },
-                        adw::ActionRow {
-                            set_title: "Desktop environment",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.desktop_environment,
-                        },
-                        adw::ActionRow {
-                            set_title: "Windowing system",
-                            add_css_class: "property",
-                            set_subtitle_selectable: true,
-                            set_subtitle: &model.windowing_system,
-                        },
-                    }
                 }
             }
         }
     }
 
-    fn init(
+    async fn init(
         _init: Self::Init,
         _root: Self::Root,
-        _sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        _sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
         let mut model = SystemAboutPage {
             os_architecture: architecture(),
             kernel_version: kernel_version(),
@@ -207,16 +210,8 @@ impl SimpleComponent for SystemAboutPage {
         }
 
         let widgets = view_output!();
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
-}
-
-fn embedded_logo() -> Texture {
-    let bytes = include_bytes!("../../../.forgejo/assets/logo.png");
-    let g_bytes = glib::Bytes::from(&bytes.to_vec());
-    let stream = MemoryInputStream::from_bytes(&g_bytes);
-    let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
-    Texture::for_pixbuf(&pixbuf)
 }
 
 fn architecture() -> String {
