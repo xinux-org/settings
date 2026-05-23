@@ -11,11 +11,11 @@ use relm4::{
 pub struct AccentColorWrapped(pub AccentColor);
 
 impl AccentColorWrapped {
-    pub fn iterator() -> impl Iterator<Item = AccentColor> {
+    pub fn iterator() -> impl Iterator<Item = AccentColorWrapped> {
         use relm4::adw::AccentColor::*;
         [Blue, Teal, Green, Yellow, Orange, Red, Pink, Purple, Slate]
             .iter()
-            .copied()
+            .map(|x| AccentColorWrapped(x.clone()))
     }
 }
 
@@ -36,15 +36,28 @@ impl From<String> for AccentColorWrapped {
     }
 }
 
-#[derive(Debug)]
-pub struct AccentColorModel {
-    is_active: bool,
-    group: gtk::ToggleButton,
-    color: String,
-    accent_color: AccentColorWrapped,
+impl From<AccentColorWrapped> for String {
+    fn from(value: AccentColorWrapped) -> Self {
+        let AccentColorWrapped(x) = value;
+        let y = match x {
+            AccentColor::Blue => "blue",
+            AccentColor::Teal => "teal",
+            AccentColor::Green => "green",
+            AccentColor::Yellow => "yellow",
+            AccentColor::Orange => "orange",
+            AccentColor::Red => "red",
+            AccentColor::Pink => "pink",
+            AccentColor::Purple => "purple",
+            AccentColor::Slate => "slate",
+            _ => "blue",
+        };
+
+        y.to_string()
+    }
 }
 
-pub struct AccentColorInit {
+#[derive(Debug)]
+pub struct AccentColorModel {
     pub is_active: bool,
     pub group: gtk::ToggleButton,
     pub color: String,
@@ -58,7 +71,7 @@ pub enum AccentColorOutput {
 
 #[relm4::factory(pub)]
 impl FactoryComponent for AccentColorModel {
-    type Init = AccentColorInit;
+    type Init = AccentColorModel;
     type Input = ();
     type Output = AccentColorOutput;
     type CommandOutput = ();

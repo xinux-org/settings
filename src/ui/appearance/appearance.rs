@@ -1,6 +1,6 @@
 use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
 use crate::ui::appearance::components::accent_box::{
-    AccentColorInit, AccentColorModel, AccentColorOutput, AccentColorWrapped,
+    AccentColorModel, AccentColorOutput, AccentColorWrapped,
 };
 
 use anyhow::Context;
@@ -10,7 +10,6 @@ use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
-use relm4::adw::AccentColor;
 use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
@@ -51,77 +50,7 @@ pub struct AppearanceModel {
     open_dialog: Controller<OpenDialog>,
     background_group: gtk::ToggleButton,
     accent_box_group: gtk::ToggleButton,
-    accent_color_box: FactoryVecDeque<AccentColorModel>,
-}
-
-impl AppearanceModel {
-    fn setup_accent_color(model: &mut AppearanceModel) {
-        // TODO: We need to remove code dublications!
-        // use .guard().extend() and put iterator on it.
-        let blue = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Blue)),
-            group: model.accent_box_group.clone(),
-            color: "blue".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Blue),
-        };
-        let teal = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Teal)),
-            group: model.accent_box_group.clone(),
-            color: "teal".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Teal),
-        };
-        let green = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Green)),
-            group: model.accent_box_group.clone(),
-            color: "green".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Green),
-        };
-        let yellow = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Yellow)),
-            group: model.accent_box_group.clone(),
-            color: "yellow".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Yellow),
-        };
-        let orange = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Orange)),
-            group: model.accent_box_group.clone(),
-            color: "orange".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Orange),
-        };
-        let red = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Red)),
-            group: model.accent_box_group.clone(),
-            color: "red".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Red),
-        };
-        let pink = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Pink)),
-            group: model.accent_box_group.clone(),
-            color: "pink".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Pink),
-        };
-        let purple = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Purple)),
-            group: model.accent_box_group.clone(),
-            color: "purple".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Purple),
-        };
-        let slate = AccentColorInit {
-            is_active: matches!(model.accent_color, AccentColorWrapped(AccentColor::Slate)),
-            group: model.accent_box_group.clone(),
-            color: "slate".to_string(),
-            accent_color: AccentColorWrapped(AccentColor::Slate),
-        };
-        model.accent_color_box.guard().push_back(blue);
-        model.accent_color_box.guard().push_back(teal);
-        model.accent_color_box.guard().push_back(green);
-        model.accent_color_box.guard().push_back(yellow);
-        model.accent_color_box.guard().push_back(orange);
-        model.accent_color_box.guard().push_back(red);
-        model.accent_color_box.guard().push_back(pink);
-        model.accent_color_box.guard().push_back(purple);
-        model.accent_color_box.guard().push_back(slate);
-    }
+    accent_colors: FactoryVecDeque<AccentColorModel>,
 }
 
 #[derive(Debug)]
@@ -295,6 +224,11 @@ impl AsyncComponent for AppearanceModel {
                                     set_spacing: 12,
                                     set_margin_top: 12,
                                     set_margin_bottom: 12,
+
+                                    #[name="accent_color"]
+                                    gtk::ToggleButton{
+                                        set_visible: false
+                                    }
                                 },
                             },
                         },
@@ -402,7 +336,7 @@ impl AsyncComponent for AppearanceModel {
                 OpenDialogResponse::Accept(path) => AppearanceMsg::OpenResponse(path),
                 OpenDialogResponse::Cancel => AppearanceMsg::Ignore,
             });
-        let accent_color_box = FactoryVecDeque::builder()
+        let accent_colors = FactoryVecDeque::builder()
             .launch(gtk::Box::default())
             .forward(sender.input_sender(), |output| match output {
                 AccentColorOutput::SendPick(accent_color_wrapped) => {
@@ -443,10 +377,21 @@ impl AsyncComponent for AppearanceModel {
             open_dialog,
             background_group: gtk::ToggleButton::new(),
             accent_box_group: gtk::ToggleButton::new(),
-            accent_color_box,
+            accent_colors,
         };
-        Self::setup_accent_color(&mut model);
-        let accent_color_box = model.accent_color_box.widget();
+
+        // push colors to accent color component
+        let _ = AccentColorWrapped::iterator()
+            .map(|x| {
+                let x_string: String = x.clone().into();
+                model.accent_colors.guard().push_back(AccentColorModel {
+                    is_active: settings.interface.string("accent-color") == x_string,
+                    group: model.accent_box_group.clone(),
+                    accent_color: x.clone(),
+                    color: x_string,
+                })
+            })
+            .collect::<Vec<_>>();
 
         // default paths for system wallpapers
         let folders: [&str; 2] = ["nixos", "gnome"];
@@ -512,6 +457,7 @@ impl AsyncComponent for AppearanceModel {
 
         let wallpaper_box = model.wallpapers.widget();
         let recent_wallpaper_box = model.recent_wallpapers.widget();
+        let accent_color_box = model.accent_colors.widget();
 
         let widgets = view_output!();
         AsyncComponentParts { model, widgets }
