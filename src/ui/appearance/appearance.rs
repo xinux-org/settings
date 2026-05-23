@@ -46,7 +46,6 @@ pub struct AppearanceModel {
     wallpaper_dark: String,
     wallpapers: AsyncFactoryVecDeque<Background>,
     recent_wallpapers: AsyncFactoryVecDeque<Background>,
-    accent_color: AccentColorWrapped,
     open_dialog: Controller<OpenDialog>,
     background_group: gtk::ToggleButton,
     accent_box_group: gtk::ToggleButton,
@@ -167,7 +166,7 @@ impl AsyncComponent for AppearanceModel {
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
-                                                set_content_fit: gtk::ContentFit::Cover,
+                                                set_content_fit: gtk::ContentFit::Fill,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_default)
                                             },
@@ -191,7 +190,7 @@ impl AsyncComponent for AppearanceModel {
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
-                                                set_content_fit: gtk::ContentFit::Cover,
+                                                set_content_fit: gtk::ContentFit::Fill,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_dark)
                                             },
@@ -360,8 +359,6 @@ impl AsyncComponent for AppearanceModel {
         let settings = AppearanceSettings::new();
         let wallpaper_default = parse_dconf(settings.background.get::<String>("picture-uri"));
         let wallpaper_dark = parse_dconf(settings.background.get::<String>("picture-uri-dark"));
-        let accent_color =
-            AccentColorWrapped::from(settings.interface.get::<String>("accent-color"));
         let style = match settings.interface.get::<String>("color-scheme").as_str() {
             "prefer-dark" => AppearanceStyle::Dark,
             _ => AppearanceStyle::Default,
@@ -373,7 +370,6 @@ impl AsyncComponent for AppearanceModel {
             wallpaper_dark,
             wallpapers: create_wallpaper_box(),
             recent_wallpapers: create_wallpaper_box(),
-            accent_color,
             open_dialog,
             background_group: gtk::ToggleButton::new(),
             accent_box_group: gtk::ToggleButton::new(),
