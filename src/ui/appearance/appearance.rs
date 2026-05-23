@@ -15,6 +15,7 @@ use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
 
+// default base path for system wallpapers
 const BG_BASE_DIR: &str = "/run/current-system/sw/share/backgrounds";
 
 #[derive(Debug, Clone)]
@@ -447,6 +448,7 @@ impl AsyncComponent for AppearanceModel {
         Self::setup_accent_color(&mut model);
         let accent_color_box = model.accent_color_box.widget();
 
+        // default paths for system wallpapers
         let folders: [&str; 2] = ["nixos", "gnome"];
         for folder in folders {
             let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
@@ -493,6 +495,7 @@ impl AsyncComponent for AppearanceModel {
 
         let user = get_user_by_uid(get_current_uid()).unwrap();
 
+        // read local wallpapers
         let _: Vec<_> = fs::read_dir(format!(
             "/home/{}/.local/share/backgrounds",
             user.name().to_string_lossy()
@@ -528,6 +531,7 @@ impl AsyncComponent for AppearanceModel {
             AppearanceMsg::OpenResponse(path) => {
                 let f_name = path.file_name().context("extract filename failed");
 
+                // add local wallpaper
                 let dest = PathBuf::from("/home")
                     .join(user.name())
                     .join(".local/share/backgrounds")

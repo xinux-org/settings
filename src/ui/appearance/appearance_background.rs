@@ -71,6 +71,8 @@ impl AsyncFactoryComponent for Background {
                     add_css_class: "osd",
                     add_css_class: "circular",
                     add_css_class: "image-button",
+
+                    // verify if the wallpaper is local
                     set_visible: if self.path.contains("/home") {true} else {false},
 
                     connect_clicked[sender, index, path = self.path.clone()] => move |_| {
