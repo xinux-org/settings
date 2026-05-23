@@ -6,7 +6,7 @@ use crate::ui::appearance::components::accent_box::{
 use anyhow::Context;
 use relm4::loading_widgets::LoadingWidgets;
 use std::{fs, path::Path};
-use users::{get_current_uid, get_user_by_uid};
+use users::{User, get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
@@ -434,22 +434,29 @@ impl AsyncComponent for AppearanceModel {
             }
         }
 
-        let user = get_user_by_uid(get_current_uid()).unwrap();
-
-        // read local wallpapers
-        let _: Vec<_> = fs::read_dir(format!(
-            "/home/{}/.local/share/backgrounds",
-            user.name().to_string_lossy()
-        ))
-        .unwrap()
-        .map(|x| {
-            model.recent_wallpapers.guard().push_back(Background {
-                path: x.unwrap().path().to_str().unwrap().to_string(),
-                group: model.background_group.clone(),
-                active: false,
-            });
-        })
-        .collect();
+        if let Some(user) = get_user_by_uid(get_current_uid()) {
+            if let Ok(wallpapers) = fs::read_dir(format!(
+                // read local wallpapers
+                "/home/{}/.local/share/backgrounds",
+                user.name().to_string_lossy()
+            )) {
+                let _ = wallpapers
+                    .filter(|x| x.is_ok())
+                    .map(|x| {
+                        let _ = x.map(|y| {
+                            model.recent_wallpapers.guard().push_back(Background {
+                                path: y.path().to_string_lossy().to_string(),
+                                group: model.background_group.clone(),
+                                active: false,
+                            });
+                            y
+                        });
+                    })
+                    .collect::<Vec<_>>();
+            }
+        } else {
+            eprintln!("Couldn't get username")
+        }
 
         let wallpaper_box = model.wallpapers.widget();
         let recent_wallpaper_box = model.recent_wallpapers.widget();
@@ -500,11 +507,14 @@ impl AsyncComponent for AppearanceModel {
                         settings
                             .interface
                             .set("color-scheme", "prefer-dark")
-                            .unwrap();
+                            .unwrap_or_else(|e| eprintln!("Couldn't set color-scheme: {e:?}"));
                     }
 
                     AppearanceStyle::Default => {
-                        settings.interface.set("color-scheme", "default").unwrap();
+                        settings
+                            .interface
+                            .set("color-scheme", "default")
+                            .unwrap_or_else(|e| eprintln!("Couldn't set color-scheme: {e:?}"));
                     }
                 }
             }
@@ -550,7 +560,7 @@ impl AsyncComponent for AppearanceModel {
                 settings
                     .interface
                     .set("accent-color", format!("{:?}", color.0).to_lowercase())
-                    .unwrap();
+                    .unwrap_or_else(|e| eprintln!("Couldn't set accent-color: {e:?}"));
             }
             AppearanceMsg::Ignore => {}
         }
