@@ -42,7 +42,7 @@ futures-util = "0.3.32"
 tracing = "0.1.41"
 tracing-subscriber = "0.3"
 tracker = "0.2.2"
-thiserror = "1"
+thiserror = "2.0.18"
 anyhow = "1.0.102"
 walkdir = "2.3"
 serde = { version = "1.0.228", features = ["derive"] }
@@ -51,13 +51,13 @@ serde = { version = "1.0.228", features = ["derive"] }
 enquote = "1"
 
 # system infos
-sysinfo = "0.38.3"
-wgpu = "27.0.1"
+sysinfo = "0.39.2"
+wgpu = "29.0.3"
 
 # power page
 ppd = "0.1.0"
-zbus = { version = "5.13", default-features = false }
+zbus = { version = "5.15", default-features = false }
 notify = { version = "8.1.0", features = ["serde"] }
 regex = "1.12.3"
-nmrs = "2.0.1"
+nmrs = "3.1.5"
 gio-unix = "0.22.6"
