@@ -232,6 +232,8 @@ impl AsyncComponent for AppearanceModel {
                                             set_overflow: gtk::Overflow::Hidden,
                                             add_css_class: "style-toggle",
                                             set_active: model.style == AppearanceStyle::Default,
+                                            set_width_request: 220,
+                                            set_height_request: 140,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
@@ -254,10 +256,12 @@ impl AsyncComponent for AppearanceModel {
                                             add_css_class: "style-toggle",
                                             set_overflow: gtk::Overflow::Hidden,
                                             set_active: model.style == AppearanceStyle::Dark,
+                                            set_width_request: 220,
+                                            set_height_request: 140,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
-                                                set_content_fit: gtk::ContentFit::Fill,
+                                                set_content_fit: gtk::ContentFit::Cover,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_dark)
                                             },
