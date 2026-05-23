@@ -588,7 +588,8 @@ impl AsyncComponent for AppearanceModel {
                     && let Some(x) = self.wallpapers.get(0)
                 {
                     set_wallpaper(x)
-                } else if let Some(x) = self.recent_wallpapers.get(self.recent_wallpapers.len() - 1)
+                } else if (path == self.wallpaper_default || path == self.wallpaper_dark)
+                    && let Some(x) = self.recent_wallpapers.get(self.recent_wallpapers.len() - 1)
                 {
                     set_wallpaper(x)
                 }
