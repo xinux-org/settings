@@ -10,7 +10,13 @@ use users::{User, get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
-use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
+use relm4::{
+    adw::prelude::*,
+    gtk::gio::Settings,
+    gtk::{self, glib},
+    prelude::*,
+    view,
+};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
 
@@ -61,6 +67,7 @@ pub enum AppearanceMsg {
     OpenRequest,
     OpenResponse(PathBuf),
     Ignore,
+    // WallpapersLoaded(Background),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -415,28 +422,24 @@ impl AsyncComponent for AppearanceModel {
             }
         }
 
+        // Load Local Wallpapers
         if let Some(user) = get_user_by_uid(get_current_uid()) {
-            if let Ok(wallpapers) = fs::read_dir(format!(
-                // read local wallpapers
+            let local_path = format!(
                 "/home/{}/.local/share/backgrounds",
                 user.name().to_string_lossy()
-            )) {
-                let _ = wallpapers
-                    .filter(|x| x.is_ok())
-                    .map(|x| {
-                        let _ = x.map(|y| {
-                            model.recent_wallpapers.guard().push_back(Background {
-                                path: y.path().to_string_lossy().to_string(),
-                                group: model.background_group.clone(),
-                                active: false,
-                            });
-                            y
-                        });
-                    })
-                    .collect::<Vec<_>>();
+            );
+            if let Ok(rd) = fs::read_dir(local_path) {
+                for entry in rd.flatten() {
+                    let file_path = entry.path().to_string_lossy().to_string();
+                    let is_active = active_wallpaper.ends_with(&file_path);
+
+                    model.recent_wallpapers.guard().push_back(Background {
+                        path: file_path.clone(),
+                        group: model.background_group.clone(),
+                        active: is_active,
+                    });
+                }
             }
-        } else {
-            eprintln!("Couldn't get username")
         }
 
         let wallpaper_box = model.wallpapers.widget();
@@ -543,6 +546,19 @@ impl AsyncComponent for AppearanceModel {
                     .set("accent-color", format!("{:?}", color.0).to_lowercase())
                     .unwrap_or_else(|e| eprintln!("Couldn't set accent-color: {e:?}"));
             }
+            // AppearanceMsg::WallpapersLoaded(background) => {
+            //     // Batch update system wallpapers
+            //     let mut sys_guard = self.wallpapers.guard();
+            //     // for bg in background {
+            //     sys_guard.push_back(background);
+            //     // }
+
+            //     // // Batch update local wallpapers
+            //     // let mut loc_guard = self.recent_wallpapers.guard();
+            //     // for bg in local {
+            //     //     loc_guard.push_back(bg);
+            //     // }
+            // }
             AppearanceMsg::Ignore => {}
         }
     }
