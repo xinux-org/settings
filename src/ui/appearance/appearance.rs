@@ -391,45 +391,26 @@ impl AsyncComponent for AppearanceModel {
 
         // default paths for system wallpapers
         let folders: [&str; 2] = ["nixos", "gnome"];
+        let color_scheme = settings.interface.string("color-scheme");
+        let uri_key = match color_scheme.as_str() {
+            "prefer-dark" => "picture-uri-dark",
+            _ => "picture-uri",
+        };
+        let active_wallpaper = settings.background.string(uri_key);
+
         for folder in folders {
             let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
-            match fs::read_dir(&path) {
-                Ok(rd) => {
-                    let _ = rd
-                        .filter(|x| x.is_ok())
-                        .map(|x| {
-                            x.map(|y| {
-                                let path = y.path().to_string_lossy().to_string();
 
-                                model.wallpapers.guard().push_back(Background {
-                                    path: path.clone(),
-                                    group: model.background_group.clone(),
-                                    active: path[47..]
-                                        == settings.background.get::<String>(
-                                            match settings
-                                                .interface
-                                                .get::<String>("color-scheme")
-                                                .as_str()
-                                            {
-                                                "prefer-dark" => "picture-uri-dark",
-                                                _ => "picture-uri",
-                                            },
-                                        )
-                                            [(if path.contains("gnome") { 57 } else { 54 })..],
-                                });
+            if let Ok(rd) = fs::read_dir(&path) {
+                for entry in rd.flatten() {
+                    let file_path = entry.path().to_string_lossy().to_string();
+                    let is_active = active_wallpaper.ends_with(&file_path);
 
-                                y
-                            })
-                        })
-                        .collect::<Vec<_>>();
-                }
-                Err(err) => {
-                    eprintln!(
-                        "Failed to read '{1}': {0}",
-                        err,
-                        path.to_str().unwrap_or_default()
-                    );
-                    continue;
+                    model.wallpapers.guard().push_back(Background {
+                        path: file_path.clone(),
+                        group: model.background_group.clone(),
+                        active: is_active,
+                    });
                 }
             }
         }
