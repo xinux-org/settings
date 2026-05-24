@@ -364,9 +364,11 @@ impl AsyncComponent for AppearanceModel {
         };
 
         let settings = AppearanceSettings::new();
-        let wallpaper_default = parse_dconf(settings.background.get::<String>("picture-uri"));
-        let wallpaper_dark = parse_dconf(settings.background.get::<String>("picture-uri-dark"));
-        let style = match settings.interface.get::<String>("color-scheme").as_str() {
+        let wallpaper_default = parse_dconf(settings.background.string("picture-uri").to_string());
+        let wallpaper_dark =
+            parse_dconf(settings.background.string("picture-uri-dark").to_string());
+
+        let style = match settings.interface.string("color-scheme").as_str() {
             "prefer-dark" => AppearanceStyle::Dark,
             _ => AppearanceStyle::Default,
         };
