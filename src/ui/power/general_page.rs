@@ -47,6 +47,7 @@ impl fmt::Display for PowerMode {
             PowerMode::Performance => "performance",
             PowerMode::Balanced => "balanced",
             PowerMode::PowerSaver => "power-saver",
+            PowerMode::Disabled => "disabled",
         };
         write!(f, "{s}")
     }
@@ -115,6 +116,7 @@ pub enum PowerMode {
     Performance, // performance
     Balanced,    // balanced
     PowerSaver,  // power-saver
+    Disabled     // ppd disabled
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -194,6 +196,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Power Mode",
+                set_visible: model.power_mode != PowerMode::Disabled, 
 
                 adw::ActionRow {
                     set_title: "Performance",
@@ -500,10 +503,11 @@ impl Component for GeneralPowerPageView {
 }
 
 fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
-    match proxy.active_profile().unwrap().trim() {
+    match proxy.active_profile().unwrap_or("disabled".to_string()).trim() {
         "balanced" => PowerMode::Balanced,
         "power-saver" => PowerMode::PowerSaver,
         "performance" => PowerMode::Performance,
+        "disabled" => PowerMode::Disabled,
         _ => PowerMode::Balanced,
     }
 }
