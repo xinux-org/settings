@@ -189,9 +189,7 @@ impl SimpleComponent for Touchpad {
         let scroll_method = settings.touchpad.boolean("two-finger-scrolling-enabled");
         let scroll_method_controller = Choice::builder()
             .launch(ChoiceInit {
-                // TODO: this component changes two dconf keys
-                // FIX:
-                key: "scroll method".to_string(),
+                key: "edge-scrolling-enabled".to_string(),
                 settings: settings.touchpad.clone(),
                 title: "Scroll Method".to_string(),
 
