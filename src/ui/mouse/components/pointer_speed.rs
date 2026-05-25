@@ -44,9 +44,9 @@ impl Component for PointerSpeed {
                 set_hexpand: true,
                 set_value: model.speed,
                 set_range: (-1.0, 1.0),
-                add_mark: (-1.0, gtk::PositionType::Left, Some("Slow")),
-                add_mark: (0.0, gtk::PositionType::Top, None),
-                add_mark: (1.0, gtk::PositionType::Right, Some("Fast")),
+                add_mark: (-1.0, gtk::PositionType::Bottom, Some("Slow")),
+                add_mark: (0.0, gtk::PositionType::Bottom, None),
+                add_mark: (1.0, gtk::PositionType::Bottom, Some("Fast")),
                 set_adjustment = &gtk::Adjustment {
                     set_lower: -1.0,
                     set_upper: 1.0,
