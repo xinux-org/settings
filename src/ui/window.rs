@@ -28,6 +28,7 @@ use crate::{
 use std::{convert::identity, fs, path::Path};
 
 pub struct App {
+    stack: adw::ViewStack,
     #[allow(dead_code)]
     wifi: AsyncController<WifiModel>,
     #[allow(dead_code)]
@@ -142,19 +143,17 @@ impl SimpleComponent for App {
                             }
                         },
                         #[wrap(Some)]
-                        set_content = &gtk::StackSidebar {
-                            set_stack: &stack,
+                        set_content = &adw::ViewSwitcherSidebar {
+                            set_stack: Some(&model.stack),
                         },
                     },
                 },
 
                 #[wrap(Some)]
                 set_content = &adw::NavigationPage {
-                    // set_title: "Content",
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
-                        // add_top_bar = &adw::HeaderBar {},
-                        set_content: Some(&stack),
+                        set_content: Some(&model.stack),
                     }
                 },
             },
@@ -171,28 +170,6 @@ impl SimpleComponent for App {
                 ]
             ),
         },
-        stack = &gtk::Stack {
-            add_titled: (wifi.widget(), Some("wifi"), "Wi-Fi"),
-            add_titled: (network.widget(), Some("network"), "Network"),
-            add_titled: (bluetooth.widget(), Some("bluetooth"), "Bluetooth"),
-            add_titled: (display.widget(), Some("display"), "Display"),
-            add_titled: (appearance.widget(), Some("appearance"), "Appearance"),
-            add_titled: (sound.widget(), Some("sound"), "Sound"),
-            add_titled: (power.widget(), Some("power"), "Power"),
-            // add_titled: (multitasking.widget(), Some("multitasking"), "Multitasking"),
-            add_titled: (apps.widget(), Some("apps"), "Apps"),
-            add_titled: (notifications.widget(), Some("notifications"), "Notifications"),
-            // add_titled: (search.widget(), Some("search"), "Search"),
-            // add_titled: (accounts.widget(), Some("accounts"), "Online Accounts"),
-            // add_titled: (sharing.widget(), Some("sharing"), "Sharing"),
-            // add_titled: (wellbeing.widget(), Some("wellbeing"), "Wellbeing"),
-            add_titled: (mouse.widget(), Some("mouse"), "Mouse and Touchpad"),
-            // add_titled: (accessibility.widget(), Some("accessibility"), "Acccesibility"),
-            // add_titled: (privacyandsecurity.widget(), Some("privacyandsecurity"), "Privacy and Security"),
-            add_titled: (system.widget(), Some("system"), "System"),
-            set_vhomogeneous: false,
-            set_hhomogeneous: false,
-        }
     }
 
     fn init(
@@ -264,9 +241,8 @@ impl SimpleComponent for App {
             })
             .forward(sender.input_sender(), identity);
 
-        let widgets = view_output!();
-
-        let model = App {
+        let mut model = App {
+            stack: adw::ViewStack::new(),
             wifi,
             network,
             bluetooth,
@@ -291,7 +267,42 @@ impl SimpleComponent for App {
             // modified_config: HashMap::new(),
         };
 
-        widgets.stack.connect_visible_child_notify({
+        relm4::view! {
+          view_stack = &adw::ViewStack {
+              add_titled_with_icon: (model.wifi.widget(), Some("wifi"), "Wi-Fi", "network-wireless-symbolic"),
+              add_titled_with_icon: (model.network.widget(), Some("network"), "Network", "org.gnome.Settings-network-symbolic"),
+              add_titled_with_icon: (model.bluetooth.widget(), Some("display"), "Bluetooth", "org.gnome.Settings-bluetooth-symbolic"),
+              add_titled_with_icon: (model.display.widget(), Some("display"), "Display", "org.gnome.Settings-display-symbolic"),
+              add_titled_with_icon: (model.appearance.widget(), Some("appearance"), "Appearance", "org.gnome.Settings-appearance-symbolic"),
+              add_titled_with_icon: (model.sound.widget(), Some("sound"), "Sound", "org.gnome.Settings-sound-symbolic"),
+              add_titled_with_icon: (model.power.widget(), Some("power"), "Power", "org.gnome.Settings-power-symbolic"),
+              // add_titled_with_icon: (multitasking.widget(), Some("multitasking"), "Multitasking", "org.gnome.Settings-multitasking-symbolic"),
+              add_titled_with_icon: (model.apps.widget(), Some("apps"), "Apps", "org.gnome.Settings-applications-symbolic"),
+              add_titled_with_icon: (model.notifications.widget(), Some("notifications"), "Notifications", "org.gnome.Settings-notifications-symbolic"),
+              // add_titled_with_icon: (search.widget(), Some("search"), "Search", "org.gnome.Settings-search-symbolic"),
+              // add_titled_with_icon: (accounts.widget(), Some("accounts"), "Online Accounts", "org.gnome.Settings-online-accounts-symbolic"),
+              // add_titled_with_icon: (sharing.widget(), Some("sharing"), "Sharing", "org.gnome.Settings-sharing-symbolic"),
+              // add_titled_with_icon: (wellbeing.widget(), Some("wellbeing"), "Wellbeing", "org.gnome.Settings-wellbeing-symbolic"),
+              add_titled_with_icon: (model.mouse.widget(), Some("mouse"), "Mouse and Touchpad", "input-mouse-symbolic"),
+              // add_titled_with_icon: (accessibility.widget(), Some("accessibility"), "Acccesibility", "org.gnome.Settings-accessibility-symbolic"),
+              // add_titled_with_icon: (privacyandsecurity.widget(), Some("privacyandsecurity"), "Privacy and Security", "org.gnome.Settings-privacy-symbolic"),
+              add_titled_with_icon: (model.system.widget(), Some("system"), "System", "org.gnome.Settings-system-symbolic"),
+              set_vhomogeneous: false,
+              set_hhomogeneous: false,
+          }
+        }
+        model.stack = view_stack;
+        let display_stack = model.stack.page(model.display.widget());
+        display_stack.set_starts_section(true);
+        
+        let apps_stack = model.stack.page(model.apps.widget());
+        apps_stack.set_starts_section(true);
+        
+        let mouse_stack = model.stack.page(model.mouse.widget());
+        mouse_stack.set_starts_section(true);
+
+        let widgets = view_output!();
+        model.stack.connect_visible_child_notify({
             let split_view = widgets.split_view.clone();
             move |_| {
                 split_view.set_show_content(true);

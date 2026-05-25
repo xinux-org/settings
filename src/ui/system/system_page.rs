@@ -23,7 +23,7 @@ pub struct SystemPageModel {
     system_l10n: Controller<SystemRegionLanguagePage>,
     system_datetime: Controller<SystemDateTimePage>,
     system_users: Controller<SystemUsersPage>,
-    system_about: Controller<SystemAboutPage>,
+    system_about: AsyncController<SystemAboutPage>,
     user_model: Option<Controller<UserPageModel>>,
 }
 

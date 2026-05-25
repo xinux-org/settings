@@ -2,6 +2,7 @@ use super::app_notification::{
     AppNotificationItem, AppNotificationsInit, AppNotificationsPageModel,
     AppNotificationsPageOutput, app_bool_from_canonical,
 };
+use gio_unix;
 use relm4::adw;
 use relm4::adw::prelude::*;
 use relm4::gtk;
@@ -305,7 +306,7 @@ fn load_notification_apps(master_settings: &gio::Settings) -> Vec<AppNotificatio
             continue;
         };
 
-        let Some(desktop) = gio::DesktopAppInfo::new(&app_id) else {
+        let Some(desktop) = gio_unix::DesktopAppInfo::new(&app_id) else {
             continue;
         };
 
@@ -368,7 +369,7 @@ fn maybe_add_app_from_canonical(
         return;
     }
 
-    let Some(desktop) = gio::DesktopAppInfo::new(full_app_id.as_str()) else {
+    let Some(desktop) = gio_unix::DesktopAppInfo::new(full_app_id.as_str()) else {
         return;
     };
 
@@ -420,7 +421,7 @@ fn strip_desktop_suffix(app_id: &str) -> String {
         .to_string()
 }
 
-fn app_is_system_service(app: &gio::DesktopAppInfo) -> bool {
+fn app_is_system_service(app: &gio_unix::DesktopAppInfo) -> bool {
     let categories = app.categories().unwrap_or_default();
 
     if categories.is_empty() {
