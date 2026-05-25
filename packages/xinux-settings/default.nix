@@ -26,6 +26,9 @@ pkgs.stdenv.mkDerivation {
     ninja
     pkg-config
     polkit
+    libglycin
+    glycin-loaders
+    bubblewrap
     wrapGAppsHook4
     rustPlatform.cargoSetupHook
   ];
@@ -37,6 +40,9 @@ pkgs.stdenv.mkDerivation {
     openssl
     vte-gtk4
     libgweather
+    bubblewrap
+    libglycin
+    glycin-loaders
   ];
 
 }

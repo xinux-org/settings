@@ -1,11 +1,13 @@
+use gtk::{self, gdk::Texture};
 use relm4::loading_widgets::LoadingWidgets;
-use relm4::{adw::prelude::*, gtk, prelude::*, view};
+use relm4::{adw::prelude::*, prelude::*, view};
 
 #[derive(Debug, Clone)]
 pub struct Background {
     pub path: String,
     pub group: gtk::ToggleButton,
     pub active: bool,
+    pub texture: Texture,
 }
 
 #[derive(Debug)]
@@ -50,6 +52,7 @@ impl AsyncFactoryComponent for Background {
                         set_content_fit: gtk::ContentFit::Fill,
                         set_isolate_contents: true,
                         set_filename: Some(&self.path),
+                        set_paintable: Some(&self.texture),
                         set_can_shrink: true,
                         set_size_request: (200, 150),
                     },
@@ -114,6 +117,7 @@ impl AsyncFactoryComponent for Background {
             path: init.path,
             group: init.group,
             active: init.active,
+            texture: init.texture,
         }
     }
 

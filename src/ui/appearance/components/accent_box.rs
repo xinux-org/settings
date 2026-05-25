@@ -39,7 +39,7 @@ impl From<String> for AccentColorWrapped {
 impl From<AccentColorWrapped> for String {
     fn from(value: AccentColorWrapped) -> Self {
         let AccentColorWrapped(x) = value;
-        let y = match x {
+        match x {
             AccentColor::Blue => "blue",
             AccentColor::Teal => "teal",
             AccentColor::Green => "green",
@@ -50,9 +50,7 @@ impl From<AccentColorWrapped> for String {
             AccentColor::Purple => "purple",
             AccentColor::Slate => "slate",
             _ => "blue",
-        };
-
-        y.to_string()
+        }.to_string()
     }
 }
 

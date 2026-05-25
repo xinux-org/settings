@@ -5,8 +5,10 @@ use crate::ui::appearance::components::accent_box::{
 use crate::utils::parse_dconf;
 
 use anyhow::Context;
+use glycin::Loader;
 use relm4::loading_widgets::LoadingWidgets;
 use std::{fs, path::Path};
+use tracing::Instrument;
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
@@ -16,6 +18,7 @@ use std::path::PathBuf;
 
 // default base path for system wallpapers
 const BG_BASE_DIR: &str = "/run/current-system/sw/share/backgrounds";
+// const BG_BASE_DIR: &str = "/home/shahruz";
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
@@ -70,7 +73,6 @@ pub enum AppearanceStyle {
     Default,
     Dark,
 }
-
 impl AppearanceStyle {
     fn get_picture_uri(self) -> String {
         match self {
@@ -193,7 +195,7 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
-                                                // set_isolate_contents: true,
+                                                set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_default)
                                             },
@@ -218,7 +220,7 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
-                                                // set_isolate_contents: true,
+                                                set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_dark)
                                             },
@@ -423,22 +425,6 @@ impl AsyncComponent for AppearanceModel {
             })
             .collect::<Vec<_>>();
 
-        // default paths for system wallpapers
-        let folders: [&str; 2] = ["nixos", "gnome"];
-        // let color_scheme = settings.interface.string("color-scheme");
-
-        for folder in folders {
-            let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
-
-            if let Ok(rd) = fs::read_dir(&path) {
-                for entry in rd.flatten() {
-                    let file_path = entry.path().to_string_lossy().to_string();
-                    sender
-                        .spawn_oneshot_command(move || AddBackroundMsg::Default(file_path.clone()));
-                }
-            }
-        }
-
         // Load Local Wallpapers
         if let Some(user) = get_user_by_uid(get_current_uid()) {
             let local_path = format!(
@@ -449,6 +435,22 @@ impl AsyncComponent for AppearanceModel {
                 for entry in rd.flatten() {
                     let file_path = entry.path().to_string_lossy().to_string();
                     sender.spawn_oneshot_command(move || AddBackroundMsg::Local(file_path.clone()));
+                }
+            }
+        }
+
+        // default paths for system wallpapers
+        let folders: [&str; 2] = ["nixos", "gnome"];
+        // let folders: [&str; 1] = ["wallpapers"];
+
+        for folder in folders {
+            let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
+
+            if let Ok(rd) = fs::read_dir(&path) {
+                for entry in rd.flatten() {
+                    let x = entry.path().to_string_lossy().to_string();
+
+                    sender.spawn_oneshot_command(move || AddBackroundMsg::Default(x.clone()));
                 }
             }
         }
@@ -469,6 +471,14 @@ impl AsyncComponent for AppearanceModel {
     ) {
         match message {
             AddBackroundMsg::Default(x) => {
+                // println!("the path: {x}");
+                let file = gtk::gio::File::for_path(Path::new(&x));
+                let image = Loader::new(file)
+                    .load()
+                    .await
+                    .expect("Coulnd't load the wallpaper: ");
+                let texture = image.next_frame().await.unwrap().texture();
+
                 self.wallpapers.guard().push_back(Background {
                     path: x.clone(),
                     group: self.background_group.clone(),
@@ -476,9 +486,15 @@ impl AsyncComponent for AppearanceModel {
                         AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
                     },
+                    texture,
                 });
             }
             AddBackroundMsg::Local(x) => {
+                let file = gtk::gio::File::for_path(&x);
+                let image = Loader::new(file).load().await.unwrap();
+
+                let texture = image.next_frame().await.unwrap().texture();
+
                 self.recent_wallpapers.guard().push_back(Background {
                     path: x.clone(),
                     group: self.background_group.clone(),
@@ -486,6 +502,7 @@ impl AsyncComponent for AppearanceModel {
                         AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
                     },
+                    texture,
                 });
             }
         }
@@ -511,12 +528,17 @@ impl AsyncComponent for AppearanceModel {
                     .join(".local/share/backgrounds")
                     .join(f_name.unwrap_or_default());
 
+                let file = gtk::gio::File::for_path(&dest);
+                let image = Loader::new(file).load().await.unwrap();
+                let texture = image.next_frame().await.unwrap().texture();
+
                 match std::fs::copy(&path, &dest) {
                     Ok(x) => {
                         self.recent_wallpapers.guard().push_back(Background {
                             path: dest.to_string_lossy().to_string(),
                             group: self.background_group.clone(),
                             active: false,
+                            texture,
                         });
 
                         println!("COPIED: {x:?}")

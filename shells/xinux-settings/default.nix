@@ -55,6 +55,9 @@ pkgs.mkShell {
     wrapGAppsHook4
     desktop-file-utils
     gobject-introspection
+    libglycin
+    bubblewrap
+    glycin-loaders
     rustPlatform.bindgenHook
   ];
 
