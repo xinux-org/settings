@@ -48,6 +48,7 @@ impl AsyncFactoryComponent for Background {
 
                     gtk::Picture {
                         set_content_fit: gtk::ContentFit::Fill,
+                        set_isolate_contents: true,
                         set_filename: Some(&self.path),
                         set_can_shrink: true,
                         set_size_request: (200, 150),

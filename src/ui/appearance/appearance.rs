@@ -174,6 +174,7 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
+                                                set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_default)
                                             },
@@ -198,6 +199,7 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
+                                                set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_dark)
                                             },
