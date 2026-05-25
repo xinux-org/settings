@@ -80,30 +80,35 @@ impl SimpleComponent for Touchpad {
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "Secondary Click",
+                set_title: "Clicking",
 
                 add = model.secondary_click_controller.widget(),
             },
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "Tap to Click",
 
                 add = model.tap_to_click_controller.widget(),
             },
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "Scroll Method",
+                set_title: "Scrolling",
 
                 add = model.scroll_method_controller.widget(),
             },
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "Scroll Direction",
 
                 add = model.natural_scroll_controller.widget(),
+            },
+
+            add = &adw::PreferencesGroup {
+                add = &adw::ButtonRow {
+                    set_title: "Test Settings",
+                    set_end_icon_name: Some("go-next-symbolic"),
+                },
             },
         }
     }
