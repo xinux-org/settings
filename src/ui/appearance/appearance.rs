@@ -2,21 +2,15 @@ use crate::ui::appearance::appearance_background::{Background, BackgroundOutput}
 use crate::ui::appearance::components::accent_box::{
     AccentColorModel, AccentColorOutput, AccentColorWrapped,
 };
+use crate::utils::parse_dconf;
 
 use anyhow::Context;
 use relm4::loading_widgets::LoadingWidgets;
 use std::{fs, path::Path};
-use users::{User, get_current_uid, get_user_by_uid};
+use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
-use crate::utils::parse_dconf;
-use relm4::{
-    adw::prelude::*,
-    gtk::gio::Settings,
-    gtk::{self, glib},
-    prelude::*,
-    view,
-};
+use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
 
@@ -48,6 +42,7 @@ impl Default for AppearanceSettings {
 #[derive(Debug)]
 pub struct AppearanceModel {
     style: AppearanceStyle,
+    accent_color: AccentColorWrapped,
     wallpaper_default: String,
     wallpaper_dark: String,
     wallpapers: AsyncFactoryVecDeque<Background>,
@@ -76,12 +71,36 @@ pub enum AppearanceStyle {
     Dark,
 }
 
+impl AppearanceStyle {
+    fn get_picture_uri(self) -> String {
+        match self {
+            Self::Dark => "picture-uri-dark",
+            Self::Default => "picture-uri",
+        }
+        .to_string()
+    }
+
+    fn get_style(self) -> String {
+        match self {
+            Self::Dark => "prefer-dark",
+            Self::Default => "prefer-default",
+        }
+        .to_string()
+    }
+}
+
+#[derive(Debug)]
+pub enum AddBackroundMsg {
+    Default(String),
+    Local(String),
+}
+
 #[relm4::component(pub, async)]
 impl AsyncComponent for AppearanceModel {
     type Init = ();
     type Input = AppearanceMsg;
     type Output = AppMsg;
-    type CommandOutput = ();
+    type CommandOutput = AddBackroundMsg;
 
     view! {
         #[root]
@@ -174,7 +193,7 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
-                                                set_isolate_contents: true,
+                                                // set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_default)
                                             },
@@ -199,7 +218,7 @@ impl AsyncComponent for AppearanceModel {
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Fill,
-                                                set_isolate_contents: true,
+                                                // set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_dark)
                                             },
@@ -366,25 +385,29 @@ impl AsyncComponent for AppearanceModel {
         };
 
         let settings = AppearanceSettings::new();
-        let wallpaper_default = parse_dconf(settings.background.string("picture-uri").to_string());
-        let wallpaper_dark =
-            parse_dconf(settings.background.string("picture-uri-dark").to_string());
 
         let style = match settings.interface.string("color-scheme").as_str() {
             "prefer-dark" => AppearanceStyle::Dark,
             _ => AppearanceStyle::Default,
         };
 
+        let wallpaper_default = parse_dconf(settings.background.string("picture-uri").to_string());
+        let wallpaper_dark =
+            parse_dconf(settings.background.string("picture-uri-dark").to_string());
+
         let mut model = Self {
-            style,
+            accent_color: AccentColorWrapped::from(
+                settings.interface.get::<String>("accent-color"),
+            ),
             wallpaper_default,
             wallpaper_dark,
             wallpapers: create_wallpaper_box(),
             recent_wallpapers: create_wallpaper_box(),
-            open_dialog,
             background_group: gtk::ToggleButton::new(),
             accent_box_group: gtk::ToggleButton::new(),
+            style,
             accent_colors,
+            open_dialog,
         };
 
         // push colors to accent color component
@@ -392,7 +415,7 @@ impl AsyncComponent for AppearanceModel {
             .map(|x| {
                 let x_string: String = x.clone().into();
                 model.accent_colors.guard().push_back(AccentColorModel {
-                    is_active: settings.interface.string("accent-color") == x_string,
+                    is_active: String::from(model.accent_color.clone()) == x_string,
                     group: model.accent_box_group.clone(),
                     accent_color: x.clone(),
                     color: x_string,
@@ -402,12 +425,7 @@ impl AsyncComponent for AppearanceModel {
 
         // default paths for system wallpapers
         let folders: [&str; 2] = ["nixos", "gnome"];
-        let color_scheme = settings.interface.string("color-scheme");
-        let uri_key = match color_scheme.as_str() {
-            "prefer-dark" => "picture-uri-dark",
-            _ => "picture-uri",
-        };
-        let active_wallpaper = settings.background.string(uri_key);
+        // let color_scheme = settings.interface.string("color-scheme");
 
         for folder in folders {
             let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
@@ -415,13 +433,8 @@ impl AsyncComponent for AppearanceModel {
             if let Ok(rd) = fs::read_dir(&path) {
                 for entry in rd.flatten() {
                     let file_path = entry.path().to_string_lossy().to_string();
-                    let is_active = active_wallpaper.ends_with(&file_path);
-
-                    model.wallpapers.guard().push_back(Background {
-                        path: file_path.clone(),
-                        group: model.background_group.clone(),
-                        active: is_active,
-                    });
+                    sender
+                        .spawn_oneshot_command(move || AddBackroundMsg::Default(file_path.clone()));
                 }
             }
         }
@@ -435,13 +448,7 @@ impl AsyncComponent for AppearanceModel {
             if let Ok(rd) = fs::read_dir(local_path) {
                 for entry in rd.flatten() {
                     let file_path = entry.path().to_string_lossy().to_string();
-                    let is_active = active_wallpaper.ends_with(&file_path);
-
-                    model.recent_wallpapers.guard().push_back(Background {
-                        path: file_path.clone(),
-                        group: model.background_group.clone(),
-                        active: is_active,
-                    });
+                    sender.spawn_oneshot_command(move || AddBackroundMsg::Local(file_path.clone()));
                 }
             }
         }
@@ -452,6 +459,36 @@ impl AsyncComponent for AppearanceModel {
 
         let widgets = view_output!();
         AsyncComponentParts { model, widgets }
+    }
+
+    async fn update_cmd(
+        &mut self,
+        message: Self::CommandOutput,
+        _sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
+        match message {
+            AddBackroundMsg::Default(x) => {
+                self.wallpapers.guard().push_back(Background {
+                    path: x.clone(),
+                    group: self.background_group.clone(),
+                    active: match self.style {
+                        AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
+                        AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
+                    },
+                });
+            }
+            AddBackroundMsg::Local(x) => {
+                self.recent_wallpapers.guard().push_back(Background {
+                    path: x.clone(),
+                    group: self.background_group.clone(),
+                    active: match self.style {
+                        AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
+                        AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
+                    },
+                });
+            }
+        }
     }
 
     async fn update(
@@ -550,19 +587,6 @@ impl AsyncComponent for AppearanceModel {
                     .set("accent-color", format!("{:?}", color.0).to_lowercase())
                     .unwrap_or_else(|e| eprintln!("Couldn't set accent-color: {e:?}"));
             }
-            // AppearanceMsg::WallpapersLoaded(background) => {
-            //     // Batch update system wallpapers
-            //     let mut sys_guard = self.wallpapers.guard();
-            //     // for bg in background {
-            //     sys_guard.push_back(background);
-            //     // }
-
-            //     // // Batch update local wallpapers
-            //     // let mut loc_guard = self.recent_wallpapers.guard();
-            //     // for bg in local {
-            //     //     loc_guard.push_back(bg);
-            //     // }
-            // }
             AppearanceMsg::Ignore => {}
         }
     }
