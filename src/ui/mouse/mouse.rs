@@ -9,7 +9,6 @@ use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 use crate::utils::input::Interface;
 use input;
 use input::Libinput;
-use input::event::EventTrait;
 
 #[derive(Debug)]
 pub struct Mouse {
@@ -33,7 +32,7 @@ pub struct Mouse {
 
 #[derive(Debug, Clone)]
 pub enum MousePageMsg {
-    PrimaryButton(bool),
+    PrimaryButton(u32),
     MouseAcceleration(bool),
     Noop,
 }
@@ -55,41 +54,31 @@ impl SimpleComponent for Mouse {
                     set_title: "Primary Button",
                     set_subtitle: "Order of physical buttons on mice and touchpads",
 
-                    // TODO: use adw::ToggleGroup instead of ToggleButton.
-                    // See more: https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/mouse/cc-mouse-panel.blp?ref_type=heads#L64
                     add_suffix = &gtk::Box {
                         set_spacing: 0,
                         set_halign: gtk::Align::End,
                         set_valign: gtk::Align::Center,
                         add_css_class: "linked",
 
-                        #[name= "left" ]
-                        append = &gtk::ToggleButton {
-                            set_group: Some(&right),
-                            set_label: "Left",
-                            #[watch]
-                            set_active: !model.left_handed,
-                            connect_toggled[sender] => move |btn| {
-                                if btn.is_active() {
-                                    sender.input(MousePageMsg::PrimaryButton(!btn.is_active()));
-                                }
+                        adw::ToggleGroup {
+                            add = adw::Toggle {
+                                set_label: Some("Left"),
+                                set_name: Some("Left"),
                             },
-                        },
 
-                        #[name= "right" ]
-                        append = &gtk::ToggleButton {
-                            set_label: "Right",
-                            #[watch]
-                            set_active: model.left_handed,
-                            connect_toggled[sender] => move |btn| {
-                                if btn.is_active() {
-                                    sender.input(MousePageMsg::PrimaryButton(btn.is_active()));
-                                }
+                            add = adw::Toggle {
+                                set_label: Some("Right"),
+                                set_name: Some("Right"),
+                            },
+
+                            connect_active_name_notify[sender] => move |toggle| {
+                                sender.input(MousePageMsg::PrimaryButton(toggle.active()));
                             },
                         },
                     }
                 },
             },
+
             #[name(mouse_group)]
             add = &adw::PreferencesGroup {
                 set_title: "Mouse",
@@ -221,9 +210,16 @@ impl SimpleComponent for Mouse {
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             MousePageMsg::PrimaryButton(state) => {
-                self.left_handed = state;
+                let primary = if state == 0 {
+                    // left handed false
+                    false
+                } else {
+                    // left handed true
+                    true
+                };
+                self.left_handed = primary;
 
-                let _ = self.settings.mouse.set_boolean("left-handed", state);
+                let _ = self.settings.mouse.set_boolean("left-handed", primary);
             }
             MousePageMsg::MouseAcceleration(state) => {
                 self.accel_profile = state;

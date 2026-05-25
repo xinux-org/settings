@@ -55,7 +55,7 @@ impl SimpleComponent for SingleChoice {
 
             add_controller = gtk::GestureClick {
                 connect_pressed[sender, enable_row_option] => move |_,_,_,_| {
-                    let enabled = enable_row_option.is_active();   
+                    let enabled = enable_row_option.is_active();
                     let _ = sender.input_sender().send(SingleChoiceMsg::Switch(!enabled));
                 },
             },
@@ -64,7 +64,7 @@ impl SimpleComponent for SingleChoice {
             set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: false,
-                
+
 
                 #[name(header)]
                 gtk::Box {
@@ -204,7 +204,9 @@ impl SimpleComponent for SingleChoice {
             SingleChoiceMsg::Switch(state) => {
                 self.row_option.enabled = state;
 
-                let _ = sender.output_sender().send(SingleChoiceOutput::Switch(state));
+                let _ = sender
+                    .output_sender()
+                    .send(SingleChoiceOutput::Switch(state));
             }
         }
     }
