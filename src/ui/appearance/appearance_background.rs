@@ -26,68 +26,72 @@ impl AsyncFactoryComponent for Background {
 
     view! {
         #[root]
-        gtk::FlowBoxChild {
-            set_size_request: (200, 150),
-            set_halign: gtk::Align::Center,
-            set_accessible_role: gtk::AccessibleRole::ToggleButton,
+        adw::Clamp{
+            set_maximum_size: 30,
 
-            gtk::Overlay{
-                add_css_class: "background-thumbnail",
+            gtk::FlowBoxChild {
+                set_size_request: (200, 150),
+                set_halign: gtk::Align::Center,
+                set_accessible_role: gtk::AccessibleRole::ToggleButton,
 
-                #[name="wallpaper_item"]
-                gtk::ToggleButton {
-                    set_group: Some(&self.group),
-                    add_css_class: "wallpaper-button",
-                    set_overflow: gtk::Overflow::Hidden,
-                    #[watch]
-                    set_active: self.active,
-                    connect_clicked[sender, path = self.path.clone()] => move |_| {
-                        match sender.output(BackgroundOutput::SetBackground(path.clone())) {
-                            Ok(_) => (),
-                            Err(e) => eprintln!("{e:?}")
-                        }
+                gtk::Overlay{
+                    add_css_class: "background-thumbnail",
+
+                    #[name="wallpaper_item"]
+                    gtk::ToggleButton {
+                        set_group: Some(&self.group),
+                        add_css_class: "wallpaper-button",
+                        set_overflow: gtk::Overflow::Hidden,
+                        #[watch]
+                        set_active: self.active,
+                        connect_clicked[sender, path = self.path.clone()] => move |_| {
+                            match sender.output(BackgroundOutput::SetBackground(path.clone())) {
+                                Ok(_) => (),
+                                Err(e) => eprintln!("{e:?}")
+                            }
+                        },
+
+                        gtk::Picture {
+                            set_content_fit: gtk::ContentFit::Fill,
+                            set_isolate_contents: true,
+                            set_filename: Some(&self.path),
+                            set_paintable: Some(&self.texture),
+                            set_can_shrink: true,
+                            set_size_request: (200, 150),
+                        },
                     },
 
-                    gtk::Picture {
-                        set_content_fit: gtk::ContentFit::Fill,
-                        set_isolate_contents: true,
-                        set_filename: Some(&self.path),
-                        set_paintable: Some(&self.texture),
-                        set_can_shrink: true,
-                        set_size_request: (200, 150),
-                    },
-                },
 
-
-                add_overlay = &gtk::Image {
-                    set_icon_name: Some("check-icon-symbolic"),
-                    set_halign: gtk::Align::End,
-                    set_valign: gtk::Align::End,
-                    add_css_class: "remove-button",
-                    add_css_class: "selected-icon",
-                },
-
-                add_overlay = &gtk::Button {
-                    set_icon_name: "window-close",
-                    set_halign: gtk::Align::End,
-                    set_valign: gtk::Align::Start,
-                    add_css_class: "remove-button",
-                    add_css_class: "osd",
-                    add_css_class: "circular",
-                    add_css_class: "image-button",
-
-                    // verify if the wallpaper is local
-                    set_visible: if self.path.contains("/home") {true} else {false},
-
-                    connect_clicked[sender, index, path = self.path.clone()] => move |_| {
-                        match sender.output(BackgroundOutput::RemoveBackground(index.clone(), path.clone())) {
-                            Ok(_) => (),
-                            Err(e) => eprintln!("{e:?}")
-                        }
+                    add_overlay = &gtk::Image {
+                        set_icon_name: Some("check-icon-symbolic"),
+                        set_halign: gtk::Align::End,
+                        set_valign: gtk::Align::End,
+                        add_css_class: "remove-button",
+                        add_css_class: "selected-icon",
                     },
 
-                },
-            }
+                    add_overlay = &gtk::Button {
+                        set_icon_name: "window-close",
+                        set_halign: gtk::Align::End,
+                        set_valign: gtk::Align::Start,
+                        add_css_class: "remove-button",
+                        add_css_class: "osd",
+                        add_css_class: "circular",
+                        add_css_class: "image-button",
+
+                        // verify if the wallpaper is local
+                        set_visible: if self.path.contains("/home") {true} else {false},
+
+                        connect_clicked[sender, index, path = self.path.clone()] => move |_| {
+                            match sender.output(BackgroundOutput::RemoveBackground(index.clone(), path.clone())) {
+                                Ok(_) => (),
+                                Err(e) => eprintln!("{e:?}")
+                            }
+                        },
+
+                    },
+                }
+            },
         },
     }
 
