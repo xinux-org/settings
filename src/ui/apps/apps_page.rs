@@ -71,6 +71,7 @@ impl SimpleComponent for AppModal {
                             set_title: "General",
 
                             adw::ActionRow {
+                                set_use_markup: false,
                                 set_title: "Default Apps",
                                 set_subtitle: "Set which apps open links, files, and media",
                                 set_activatable: true,
@@ -229,6 +230,7 @@ fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: ComponentSe
     for app in apps {
         let row = adw::ActionRow::new();
 
+        row.set_use_markup(false);
         row.set_title(&app.name);
         row.set_activatable(true);
 

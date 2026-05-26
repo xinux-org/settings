@@ -163,14 +163,14 @@ impl SimpleComponent for AppDetailsPage {
             }
 
             AppDetailsMsg::ShowDetails(button) => {
-                self.show_app_details_dialog(&button);
+                self.app.show_app_details_dialog(&button);
             }
         }
     }
 }
 
 fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
-    if let Some(settings) = notification_settings_for_app(app) {
+    if let Some(settings) = app.notification_settings() {
         row.set_subtitle("Show system notifications");
         row.set_sensitive(true);
         row.set_active(settings.boolean("enable"));
@@ -203,13 +203,13 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
     }
 }
 
-fn notification_settings_for_app(app: &AppEntry) -> Option<gio::Settings> {
-    let canonical_id = app.canonical_id.as_deref()?;
-
-    Some(app_settings_for_canonical(canonical_id))
-}
-
 impl AppEntry {
+    fn notification_settings(&self) -> Option<gio::Settings> {
+        let canonical_id = self.canonical_id.as_deref()?;
+
+        Some(app_settings_for_canonical(canonical_id))
+    }
+
     fn show_app_details_dialog(&self, button: &gtk::Button) {
         let details = format!(
             "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
@@ -248,8 +248,8 @@ impl AppEntry {
     }
 }
 
-impl AppDetailsPage {
-    fn show_app_details_dialog(&self, button: &gtk::Button) {
-        self.app.show_app_details_dialog(button);
-    }
-}
+// impl AppDetailsPage {
+//     fn show_app_details_dialog(&self, button: &gtk::Button) {
+//         self.app.show_app_details_dialog(button);
+//     }
+// }
