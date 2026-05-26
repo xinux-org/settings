@@ -5,7 +5,7 @@ use crate::ui::appearance::components::accent_box::{
 use crate::utils::parse_dconf;
 
 use anyhow::Context;
-use glycin::Loader;
+use glycin::{FrameRequest, Loader};
 use relm4::loading_widgets::LoadingWidgets;
 use std::{fs, path::Path};
 use tracing::Instrument;
@@ -477,7 +477,11 @@ impl AsyncComponent for AppearanceModel {
                     .load()
                     .await
                     .expect("Coulnd't load the wallpaper: ");
-                let texture = image.next_frame().await.unwrap().texture();
+                let texture = image
+                    .specific_frame(FrameRequest::new().scale(100, 100))
+                    .await
+                    .unwrap()
+                    .texture();
 
                 self.wallpapers.guard().push_back(Background {
                     path: x.clone(),
@@ -493,7 +497,11 @@ impl AsyncComponent for AppearanceModel {
                 let file = gtk::gio::File::for_path(&x);
                 let image = Loader::new(file).load().await.unwrap();
 
-                let texture = image.next_frame().await.unwrap().texture();
+                let texture = image
+                    .specific_frame(FrameRequest::new().scale(100, 100))
+                    .await
+                    .unwrap()
+                    .texture();
 
                 self.recent_wallpapers.guard().push_back(Background {
                     path: x.clone(),
