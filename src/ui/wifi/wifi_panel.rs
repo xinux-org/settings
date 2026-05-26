@@ -2,7 +2,6 @@ use crate::ui::{
     wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
     window::AppMsg,
 };
-use futures_util::stream::StreamExt;
 use nmrs::NetworkManager;
 use relm4::{
     adw::{self, prelude::*},
@@ -14,18 +13,22 @@ use relm4::{
     prelude::*,
 };
 use tracing::debug;
-use zbus::{Connection, proxy};
 
-#[proxy(
-    interface = "org.freedesktop.NetworkManager",
-    default_service = "org.freedesktop.NetworkManager",
-    default_path = "/org/freedesktop/NetworkManager"
-)]
-
-trait NetworkManagerInterface {
-    #[zbus(property)]
-    fn wireless_enabled(&self) -> zbus::Result<bool>;
+pub struct WifiModel {
+    wifi_enabled: bool,
+    networks: FactoryVecDeque<WifiNetwork>,
+    loading: bool,
+    wifi_stack: gtk::Stack,
+    wifi_stack_page: WifiStack,
+    airplane_mode: bool,
+    client: nmrs::NetworkManager,
+    active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
+    // Store the proxy to call methods later
+    // proxy: Option<RfkillProxy<'static>>,
 }
+
+// use zbus::proxy;
+
 // #[proxy(
 //     interface = "org.gnome.SettingsDaemon.Rfkill",
 //     default_service = "org.gnome.SettingsDaemon.Rfkill",
@@ -40,19 +43,6 @@ trait NetworkManagerInterface {
 //     #[zbus(property)]
 //     fn set_airplane_mode(&self, value: bool) -> zbus::Result<()>;
 // }
-//
-pub struct WifiModel {
-    wifi_enabled: bool,
-    networks: FactoryVecDeque<WifiNetwork>,
-    loading: bool,
-    wifi_stack: gtk::Stack,
-    wifi_stack_page: WifiStack,
-    airplane_mode: bool,
-    client: nmrs::NetworkManager,
-    active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
-    // Store the proxy to call methods later
-    // proxy: Option<RfkillProxy<'static>>,
-}
 
 #[derive(Debug)]
 pub enum WifiInput {
@@ -62,8 +52,6 @@ pub enum WifiInput {
     LoadNetworks,
     ToggleWifi(bool),
     ToggleAirplaneMode(bool),
-    HandleWifiState(bool),
-    HandleWifiStateZBUS,
     // Received update from System D-Bus
     // AirplaneModeChanged(bool),
     // ProxyInitialized(RfkillProxy<'static>),
@@ -96,16 +84,14 @@ impl SimpleAsyncComponent for WifiModel {
             },
             adw::PreferencesPage {
                 adw::PreferencesGroup {
-                    // #[name(wifi_toggle)]
                     adw::SwitchRow {
                         set_title: "Wi-Fi",
                         set_activatable: true,
                         #[watch]
-                        #[block_signal(wifi_toggle)]
                         set_active: model.wifi_enabled,
                         connect_active_notify[sender] => move |row| {
-                            sender.input(WifiInput::HandleWifiState(row.is_active()));
-                        } @wifi_toggle,
+                            sender.input(WifiInput::ToggleWifi(row.is_active()));
+                        }
                     }
                 },
                 adw::PreferencesGroup {
@@ -248,79 +234,41 @@ impl SimpleAsyncComponent for WifiModel {
         let wifi_stack = widgets.wifi_stack.clone();
         model.wifi_stack = wifi_stack;
 
-        let sender_clone = sender.clone();
-        relm4::spawn_local(async move {
-            let connection = Connection::system().await.unwrap();
-            let proxy = NetworkManagerInterfaceProxy::new(&connection)
-                .await
-                .unwrap();
+        // let sender_clone = sender.clone();
+        // relm4::spawn_local(async move {
+        //     let connection = zbus::Connection::session().await.unwrap();
+        //     let proxy = RfkillProxy::new(&connection).await.unwrap();
+        //     sender_clone.input(WifiInput::ProxyInitialized(proxy.clone()));
 
-            // zbus generates 'receive_<prop>_changed' automatically
-            let mut wireless_enabled_changed = proxy.receive_wireless_enabled_changed().await;
-            while let Some(change) = wireless_enabled_changed.next().await {
-                if let Ok(enable) = change.get().await {
-                    sender_clone.input(WifiInput::ToggleWifi(enable));
-                    if enable {
-                        sender_clone.input(WifiInput::HandleWifiStateZBUS);
-                    }
-                }
-            }
-        });
+        //     // initial state
+        //     if let Ok(on) = proxy.airplane_mode().await {
+        //         sender_clone.input(WifiInput::AirplaneModeChanged(on));
+        //     }
+
+        //     // zbus generates 'receive_<prop>_changed' automatically
+        //     let mut stream = proxy.receive_airplane_mode_changed().await;
+        //     while let Some(update) = futures_util::StreamExt::next(&mut stream).await {
+        //         if let Ok(on) = update.get().await {
+        //             sender_clone.input(WifiInput::AirplaneModeChanged(on));
+        //         }
+        //     }
+        // });
 
         AsyncComponentParts { model, widgets }
     }
 
     async fn update(&mut self, message: Self::Input, sender: AsyncComponentSender<Self>) {
         match message {
-            // The user clicked a button to turn Wi-Fi on/off
-            WifiInput::ToggleWifi(enabled) => {
-                self.wifi_enabled = enabled;
-                self.loading = enabled;
-
-                // Immediate UI cleanup
-                if self.wifi_enabled {
-                    self.wifi_stack_page = WifiStack::WifiOn;
-                } else {
-                    sender.input(WifiInput::ClearNetworksList);
-                    self.wifi_stack_page = WifiStack::WifiOff;
-                }
-            }
-            WifiInput::HandleWifiState(enabled) => {
-                self.wifi_enabled = enabled;
-                // drop spawned load_networks async task and run fresh task
-                if let Some(handle) = self.active_toggle_task.take() {
-                    handle.abort();
-                }
-                // spawn task on background and let finish WifiInput::ToggleWifi
-                let clinet_clone = self.client.clone();
-                let handle = relm4::spawn_local(async move {
-                    let wifi_enabled = set_wifi_enabled(clinet_clone, enabled).await.is_ok();
-
-                    if wifi_enabled {
-                        glib::timeout_future(std::time::Duration::from_secs(4)).await;
-                        sender.input(WifiInput::LoadNetworks);
-                    }
-                });
-                self.active_toggle_task = Some(handle);
-            }
-            WifiInput::HandleWifiStateZBUS => {
-                // drop spawned load_networks async task and run fresh task
-                if let Some(handle) = self.active_toggle_task.take() {
-                    handle.abort();
-                }
-                let handle = relm4::spawn_local(async move {
-                    glib::timeout_future(std::time::Duration::from_secs(4)).await;
-                    sender.input(WifiInput::LoadNetworks);
-                });
-                self.active_toggle_task = Some(handle);
-            }
             WifiInput::LoadNetworks => {
-                sender.input(WifiInput::ClearNetworksList);
+                if self.wifi_enabled && !self.airplane_mode {
+                    sender.input(WifiInput::ClearNetworksList);
+                    // glib::timeout_future(std::time::Duration::from_secs(5)).await;
 
-                match load_networks(&self.client).await {
-                    Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
-                    Err(e) => {
-                        eprintln!("nmrs error: {e}");
+                    match load_networks(&self.client).await {
+                        Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
+                        Err(e) => {
+                            eprintln!("nmrs error: {e}");
+                        }
                     }
                 }
             }
@@ -331,8 +279,38 @@ impl SimpleAsyncComponent for WifiModel {
                     .map(|n| self.networks.guard().push_back(n))
                     .collect();
             }
+            WifiInput::ToggleWifi(on) => {
+                self.wifi_enabled = on;
+                // drop spawned load_networks async task and run fresh task
+                if let Some(handle) = self.active_toggle_task.take() {
+                    handle.abort();
+                }
+
+                // Immediate UI cleanup
+                if on {
+                    self.loading = true;
+                    self.wifi_stack_page = WifiStack::WifiOn;
+                } else {
+                    sender.input(WifiInput::ClearNetworksList);
+                    self.wifi_stack_page = WifiStack::WifiOff;
+                }
+
+                // spawn task on background and let finish WifiInput::ToggleWifi
+                let clinet_clone = self.client.clone();
+                let handle = relm4::spawn_local(async move {
+                    if let Err(e) = set_wifi_enabled(clinet_clone, on).await {
+                        debug!("Could not toggle Wi-Fi: {e}");
+                        return;
+                    }
+                    if on {
+                        glib::timeout_future(std::time::Duration::from_secs(5)).await;
+                        sender.input(WifiInput::LoadNetworks);
+                    }
+                });
+                self.active_toggle_task = Some(handle);
+            }
             WifiInput::ConnectResult(res) => match res {
-                Ok(()) => {
+                Ok(_) => {
                     debug!("Connected successfully");
                     sender.input(WifiInput::LoadNetworks);
                 }
@@ -361,7 +339,11 @@ impl SimpleAsyncComponent for WifiModel {
 }
 
 async fn is_wifi_enabled(client: &nmrs::NetworkManager) -> bool {
-    client.wifi_enabled().await.is_ok()
+    // Control WiFi
+    client
+        .wifi_enabled()
+        .await
+        .expect("cannot get whather wifi_enabled")
 }
 
 async fn load_networks(client: &nmrs::NetworkManager) -> nmrs::Result<Vec<WifiNetwork>> {
@@ -388,6 +370,44 @@ async fn load_networks(client: &nmrs::NetworkManager) -> nmrs::Result<Vec<WifiNe
 }
 
 async fn set_wifi_enabled(client: nmrs::NetworkManager, enabled: bool) -> nmrs::Result<()> {
+    // Control WiFi
     client.set_wifi_enabled(enabled).await?; // Disable WiFi
     Ok(())
 }
+
+// async fn is_wifi_enabled() -> bool {
+//     #[proxy(
+//         interface = "org.freedesktop.NetworkManager",
+//         default_service = "org.freedesktop.NetworkManager",
+//         default_path = "/org/freedesktop/NetworkManager"
+//     )]
+//     trait NetworkManagerDBus {
+//         #[zbus(property)]
+//         fn wireless_enabled(&self) -> zbus::Result<bool>;
+//     }
+
+//     let Ok(conn) = Connection::system().await else {
+//         return false;
+//     };
+//     let Ok(proxy) = NetworkManagerDBusProxy::new(&conn).await else {
+//         return false;
+//     };
+//     proxy.wireless_enabled().await.unwrap_or(false)
+// }
+
+// async fn set_wifi_enabled(enabled: bool) -> Result<(), Box<dyn std::error::Error>> {
+//     #[proxy(
+//         interface = "org.freedesktop.NetworkManager",
+//         default_service = "org.freedesktop.NetworkManager",
+//         default_path = "/org/freedesktop/NetworkManager"
+//     )]
+//     trait NetworkManagerDBus {
+//         #[zbus(property)]
+//         fn set_wireless_enabled(&self, enabled: bool) -> zbus::Result<()>;
+//     }
+
+//     let conn = Connection::system().await?;
+//     let proxy = NetworkManagerDBusProxy::new(&conn).await?;
+//     proxy.set_wireless_enabled(enabled).await?;
+//     Ok(())
+// }
