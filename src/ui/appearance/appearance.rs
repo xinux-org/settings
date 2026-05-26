@@ -113,7 +113,7 @@ impl AsyncComponent for AppearanceModel {
             add_breakpoint = adw::Breakpoint::new(
                 adw::BreakpointCondition::new_length(
                     adw::BreakpointConditionLengthType::MaxWidth,
-                    420.0,
+                    380.0,
                     adw::LengthUnit::Px,
                 )
             ) {
@@ -130,8 +130,28 @@ impl AsyncComponent for AppearanceModel {
 
             add_breakpoint = adw::Breakpoint::new(
                 adw::BreakpointCondition::new_length(
+                    adw::BreakpointConditionLengthType::MaxWidth,
+                    500.0,
+                    adw::LengthUnit::Px,
+                )
+            ) {
+
+               add_setters: &[
+                    (recent_wallpaper_box, "min_children_per_line", &2),
+                    (recent_wallpaper_box, "max_children_per_line", &2)
+                ],
+
+
+                add_setters: &[
+                    (wallpaper_box, "min_children_per_line", &3),
+                    (wallpaper_box, "max_children_per_line", &3)
+                ],
+            },
+
+            add_breakpoint = adw::Breakpoint::new(
+                adw::BreakpointCondition::new_length(
                     adw::BreakpointConditionLengthType::MinWidth,
-                    421.0,
+                    500.0,
                     adw::LengthUnit::Px,
                 )
             ) {
@@ -169,7 +189,7 @@ impl AsyncComponent for AppearanceModel {
                                 set_focusable: false,
                                 #[wrap(Some)]
                                 set_child = &adw::Clamp {
-                                    set_maximum_size: 400,
+                                    set_maximum_size: 300,
                                     set_tightening_threshold: 300,
                                     gtk::Grid {
                                         set_focusable: false,
@@ -189,8 +209,9 @@ impl AsyncComponent for AppearanceModel {
                                             set_overflow: gtk::Overflow::Hidden,
                                             add_css_class: "style-toggle",
                                             set_active: model.style == AppearanceStyle::Default,
-                                            set_width_request: 220,
-                                            set_height_request: 140,
+                                            // set_width_request: 220,
+                                            set_height_request: 100,
+
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
@@ -214,8 +235,8 @@ impl AsyncComponent for AppearanceModel {
                                             add_css_class: "style-toggle",
                                             set_overflow: gtk::Overflow::Hidden,
                                             set_active: model.style == AppearanceStyle::Dark,
-                                            set_width_request: 220,
-                                            set_height_request: 140,
+                                            // set_width_request: 220,
+                                            set_height_request: 100,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{

@@ -27,21 +27,27 @@ impl AsyncFactoryComponent for Background {
     view! {
         #[root]
         adw::Clamp{
-            set_maximum_size: 30,
+            set_maximum_size: 130,
 
             gtk::FlowBoxChild {
-                set_size_request: (200, 150),
+                set_width_request: 150,
+                set_height_request: 100,
                 set_halign: gtk::Align::Center,
                 set_accessible_role: gtk::AccessibleRole::ToggleButton,
 
+                adw::Clamp{
+                    set_maximum_size: 130,
+
                 gtk::Overlay{
                     add_css_class: "background-thumbnail",
+
 
                     #[name="wallpaper_item"]
                     gtk::ToggleButton {
                         set_group: Some(&self.group),
                         add_css_class: "wallpaper-button",
                         set_overflow: gtk::Overflow::Hidden,
+
                         #[watch]
                         set_active: self.active,
                         connect_clicked[sender, path = self.path.clone()] => move |_| {
@@ -54,10 +60,9 @@ impl AsyncFactoryComponent for Background {
                         gtk::Picture {
                             set_content_fit: gtk::ContentFit::Fill,
                             set_isolate_contents: true,
-                            set_filename: Some(&self.path),
                             set_paintable: Some(&self.texture),
                             set_can_shrink: true,
-                            set_size_request: (200, 150),
+                            set_height_request: 50,
                         },
                     },
 
@@ -90,7 +95,7 @@ impl AsyncFactoryComponent for Background {
                         },
 
                     },
-                }
+                },}
             },
         },
     }
