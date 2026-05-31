@@ -43,7 +43,7 @@ impl SimpleComponent for SearchLocationsPage {
                         gtk::Label {
                             set_halign: gtk::Align::Center,
                             set_label: "Filesystem locations which are selected by system apps, such as Files",
-                            add_css_class: "grey_color",
+                            add_css_class: "dim-label",
                         },
                     },
 
