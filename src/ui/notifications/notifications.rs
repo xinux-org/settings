@@ -1,6 +1,6 @@
 use super::app_notification::{
     AppNotificationItem, AppNotificationsInit, AppNotificationsPageModel,
-    AppNotificationsPageOutput, app_bool_from_canonical,
+    AppNotificationsPageOutput, app_bool_from_canonical, app_settings_for_canonical,
 };
 use gio_unix;
 use relm4::adw;
@@ -30,6 +30,7 @@ pub enum NotificationsInput {
     OpenApp(String),
     BackToList,
     AppPageChanged(AppNotificationItem),
+    RefreshApps,
 }
 
 #[relm4::component(pub)]
@@ -151,6 +152,18 @@ impl Component for NotificationsModel {
             app_page: None,
         };
 
+        let sender_clone = sender.input_sender();
+
+        for app in &model.apps {
+            let settings = app_settings_for_canonical(&app.canonical_id);
+
+            let sender_clone = sender_clone.clone();
+
+            settings.connect_changed(Some("enable"), move |_, _| {
+                let _ = sender_clone.send(NotificationsInput::RefreshApps);
+            });
+        }
+
         let widgets = view_output!();
         populate_app_list(&widgets.app_listbox, &model.apps, sender.input_sender());
 
@@ -202,6 +215,14 @@ impl Component for NotificationsModel {
                 {
                     self.apps[i] = updated;
                 }
+
+                populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
+            }
+
+            NotificationsInput::RefreshApps => {
+                let settings = gio::Settings::new(MASTER_SCHEMA);
+
+                self.apps = load_notification_apps(&settings);
 
                 populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
             }
