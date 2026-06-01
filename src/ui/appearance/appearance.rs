@@ -8,7 +8,6 @@ use anyhow::Context;
 use glycin::{FrameRequest, Loader};
 use relm4::loading_widgets::LoadingWidgets;
 use std::{fs, path::Path};
-use tracing::Instrument;
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
@@ -113,38 +112,34 @@ impl AsyncComponent for AppearanceModel {
             add_breakpoint = adw::Breakpoint::new(
                 adw::BreakpointCondition::new_length(
                     adw::BreakpointConditionLengthType::MaxWidth,
-                    380.0,
-                    adw::LengthUnit::Px,
-                )
-            ) {
-                add_setters: &[
-                    (recent_wallpaper_box, "min_children_per_line", &1),
-                    (recent_wallpaper_box, "max_children_per_line", &1)
-                ],
-
-                add_setters: &[
-                    (wallpaper_box, "min_children_per_line", &1),
-                    (wallpaper_box, "max_children_per_line", &1)
-                ],
-            },
-
-            add_breakpoint = adw::Breakpoint::new(
-                adw::BreakpointCondition::new_length(
-                    adw::BreakpointConditionLengthType::MaxWidth,
                     500.0,
                     adw::LengthUnit::Px,
                 )
             ) {
-
                add_setters: &[
                     (recent_wallpaper_box, "min_children_per_line", &2),
                     (recent_wallpaper_box, "max_children_per_line", &2)
                 ],
 
+                add_setters: &[
+                    (wallpaper_box, "min_children_per_line", &2),
+                    (wallpaper_box, "max_children_per_line", &2)
+                ],
 
                 add_setters: &[
-                    (wallpaper_box, "min_children_per_line", &3),
-                    (wallpaper_box, "max_children_per_line", &3)
+                    (&style_box, "margin_bottom", &6),
+                    (&style_box, "margin_start", &6),
+                    (&style_box, "margin_end", &6),
+                ],
+
+                add_setters: &[
+                    (accent_color_box, "margin_all", &6),
+                    (accent_color_box, "spacing", &6),
+                ],
+
+                add_setters: &[
+                    (recent_wallpaper_box, "margin_all", &6),
+                    (wallpaper_box, "margin_all", &6),
                 ],
             },
 
@@ -155,16 +150,30 @@ impl AsyncComponent for AppearanceModel {
                     adw::LengthUnit::Px,
                 )
             ) {
-
                add_setters: &[
                     (recent_wallpaper_box, "min_children_per_line", &3),
                     (recent_wallpaper_box, "max_children_per_line", &3)
                 ],
 
-
                 add_setters: &[
                     (wallpaper_box, "min_children_per_line", &3),
                     (wallpaper_box, "max_children_per_line", &3)
+                ],
+
+                add_setters: &[
+                    (&style_box, "margin_bottom", &12),
+                    (&style_box, "margin_start", &12),
+                    (&style_box, "margin_end", &12),
+                ],
+
+                add_setters: &[
+                    (accent_color_box, "margin_all", &12),
+                    (accent_color_box, "spacing", &12),
+                ],
+
+                add_setters: &[
+                    (recent_wallpaper_box, "margin_all", &12),
+                    (wallpaper_box, "margin_all", &12),
                 ],
             },
 
@@ -188,9 +197,10 @@ impl AsyncComponent for AppearanceModel {
                                 set_activatable: false,
                                 set_focusable: false,
                                 #[wrap(Some)]
+                                #[name = "style_box"]
                                 set_child = &adw::Clamp {
-                                    set_maximum_size: 300,
-                                    set_tightening_threshold: 300,
+                                    set_maximum_size: 270,
+                                    // set_tightening_threshold: 300,
                                     gtk::Grid {
                                         set_focusable: false,
                                         set_orientation: gtk::Orientation::Horizontal,
@@ -271,9 +281,8 @@ impl AsyncComponent for AppearanceModel {
                                 #[wrap(Some)]
                                 set_child = accent_color_box -> gtk::Box {
                                     set_orientation: gtk::Orientation::Horizontal,
-                                    set_spacing: 12,
-                                    set_margin_top: 12,
-                                    set_margin_bottom: 12,
+                                    set_spacing: 6,
+                                    set_margin_all: 6,
 
                                     #[name="accent_color"]
                                     gtk::ToggleButton{
@@ -313,7 +322,7 @@ impl AsyncComponent for AppearanceModel {
                                         recent_wallpaper_box -> gtk::FlowBox {
                                             add_css_class: "background-flowbox",
                                             set_orientation: gtk::Orientation::Horizontal,
-                                            set_margin_all: 12,
+                                            set_margin_all: 6,
                                             set_column_spacing: 12,
                                             set_row_spacing: 12,
                                             set_homogeneous: true,
@@ -334,7 +343,7 @@ impl AsyncComponent for AppearanceModel {
                                     #[local_ref]
                                     wallpaper_box -> gtk::FlowBox {
                                         add_css_class: "background-flowbox",
-                                        set_margin_all: 12,
+                                        set_margin_all: 6,
                                         set_column_spacing: 12,
                                         set_row_spacing: 12,
                                         set_homogeneous: true,

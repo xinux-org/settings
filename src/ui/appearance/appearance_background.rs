@@ -36,7 +36,7 @@ impl AsyncFactoryComponent for Background {
                 set_accessible_role: gtk::AccessibleRole::ToggleButton,
 
                 adw::Clamp{
-                    set_maximum_size: 130,
+                    set_maximum_size: 120,
 
                 gtk::Overlay{
                     add_css_class: "background-thumbnail",

@@ -161,8 +161,8 @@ impl SimpleComponent for App {
                 adw::Breakpoint::new(
                     adw::BreakpointCondition::new_length(
                         adw::BreakpointConditionLengthType::MaxWidth,
-                        400.0,
-                        adw::LengthUnit::Sp,
+                        600.0,
+                        adw::LengthUnit::Px,
                     )
                 ),
                 &[
