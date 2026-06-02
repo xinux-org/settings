@@ -11,6 +11,8 @@ use std::path::Path;
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
+use rand;
+use rand::prelude::*;
 use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
 use relm4_components::open_dialog::*;
 use std::path::PathBuf;
@@ -494,13 +496,18 @@ impl AsyncComponent for AppearanceModel {
         match msg {
             AppearanceMsg::OpenRequest => self.open_dialog.emit(OpenDialogMsg::Open),
             AppearanceMsg::OpenResponse(path) => {
-                let f_name = path.file_name().context("extract filename failed");
+                // let f_name = path.file_name().context("extract filename failed");
+
+                let haha = rand::rng()
+                    .random_iter::<char>()
+                    .take(16)
+                    .collect::<String>();
 
                 // add local wallpaper
                 let dest = PathBuf::from("/home")
                     .join(user.name())
                     .join(".local/share/backgrounds")
-                    .join(f_name.unwrap_or_default());
+                    .join(haha);
 
                 let file_path = dest.to_string_lossy().to_string();
                 match std::fs::copy(&path, &dest) {
