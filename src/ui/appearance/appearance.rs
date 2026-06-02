@@ -6,16 +6,13 @@ use crate::utils::parse_dconf;
 
 use allmytoes::{AMT, AMTConfiguration, ThumbSize};
 use anyhow::Context;
-use glycin::{FrameRequest, Loader};
 use relm4::loading_widgets::LoadingWidgets;
-use std::sync::{Arc, Mutex};
 use std::{fs, path::Path};
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
 use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
 use relm4_components::open_dialog::*;
-use std::marker::{Send, Sync};
 use std::path::PathBuf;
 
 // default base path for system wallpapers
@@ -56,7 +53,6 @@ pub struct AppearanceModel {
     background_group: gtk::ToggleButton,
     accent_box_group: gtk::ToggleButton,
     accent_colors: FactoryVecDeque<AccentColorModel>,
-    is_cached: bool,
 }
 
 #[derive(Debug)]
@@ -68,8 +64,8 @@ pub enum AppearanceMsg {
     OpenRequest,
     OpenResponse(PathBuf),
     Ignore,
-    Default(String, Option<String>),
-    Local(String, Option<String>),
+    // Default(String, Option<String>),
+    // Local(String, Option<String>),
     // WallpapersLoaded(Background),
 }
 
@@ -446,7 +442,6 @@ impl AsyncComponent for AppearanceModel {
             style,
             accent_colors,
             open_dialog,
-            is_cached: false,
         };
 
         // push colors to accent color component
@@ -462,8 +457,6 @@ impl AsyncComponent for AppearanceModel {
             })
             .collect::<Vec<_>>();
 
-        // let thumbnail
-
         // Load Local Wallpapers
         if let Some(user) = get_user_by_uid(get_current_uid()) {
             let local_path = format!(
@@ -478,12 +471,6 @@ impl AsyncComponent for AppearanceModel {
                 for entry in rd.flatten() {
                     let file_path = entry.path();
                     let thumb = amt.get(&file_path, thumb_size).ok().map(|thumb| thumb.path);
-
-                    // sender.spawn_oneshot_command(move || AddBackroundMsg::Local(file_path.to_string_lossy().to_string(), thumb));
-                    // sender.input(AppearanceMsg::Local(
-                    //     file_path.to_string_lossy().to_string(),
-                    //     thumb,
-                    // ));
 
                     let x = file_path.to_string_lossy().to_string();
                     model.recent_wallpapers.guard().push_back(Background {
@@ -514,17 +501,6 @@ impl AsyncComponent for AppearanceModel {
                     let file_path = entry.path();
                     let thumb = amt.get(&file_path, thumb_size).ok().map(|thumb| thumb.path);
 
-                    // let local_path = format!(
-                    //     "/home/{}/.local/share/backgrounds",
-                    //     user.name().to_string_lossy()
-                    // );
-                    // if std::fs::read_dir(Path::new("")) {}
-                    // sender.spawn_oneshot_command(move || AddBackroundMsg::Local(file_path.to_string_lossy().to_string(), thumb));
-                    // sender.input(AppearanceMsg::Default(
-                    //     file_path.to_string_lossy().to_string(),
-                    //     thumb,
-                    // ));
-
                     let x = file_path.to_string_lossy().to_string();
                     model.wallpapers.guard().push_back(Background {
                         path: x.clone(),
@@ -545,39 +521,6 @@ impl AsyncComponent for AppearanceModel {
 
         let widgets = view_output!();
         AsyncComponentParts { model, widgets }
-    }
-
-    async fn update_cmd(
-        &mut self,
-        message: Self::CommandOutput,
-        _sender: AsyncComponentSender<Self>,
-        _root: &Self::Root,
-    ) {
-        match message {
-            AddBackroundMsg::Default(x, thumb) => {
-                self.wallpapers.guard().push_back(Background {
-                    path: x.clone(),
-                    group: self.background_group.clone(),
-                    active: match self.style {
-                        AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
-                        AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
-                    },
-                    thumb: thumb.unwrap_or(x),
-                    // texture,
-                });
-            }
-            AddBackroundMsg::Local(x, thumb) => {
-                self.recent_wallpapers.guard().push_back(Background {
-                    path: x.clone(),
-                    group: self.background_group.clone(),
-                    active: match self.style {
-                        AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
-                        AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
-                    },
-                    thumb: thumb.unwrap_or(x), // texture,
-                });
-            }
-        }
     }
 
     async fn update(
@@ -683,29 +626,28 @@ impl AsyncComponent for AppearanceModel {
                     .set("accent-color", format!("{:?}", color.0).to_lowercase())
                     .unwrap_or_else(|e| eprintln!("Couldn't set accent-color: {e:?}"));
             }
-            AppearanceMsg::Ignore => {}
-            AppearanceMsg::Default(x, thumb) => {
-                self.wallpapers.guard().push_back(Background {
-                    path: x.clone(),
-                    group: self.background_group.clone(),
-                    active: match self.style {
-                        AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
-                        AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
-                    },
-                    thumb: thumb.unwrap_or(x),
-                });
-            }
-            AppearanceMsg::Local(x, thumb) => {
-                self.recent_wallpapers.guard().push_back(Background {
-                    path: x.clone(),
-                    group: self.background_group.clone(),
-                    active: match self.style {
-                        AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
-                        AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
-                    },
-                    thumb: thumb.unwrap_or(x),
-                });
-            }
+            AppearanceMsg::Ignore => {} // AppearanceMsg::Default(x, thumb) => {
+                                        //     self.wallpapers.guard().push_back(Background {
+                                        //         path: x.clone(),
+                                        //         group: self.background_group.clone(),
+                                        //         active: match self.style {
+                                        //             AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
+                                        //             AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
+                                        //         },
+                                        //         thumb: thumb.unwrap_or(x),
+                                        //     });
+                                        // }
+                                        // AppearanceMsg::Local(x, thumb) => {
+                                        //     self.recent_wallpapers.guard().push_back(Background {
+                                        //         path: x.clone(),
+                                        //         group: self.background_group.clone(),
+                                        //         active: match self.style {
+                                        //             AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
+                                        //             AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
+                                        //         },
+                                        //         thumb: thumb.unwrap_or(x),
+                                        //     });
+                                        // }
         }
     }
 }

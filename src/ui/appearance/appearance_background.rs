@@ -129,8 +129,4 @@ impl AsyncFactoryComponent for Background {
             thumb: init.thumb,
         }
     }
-
-    fn shutdown(&mut self, _widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
-        println!("Wallpaper with path {} was destroyed", self.path);
-    }
 }
