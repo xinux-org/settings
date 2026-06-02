@@ -1,5 +1,7 @@
 use allmytoes::{AMT, AMTConfiguration, ThumbSize};
+use relm4::gtk;
 use std::path::PathBuf;
+use tracing::Instrument;
 
 use crate::ui::appearance::{
     appearance::{AppearanceModel, AppearanceStyle},
@@ -49,4 +51,11 @@ pub fn thumb(src: &PathBuf) -> Option<String> {
     let amt = AMT::new(&configuration);
     let thumb_size = ThumbSize::Normal;
     amt.get(&src, thumb_size).ok().map(|thumb| thumb.path)
+}
+
+pub fn wallpaper_filters() -> Vec<gtk::FileFilter> {
+    let filename_filter = gtk::FileFilter::new();
+    filename_filter.add_mime_type("image/*");
+
+    vec![filename_filter]
 }

@@ -2,7 +2,7 @@ use crate::ui::appearance::appearance_background::{Background, BackgroundOutput}
 use crate::ui::appearance::components::accent_box::{
     AccentColorModel, AccentColorOutput, AccentColorWrapped,
 };
-use crate::ui::appearance::util::{add_wallpaper, thumb};
+use crate::ui::appearance::util::{add_wallpaper, thumb, wallpaper_filters};
 use crate::utils::parse_dconf;
 
 use anyhow::Context;
@@ -396,7 +396,16 @@ impl AsyncComponent for AppearanceModel {
     ) -> AsyncComponentParts<Self> {
         let open_dialog = OpenDialog::builder()
             .transient_for_native(&root)
-            .launch(OpenDialogSettings::default())
+            .launch(OpenDialogSettings {
+                create_folders: false,
+                folder_mode: false,
+                cancel_label: "Cancel".to_string(),
+                accept_label: "Open".to_string(),
+                // cancel_label: gettext("Cancel"),
+                // accept_label: gettext("Open"),
+                is_modal: true,
+                filters: wallpaper_filters(),
+            })
             .forward(sender.input_sender(), |response| match response {
                 OpenDialogResponse::Accept(path) => AppearanceMsg::OpenResponse(path),
                 OpenDialogResponse::Cancel => AppearanceMsg::Ignore,
