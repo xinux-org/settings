@@ -65,6 +65,16 @@ impl WidgetTemplate for ChoiceWidget {
                         #[iterate]
                         add_css_class: ["activatable"],
 
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter[default_option_box] => move |_,_,_| {
+                                default_option_box.add_css_class("card");
+                            },
+
+                            connect_leave[default_option_box] => move |_| {
+                                default_option_box.remove_css_class("card");
+                            },
+                        },
+
                         #[name(default_choice_bin)]
                         adw::Bin {
                             set_margin_top: 9,
@@ -140,6 +150,16 @@ impl WidgetTemplate for ChoiceWidget {
 
                         #[iterate]
                         add_css_class: ["activatable"],
+
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter[alternative_option_box] => move |_,_,_| {
+                                alternative_option_box.add_css_class("card");
+                            },
+
+                            connect_leave[alternative_option_box] => move |_| {
+                                alternative_option_box.remove_css_class("card");
+                            },
+                        },
 
                         #[name(alternative_choice_bin)]
                         adw::Bin {

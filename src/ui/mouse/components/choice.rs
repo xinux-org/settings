@@ -171,12 +171,31 @@ impl SimpleComponent for Choice {
                         set_accessible_role: gtk::AccessibleRole::Radio,
                         set_orientation: gtk::Orientation::Vertical,
                         set_can_focus: true,
+                        set_can_target: true,
                         set_focus_on_click: false,
-                        set_focusable: false,
+                        set_focusable: true,
                         set_receives_default: true,
 
                         #[iterate]
                         add_css_class: ["activatable"],
+
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter[sender, default_option_box] => move |_,_,_| {
+                                default_option_box.add_css_class("card");
+                                let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(true));
+                            },
+
+                            connect_leave[sender, default_option_box] => move |_| {
+                                default_option_box.remove_css_class("card");
+                                let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(false));
+                            },
+                        },
+
+                        add_controller = gtk::GestureClick {
+                            connect_pressed[sender] => move |_,_,_,_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::Default(true));
+                            },
+                        },
 
                         adw::Bin {
                             set_margin_top: 9,
@@ -186,22 +205,6 @@ impl SimpleComponent for Choice {
 
                             #[iterate]
                             add_css_class: ["background","frame"],
-
-                            add_controller = gtk::EventControllerMotion {
-                                connect_enter[sender] => move |_,_,_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(true));
-                                },
-
-                                connect_leave[sender] => move |_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::DefaultMedia(false));
-                                },
-                            },
-
-                            add_controller = gtk::GestureClick {
-                                connect_pressed[sender] => move |_,_,_,_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::Default(true));
-                                },
-                            },
 
                             #[name(default_option_picture)]
                             gtk::Picture {
@@ -270,11 +273,30 @@ impl SimpleComponent for Choice {
                         set_accessible_role: gtk::AccessibleRole::Radio,
                         set_orientation: gtk::Orientation::Vertical,
                         set_can_focus: true,
+                        set_can_target: true,
                         set_focusable: true,
                         set_receives_default: true,
 
                         #[iterate]
                         add_css_class: ["activatable"],
+
+                        add_controller = gtk::EventControllerMotion {
+                            connect_enter[sender, alternative_option_box] => move |_,_,_| {
+                                alternative_option_box.add_css_class("card");
+                                let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(true));
+                            },
+
+                            connect_leave[sender, alternative_option_box] => move |_| {
+                                alternative_option_box.remove_css_class("card");
+                                let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
+                            },
+                        },
+
+                        add_controller = gtk::GestureClick {
+                            connect_pressed[sender] => move |_,_,_,_| {
+                                let _ = sender.input_sender().send(ChoiceMsg::Alternate(true));
+                            },
+                        },
 
                         adw::Bin {
                             set_margin_top: 9,
@@ -284,22 +306,6 @@ impl SimpleComponent for Choice {
 
                             #[iterate]
                             add_css_class: ["background","frame"],
-
-                            add_controller = gtk::EventControllerMotion {
-                                connect_enter[sender] => move |_,_,_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(true));
-                                },
-
-                                connect_leave[sender] => move |_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::AlternateMedia(false));
-                                },
-                            },
-
-                            add_controller = gtk::GestureClick {
-                                connect_pressed[sender] => move |_,_,_,_| {
-                                    let _ = sender.input_sender().send(ChoiceMsg::Alternate(true));
-                                },
-                            },
 
                             #[name(alternative_option_picture)]
                             gtk::Picture {

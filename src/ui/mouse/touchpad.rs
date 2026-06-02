@@ -107,7 +107,7 @@ impl SimpleComponent for Touchpad {
                     },
 
                     #[template_child]
-                    default_choice_bin {
+                    default_option_box {
                         add_controller = gtk::EventControllerMotion {
                             connect_enter[sender] => move |_,_,_| {
                                 let _ = sender.input_sender().send(TouchpadMsg::ScrollMethodDefaultMedia(true));
@@ -151,7 +151,7 @@ impl SimpleComponent for Touchpad {
 
 
                     #[template_child]
-                    alternative_choice_bin {
+                    alternative_option_box {
                         add_controller = gtk::EventControllerMotion {
                             connect_enter[sender] => move |_,_,_| {
                                 let _ = sender.input_sender().send(TouchpadMsg::ScrollMethodAlternativeMedia(true));

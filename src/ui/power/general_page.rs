@@ -123,8 +123,11 @@ pub enum PowerMode {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChargingMode {
+    /// With a threshold
     Preserve,    // with a threshold
+    /// 100% without a threshold
     Maximize,    // 100% without a threshold
+    /// couldn't find the threshold file
     Unsupported, // couldn't find the threshold file
 }
 
