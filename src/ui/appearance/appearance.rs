@@ -56,6 +56,7 @@ pub struct AppearanceModel {
     background_group: gtk::ToggleButton,
     accent_box_group: gtk::ToggleButton,
     accent_colors: FactoryVecDeque<AccentColorModel>,
+    is_cached: bool,
 }
 
 #[derive(Debug)]
@@ -445,6 +446,7 @@ impl AsyncComponent for AppearanceModel {
             style,
             accent_colors,
             open_dialog,
+            is_cached: false,
         };
 
         // push colors to accent color component
@@ -484,32 +486,21 @@ impl AsyncComponent for AppearanceModel {
                     // ));
 
                     let x = file_path.to_string_lossy().to_string();
-
-                    let img = thumb.as_ref().unwrap_or(&x);
-                    let file = gtk::gio::File::for_path(img);
-                    let image = Loader::new(file).load().await.unwrap();
-
-                    let texture = image
-                        .specific_frame(FrameRequest::new().scale(100, 100))
-                        .await
-                        .unwrap()
-                        .texture();
-
                     model.recent_wallpapers.guard().push_back(Background {
-                        path: img.to_string(),
+                        path: x.clone(),
                         group: model.background_group.clone(),
                         active: match model.style {
                             AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
                             AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
                         },
-                        texture,
+                        thumb: thumb.unwrap_or(x),
                     });
                 }
             }
         }
 
         // default paths for system wallpapers
-        let folders: [&str; 2] = ["nixos", "gnome"];
+        let folders: [&str; 2] = ["gnome", "nixos"];
         // let folders: [&str; 1] = ["wallpapers"];
 
         for folder in folders {
@@ -523,6 +514,11 @@ impl AsyncComponent for AppearanceModel {
                     let file_path = entry.path();
                     let thumb = amt.get(&file_path, thumb_size).ok().map(|thumb| thumb.path);
 
+                    // let local_path = format!(
+                    //     "/home/{}/.local/share/backgrounds",
+                    //     user.name().to_string_lossy()
+                    // );
+                    // if std::fs::read_dir(Path::new("")) {}
                     // sender.spawn_oneshot_command(move || AddBackroundMsg::Local(file_path.to_string_lossy().to_string(), thumb));
                     // sender.input(AppearanceMsg::Default(
                     //     file_path.to_string_lossy().to_string(),
@@ -530,26 +526,14 @@ impl AsyncComponent for AppearanceModel {
                     // ));
 
                     let x = file_path.to_string_lossy().to_string();
-                    let img = thumb.as_ref().unwrap_or(&x);
-                    let file = gtk::gio::File::for_path(Path::new(img));
-                    let image = Loader::new(file)
-                        .load()
-                        .await
-                        .expect("Coulnd't load the wallpaper: ");
-                    let texture = image
-                        .specific_frame(FrameRequest::new().scale(100, 100))
-                        .await
-                        .unwrap()
-                        .texture();
-
                     model.wallpapers.guard().push_back(Background {
-                        path: img.to_string(),
+                        path: x.clone(),
                         group: model.background_group.clone(),
                         active: match model.style {
                             AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
                             AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
                         },
-                        texture,
+                        thumb: thumb.unwrap_or(x),
                     });
                 }
             }
@@ -571,48 +555,26 @@ impl AsyncComponent for AppearanceModel {
     ) {
         match message {
             AddBackroundMsg::Default(x, thumb) => {
-                // println!("the path: {x}");
-                let img = thumb.as_ref().unwrap_or(&x);
-                let file = gtk::gio::File::for_path(Path::new(img));
-                let image = Loader::new(file)
-                    .load()
-                    .await
-                    .expect("Coulnd't load the wallpaper: ");
-                let texture = image
-                    .specific_frame(FrameRequest::new().scale(100, 100))
-                    .await
-                    .unwrap()
-                    .texture();
-
                 self.wallpapers.guard().push_back(Background {
-                    path: img.to_string(),
+                    path: x.clone(),
                     group: self.background_group.clone(),
                     active: match self.style {
                         AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
                     },
-                    texture,
+                    thumb: thumb.unwrap_or(x),
+                    // texture,
                 });
             }
             AddBackroundMsg::Local(x, thumb) => {
-                let img = thumb.as_ref().unwrap_or(&x);
-                let file = gtk::gio::File::for_path(img);
-                let image = Loader::new(file).load().await.unwrap();
-
-                let texture = image
-                    .specific_frame(FrameRequest::new().scale(100, 100))
-                    .await
-                    .unwrap()
-                    .texture();
-
                 self.recent_wallpapers.guard().push_back(Background {
-                    path: img.to_string(),
+                    path: x.clone(),
                     group: self.background_group.clone(),
                     active: match self.style {
                         AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
                     },
-                    texture,
+                    thumb: thumb.unwrap_or(x), // texture,
                 });
             }
         }
@@ -638,17 +600,19 @@ impl AsyncComponent for AppearanceModel {
                     .join(".local/share/backgrounds")
                     .join(f_name.unwrap_or_default());
 
-                let file = gtk::gio::File::for_path(&dest);
-                let image = Loader::new(file).load().await.unwrap();
-                let texture = image.next_frame().await.unwrap().texture();
+                let configuration = AMTConfiguration::default();
+                let amt = AMT::new(&configuration);
+                let thumb_size = ThumbSize::Normal;
+                let thumb = amt.get(&dest, thumb_size).ok().map(|thumb| thumb.path);
 
+                let file_path = dest.to_string_lossy().to_string();
                 match std::fs::copy(&path, &dest) {
                     Ok(x) => {
                         self.recent_wallpapers.guard().push_back(Background {
-                            path: dest.to_string_lossy().to_string(),
+                            path: file_path.clone(),
                             group: self.background_group.clone(),
                             active: false,
-                            texture,
+                            thumb: thumb.unwrap_or(file_path),
                         });
 
                         println!("COPIED: {x:?}")
@@ -721,48 +685,25 @@ impl AsyncComponent for AppearanceModel {
             }
             AppearanceMsg::Ignore => {}
             AppearanceMsg::Default(x, thumb) => {
-                // println!("the path: {x}");
-                let img = thumb.as_ref().unwrap_or(&x);
-                let file = gtk::gio::File::for_path(Path::new(img));
-                let image = Loader::new(file)
-                    .load()
-                    .await
-                    .expect("Coulnd't load the wallpaper: ");
-                let texture = image
-                    .specific_frame(FrameRequest::new().scale(100, 100))
-                    .await
-                    .unwrap()
-                    .texture();
-
                 self.wallpapers.guard().push_back(Background {
-                    path: img.to_string(),
+                    path: x.clone(),
                     group: self.background_group.clone(),
                     active: match self.style {
                         AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
                     },
-                    texture,
+                    thumb: thumb.unwrap_or(x),
                 });
             }
             AppearanceMsg::Local(x, thumb) => {
-                let img = thumb.as_ref().unwrap_or(&x);
-                let file = gtk::gio::File::for_path(img);
-                let image = Loader::new(file).load().await.unwrap();
-
-                let texture = image
-                    .specific_frame(FrameRequest::new().scale(100, 100))
-                    .await
-                    .unwrap()
-                    .texture();
-
                 self.recent_wallpapers.guard().push_back(Background {
-                    path: img.to_string(),
+                    path: x.clone(),
                     group: self.background_group.clone(),
                     active: match self.style {
                         AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
                     },
-                    texture,
+                    thumb: thumb.unwrap_or(x),
                 });
             }
         }
