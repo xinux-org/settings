@@ -45,11 +45,6 @@ pub enum ChoiceMsg {
 }
 
 #[derive(Debug)]
-pub enum ChoiceOutput {
-    Noop,
-}
-
-#[derive(Debug)]
 pub struct ChoiceInit {
     pub key: String,
     pub settings: Settings,
@@ -63,30 +58,17 @@ pub struct ChoiceInit {
 impl SimpleComponent for Choice {
     type Init = ChoiceInit;
     type Input = ChoiceMsg;
-    type Output = ChoiceOutput;
+    type Output = ();
 
     view! {
         adw::PreferencesRow {
             set_activatable: false,
 
-            // accessibility {
-            //   labelled-by: [
-            //     title,
-            //   ];
-
-            //   described-by: [
-            //     subtitle,
-            //   ];
-            // }
-
-            // styles [
-            //   "content",
-            // ]
             #[wrap(Some)]
             set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: false,
-                
+
 
                 #[name(header)]
                 gtk::Box {

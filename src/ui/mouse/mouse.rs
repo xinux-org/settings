@@ -2,13 +2,9 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
+use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, Default};
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
-
-use crate::utils::input::Interface;
-use input;
-use input::Libinput;
 
 #[derive(Debug)]
 pub struct Mouse {
@@ -24,9 +20,6 @@ pub struct Mouse {
     /// default for true, flat for false
     accel_profile: bool,
 
-    /// scroll direction
-    natural_scroll: bool,
-
     natural_scroll_component: Controller<Choice>,
 }
 
@@ -34,7 +27,6 @@ pub struct Mouse {
 pub enum MousePageMsg {
     PrimaryButton(u32),
     MouseAcceleration(bool),
-    Noop,
 }
 
 #[relm4::component(pub)]
@@ -138,23 +130,16 @@ impl SimpleComponent for Mouse {
         let accel_profile = acceleration.as_str() == "default";
         let left_handed = settings.mouse.boolean("left-handed");
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
-        let natural_scroll = settings.mouse.boolean("natural-scroll");
-
-        let mut input = Libinput::new_with_udev(Interface);
-        input.udev_assign_seat("seat0").unwrap();
-        input.dispatch().unwrap();
 
         let natural_scroll_default_media = gtk::MediaFile::for_filename(format!(
             "{}/src/ui/mouse/assets/scroll-traditional.webm",
             std::env::current_dir().unwrap().to_str().unwrap()
         ));
-        // natural_scroll_default_media.set_playing(true);
 
         let natural_scroll_alternate_media = gtk::MediaFile::for_filename(format!(
             "{}/src/ui/mouse/assets/scroll-natural.webm",
             std::env::current_dir().unwrap().to_str().unwrap()
         ));
-        // natural_scroll_alternate_media.set_playing(true);
 
         let natural_scroll_component = Choice::builder()
             .launch(ChoiceInit {
@@ -180,9 +165,7 @@ impl SimpleComponent for Mouse {
                     enabled: true.to_variant() == value,
                 },
             })
-            .forward(sender.input_sender(), |out| match out {
-                ChoiceOutput::Noop => MousePageMsg::Noop,
-            });
+            .detach();
 
         let speed_controller = PointerSpeed::builder()
             .launch(PointerSpeedInit {
@@ -197,7 +180,6 @@ impl SimpleComponent for Mouse {
             left_handed,
             speed_controller,
             accel_profile,
-            natural_scroll,
 
             natural_scroll_component,
         };
@@ -210,34 +192,15 @@ impl SimpleComponent for Mouse {
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             MousePageMsg::PrimaryButton(state) => {
-                let primary = if state == 0 {
-                    // left handed false
-                    false
-                } else {
-                    // left handed true
-                    true
-                };
+                let primary = state.eq(&0);
                 self.left_handed = primary;
-
-                let _ = self.settings.mouse.set_boolean("left-handed", primary);
+                self.settings.mouse.set_boolean("left-handed", primary);
             }
             MousePageMsg::MouseAcceleration(state) => {
                 self.accel_profile = state;
-
                 let profile = if state { "default" } else { "flat" };
-
-                let _ = self.settings.mouse.set_string("accel-profile", profile);
+                self.settings.mouse.set_string("accel-profile", profile);
             }
-            // MousePageMsg::ScrollDirection(state) => {
-            //     self.natural_scroll = state;
-            //
-            //     // let _ = self.settings.mouse.set_boolean("natural-scroll", state);
-            //     let _ = self
-            //         .settings
-            //         .mouse
-            //         .set_value("natural-scroll", &state.to_variant());
-            // }
-            MousePageMsg::Noop => {}
         }
     }
 }

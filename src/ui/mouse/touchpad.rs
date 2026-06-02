@@ -1,14 +1,22 @@
 use relm4::adw::prelude::*;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, ChoiceOutput, Default};
+use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, Default};
 
 use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
 use crate::ui::mouse::components::single_choice::{
     RowOption, SingleChoice, SingleChoiceInit, SingleChoiceOutput,
 };
-use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 use crate::ui::mouse::components::template::ChoiceWidget;
+use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
+
+#[derive(Debug)]
+pub struct ScrollMethod {
+    pub title: String,
+
+    pub default: Default,
+    pub alternate: Alternate,
+}
 
 #[derive(Debug)]
 pub struct Touchpad {
@@ -41,8 +49,6 @@ pub enum TouchpadMsg {
     ScrollMethod(bool),
     ScrollMethodDefaultMedia(bool),
     ScrollMethodAlternativeMedia(bool),
-
-    Noop,
 }
 
 #[relm4::component(pub)]
@@ -110,17 +116,17 @@ impl SimpleComponent for Touchpad {
                     default_option_box {
                         add_controller = gtk::EventControllerMotion {
                             connect_enter[sender] => move |_,_,_| {
-                                let _ = sender.input_sender().send(TouchpadMsg::ScrollMethodDefaultMedia(true));
+                                sender.input_sender().send(TouchpadMsg::ScrollMethodDefaultMedia(true));
                             },
 
                             connect_leave[sender] => move |_| {
-                                let _ = sender.input_sender().send(TouchpadMsg::ScrollMethodDefaultMedia(false));
+                                sender.input_sender().send(TouchpadMsg::ScrollMethodDefaultMedia(false));
                             },
                         },
 
                         add_controller = gtk::GestureClick {
                             connect_pressed[sender] => move |_,_,_,_| {
-                                let _ = sender.input_sender().send(TouchpadMsg::ScrollMethod(true));
+                                sender.input_sender().send(TouchpadMsg::ScrollMethod(true));
                             },
                         },
                     },
@@ -154,17 +160,17 @@ impl SimpleComponent for Touchpad {
                     alternative_option_box {
                         add_controller = gtk::EventControllerMotion {
                             connect_enter[sender] => move |_,_,_| {
-                                let _ = sender.input_sender().send(TouchpadMsg::ScrollMethodAlternativeMedia(true));
+                                sender.input_sender().send(TouchpadMsg::ScrollMethodAlternativeMedia(true));
                             },
 
                             connect_leave[sender] => move |_| {
-                                let _ = sender.input_sender().send(TouchpadMsg::ScrollMethodAlternativeMedia(false));
+                                sender.input_sender().send(TouchpadMsg::ScrollMethodAlternativeMedia(false));
                             },
                         },
 
                         add_controller = gtk::GestureClick {
                             connect_pressed[sender] => move |_,_,_,_| {
-                                let _ = sender.input_sender().send(TouchpadMsg::ScrollMethod(false));
+                                sender.input_sender().send(TouchpadMsg::ScrollMethod(false));
                             },
                         },
                     },
@@ -195,7 +201,7 @@ impl SimpleComponent for Touchpad {
 
                 },
             },
-                
+
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
@@ -225,7 +231,7 @@ impl SimpleComponent for Touchpad {
         ));
 
         let events = settings.touchpad.string("send-events");
-        let send_events = events == String::from("enabled");
+        let send_events = events == "enabled";
         let disable_while_typing = settings.touchpad.boolean("disable-while-typing");
         let speed = settings.touchpad.value("speed").get::<f64>().unwrap();
 
@@ -268,9 +274,7 @@ impl SimpleComponent for Touchpad {
                     enabled: "areas".to_variant() == click_method.to_variant(),
                 },
             })
-            .forward(sender.input_sender(), |out| match out {
-                ChoiceOutput::Noop => TouchpadMsg::Noop,
-            });
+            .detach();
 
         let tap_to_click = settings.touchpad.boolean("tap-to-click");
         let tap_to_click_controller = SingleChoice::builder()
@@ -291,33 +295,33 @@ impl SimpleComponent for Touchpad {
             });
 
         let scroll_method = settings.touchpad.boolean("two-finger-scrolling-enabled");
-        let scroll_method_data = ScrollMethod{
-                title: "Scroll Method".to_string(),
+        let scroll_method_data = ScrollMethod {
+            title: "Scroll Method".to_string(),
 
-                default: Default {
-                    value: false.to_variant(),
-                    media: gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/scroll-2finger.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
-                    )),
-                    title: "Two Finger".to_string(),
-                    subtitle: "Drag two fingers on the touchpad".to_string(),
+            default: Default {
+                value: false.to_variant(),
+                media: gtk::MediaFile::for_filename(format!(
+                    "{}/src/ui/mouse/assets/scroll-2finger.webm",
+                    std::env::current_dir().unwrap().to_str().unwrap()
+                )),
+                title: "Two Finger".to_string(),
+                subtitle: "Drag two fingers on the touchpad".to_string(),
 
-                    enabled: false.to_variant() == scroll_method.to_variant(),
-                },
+                enabled: false.to_variant() == scroll_method.to_variant(),
+            },
 
-                alternate: Alternate {
-                    value: true.to_variant(),
-                    media: gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/edge-scroll.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
-                    )),
-                    title: "Edge".to_string(),
-                    subtitle: "Drag one finger on the edge".to_string(),
+            alternate: Alternate {
+                value: true.to_variant(),
+                media: gtk::MediaFile::for_filename(format!(
+                    "{}/src/ui/mouse/assets/edge-scroll.webm",
+                    std::env::current_dir().unwrap().to_str().unwrap()
+                )),
+                title: "Edge".to_string(),
+                subtitle: "Drag one finger on the edge".to_string(),
 
-                    enabled: true.to_variant() == scroll_method.to_variant(),
-                },
-            };
+                enabled: true.to_variant() == scroll_method.to_variant(),
+            },
+        };
 
         let natural_scroll = settings.touchpad.boolean("natural-scroll");
         let natural_scroll_controller = Choice::builder()
@@ -350,9 +354,7 @@ impl SimpleComponent for Touchpad {
                     enabled: true.to_variant() == natural_scroll.to_variant(),
                 },
             })
-            .forward(sender.input_sender(), |out| match out {
-                ChoiceOutput::Noop => TouchpadMsg::Noop,
-            });
+            .detach();
 
         let model = Self {
             settings,
@@ -385,56 +387,47 @@ impl SimpleComponent for Touchpad {
 
                 let variant = if state { "enabled" } else { "disabled" };
 
-                let _ = self
-                    .settings
+                self.settings
                     .touchpad
                     .set_value("send-events", &variant.to_variant());
             }
             TouchpadMsg::DisableWhileTyping(state) => {
                 self.disable_while_typing = state;
 
-                let _ = self
-                    .settings
+                self.settings
                     .touchpad
                     .set_value("disable-while-typing", &state.to_variant());
             }
             TouchpadMsg::TapToClick(state) => {
                 self.tap_to_click = state;
 
-                let _ = self
-                    .settings
+                self.settings
                     .touchpad
                     .set_value("tap-to-click", &state.to_variant());
             }
             TouchpadMsg::ScrollMethod(state) => {
                 self.scroll_method = state;
 
-
-
                 println!("State: {:?}", state);
 
                 if state {
                     self.scroll_method_data.default.enabled = true;
                     self.scroll_method_data.alternate.enabled = false;
-                    let _ = self
-                        .settings
+                    self.settings
                         .touchpad
                         .set_value("edge-scrolling-enabled", &false.to_variant());
 
-                    let _ = self
-                        .settings
+                    self.settings
                         .touchpad
                         .set_value("two-finger-scrolling-enabled", &true.to_variant());
                 } else {
                     self.scroll_method_data.default.enabled = false;
                     self.scroll_method_data.alternate.enabled = true;
-                    let _ = self
-                        .settings
+                    self.settings
                         .touchpad
                         .set_value("edge-scrolling-enabled", &true.to_variant());
 
-                    let _ = self
-                        .settings
+                    self.settings
                         .touchpad
                         .set_value("two-finger-scrolling-enabled", &false.to_variant());
                 }
@@ -453,16 +446,6 @@ impl SimpleComponent for Touchpad {
                     self.scroll_method_data.alternate.media.pause();
                 }
             }
-            TouchpadMsg::Noop => {}
         }
     }
-}
-
-
-#[derive(Debug)]
-pub struct ScrollMethod {
-    pub title: String,
-
-    pub default: Default,
-    pub alternate: Alternate,
 }

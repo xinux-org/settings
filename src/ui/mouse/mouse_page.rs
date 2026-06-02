@@ -8,7 +8,6 @@ use relm4::prelude::*;
 use std::convert::identity;
 
 use crate::ui::mouse::touchpad::Touchpad;
-use input::Libinput;
 use input::event::EventTrait;
 
 use crate::utils::input::Interface;
@@ -178,7 +177,7 @@ impl SimpleComponent for MouseModal {
         pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
         pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
 
-        let mut input = Libinput::new_with_udev(Interface);
+        let mut input = input::Libinput::new_with_udev(Interface);
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
@@ -212,9 +211,6 @@ impl SimpleComponent for MouseModal {
             let title_stack = widgets.title_stack.clone();
             title_stack.set_visible_child_name("window_title");
         }
-
-        // if device.name().contains("TrackPoint") {
-        // }
 
         ComponentParts { model, widgets }
     }

@@ -5,7 +5,7 @@ use relm4::prelude::*;
 use crate::ui::mouse::mouse_page::MouseMsg;
 
 #[derive(Debug, Clone)]
-pub struct PointingStick {}
+pub struct PointingStick;
 
 #[relm4::component(pub)]
 impl SimpleComponent for PointingStick {
