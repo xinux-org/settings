@@ -2,12 +2,12 @@ use crate::ui::appearance::appearance_background::{Background, BackgroundOutput}
 use crate::ui::appearance::components::accent_box::{
     AccentColorModel, AccentColorOutput, AccentColorWrapped,
 };
+use crate::ui::appearance::util::{add_wallpaper, thumb};
 use crate::utils::parse_dconf;
 
-use allmytoes::{AMT, AMTConfiguration, ThumbSize};
 use anyhow::Context;
 use relm4::loading_widgets::LoadingWidgets;
-use std::{fs, path::Path};
+use std::path::Path;
 use users::{get_current_uid, get_user_by_uid};
 
 use crate::ui::window::AppMsg;
@@ -17,7 +17,6 @@ use std::path::PathBuf;
 
 // default base path for system wallpapers
 const BG_BASE_DIR: &str = "/run/current-system/sw/share/backgrounds";
-// const BG_BASE_DIR: &str = "/home/shahruz";
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
@@ -43,14 +42,14 @@ impl Default for AppearanceSettings {
 // #[tracker::track]
 #[derive(Debug)]
 pub struct AppearanceModel {
-    style: AppearanceStyle,
+    pub style: AppearanceStyle,
     accent_color: AccentColorWrapped,
-    wallpaper_default: String,
-    wallpaper_dark: String,
-    wallpapers: AsyncFactoryVecDeque<Background>,
-    recent_wallpapers: AsyncFactoryVecDeque<Background>,
+    pub wallpaper_default: String,
+    pub wallpaper_dark: String,
+    pub wallpapers: AsyncFactoryVecDeque<Background>,
+    pub recent_wallpapers: AsyncFactoryVecDeque<Background>,
     open_dialog: Controller<OpenDialog>,
-    background_group: gtk::ToggleButton,
+    pub background_group: gtk::ToggleButton,
     accent_box_group: gtk::ToggleButton,
     accent_colors: FactoryVecDeque<AccentColorModel>,
 }
@@ -459,60 +458,17 @@ impl AsyncComponent for AppearanceModel {
 
         // Load Local Wallpapers
         if let Some(user) = get_user_by_uid(get_current_uid()) {
-            let local_path = format!(
+            let local_path: String = format!(
                 "/home/{}/.local/share/backgrounds",
                 user.name().to_string_lossy()
             );
-            let configuration = AMTConfiguration::default();
-            let amt = AMT::new(&configuration);
-            let thumb_size = ThumbSize::Normal;
-
-            if let Ok(rd) = fs::read_dir(local_path) {
-                for entry in rd.flatten() {
-                    let file_path = entry.path();
-                    let thumb = amt.get(&file_path, thumb_size).ok().map(|thumb| thumb.path);
-
-                    let x = file_path.to_string_lossy().to_string();
-                    model.recent_wallpapers.guard().push_back(Background {
-                        path: x.clone(),
-                        group: model.background_group.clone(),
-                        active: match model.style {
-                            AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
-                            AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
-                        },
-                        thumb: thumb.unwrap_or(x),
-                    });
-                }
-            }
+            add_wallpaper(Path::new(&local_path).to_path_buf(), &mut model, true);
         }
 
         // default paths for system wallpapers
-        let folders: [&str; 2] = ["gnome", "nixos"];
-        // let folders: [&str; 1] = ["wallpapers"];
-
-        for folder in folders {
+        for folder in vec!["gnome", "nixos"] {
             let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
-            let configuration = AMTConfiguration::default();
-            let amt = AMT::new(&configuration);
-            let thumb_size = ThumbSize::Normal;
-
-            if let Ok(rd) = fs::read_dir(&path) {
-                for entry in rd.flatten() {
-                    let file_path = entry.path();
-                    let thumb = amt.get(&file_path, thumb_size).ok().map(|thumb| thumb.path);
-
-                    let x = file_path.to_string_lossy().to_string();
-                    model.wallpapers.guard().push_back(Background {
-                        path: x.clone(),
-                        group: model.background_group.clone(),
-                        active: match model.style {
-                            AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
-                            AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
-                        },
-                        thumb: thumb.unwrap_or(x),
-                    });
-                }
-            }
+            add_wallpaper(path, &mut model, false);
         }
 
         let wallpaper_box = model.wallpapers.widget();
@@ -543,22 +499,15 @@ impl AsyncComponent for AppearanceModel {
                     .join(".local/share/backgrounds")
                     .join(f_name.unwrap_or_default());
 
-                let configuration = AMTConfiguration::default();
-                let amt = AMT::new(&configuration);
-                let thumb_size = ThumbSize::Normal;
-                let thumb = amt.get(&dest, thumb_size).ok().map(|thumb| thumb.path);
-
                 let file_path = dest.to_string_lossy().to_string();
                 match std::fs::copy(&path, &dest) {
-                    Ok(x) => {
+                    Ok(_) => {
                         self.recent_wallpapers.guard().push_back(Background {
                             path: file_path.clone(),
                             group: self.background_group.clone(),
                             active: false,
-                            thumb: thumb.unwrap_or(file_path),
+                            thumb: thumb(&dest).unwrap_or(file_path),
                         });
-
-                        println!("COPIED: {x:?}")
                     }
                     Err(e) => eprintln!("{e:?}"),
                 };
@@ -626,28 +575,7 @@ impl AsyncComponent for AppearanceModel {
                     .set("accent-color", format!("{:?}", color.0).to_lowercase())
                     .unwrap_or_else(|e| eprintln!("Couldn't set accent-color: {e:?}"));
             }
-            AppearanceMsg::Ignore => {} // AppearanceMsg::Default(x, thumb) => {
-                                        //     self.wallpapers.guard().push_back(Background {
-                                        //         path: x.clone(),
-                                        //         group: self.background_group.clone(),
-                                        //         active: match self.style {
-                                        //             AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
-                                        //             AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
-                                        //         },
-                                        //         thumb: thumb.unwrap_or(x),
-                                        //     });
-                                        // }
-                                        // AppearanceMsg::Local(x, thumb) => {
-                                        //     self.recent_wallpapers.guard().push_back(Background {
-                                        //         path: x.clone(),
-                                        //         group: self.background_group.clone(),
-                                        //         active: match self.style {
-                                        //             AppearanceStyle::Default => self.wallpaper_default.ends_with(&x),
-                                        //             AppearanceStyle::Dark => self.wallpaper_dark.ends_with(&x),
-                                        //         },
-                                        //         thumb: thumb.unwrap_or(x),
-                                        //     });
-                                        // }
+            AppearanceMsg::Ignore => {}
         }
     }
 }
