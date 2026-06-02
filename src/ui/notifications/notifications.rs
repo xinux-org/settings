@@ -323,7 +323,6 @@ fn build_app_row(
     suffix_box.append(&arrow);
 
     row.add_suffix(&suffix_box);
-
     row.connect_activated(move |_| {
         let _ = sender.send(NotificationsInput::OpenApp(app.app_id.clone()));
     });
@@ -381,7 +380,7 @@ fn load_notification_apps(master_settings: &gio::Settings) -> Vec<AppNotificatio
         ));
     }
 
-    items.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    items.sort_by_key(|a| a.title.to_lowercase());
     items
 }
 
