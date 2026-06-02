@@ -1,9 +1,5 @@
 use crate::ui::notifications::app_notification::app_settings_for_canonical;
-use relm4::adw;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::gtk::gio;
-use relm4::prelude::*;
+use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {

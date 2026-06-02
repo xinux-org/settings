@@ -1,12 +1,12 @@
-use crate::ui::apps::app_details_page::{AppDetailsPage, AppEntry};
-use crate::ui::apps::default_apps::DefaultAppsPage;
-use crate::ui::window::AppMsg;
+use crate::ui::{
+    apps::{
+        app_details_page::{AppDetailsPage, AppEntry},
+        default_apps::DefaultAppsPage,
+    },
+    window::AppMsg,
+};
 
-use relm4::adw;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::gtk::gio;
-use relm4::prelude::*;
+use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 
 #[derive(Debug)]
 pub struct AppModal {

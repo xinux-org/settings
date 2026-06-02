@@ -3,11 +3,7 @@ use super::app_notification::{
     AppNotificationsPageOutput, app_settings_for_canonical,
 };
 use gio_unix;
-use relm4::adw;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::gtk::gio;
-use relm4::prelude::*;
+use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 use std::collections::HashSet;
 
 const MASTER_SCHEMA: &str = "org.gnome.desktop.notifications";

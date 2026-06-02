@@ -1,7 +1,4 @@
-use relm4::adw;
-use relm4::adw::prelude::*;
-use relm4::gtk::gio;
-use relm4::prelude::*;
+use relm4::{adw, adw::prelude::*, gtk::gio, prelude::*};
 
 const GLOBAL_SCHEMA: &str = "org.gnome.desktop.notifications";
 const APP_SCHEMA: &str = "org.gnome.desktop.notifications.application";
