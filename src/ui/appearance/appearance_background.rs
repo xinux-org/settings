@@ -1,6 +1,4 @@
-use gtk;
-use relm4::loading_widgets::LoadingWidgets;
-use relm4::{adw::prelude::*, prelude::*, view};
+use relm4::{adw::prelude::*, gtk, loading_widgets::LoadingWidgets, prelude::*, view};
 
 #[derive(Debug, Clone)]
 pub struct Background {

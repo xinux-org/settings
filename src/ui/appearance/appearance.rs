@@ -3,19 +3,17 @@ use crate::ui::appearance::components::accent_box::{
     AccentColorModel, AccentColorOutput, AccentColorWrapped,
 };
 use crate::ui::appearance::util::{add_wallpaper, thumb, wallpaper_filters};
+use crate::ui::window::AppMsg;
 use crate::utils::parse_dconf;
 
-use anyhow::Context;
-use relm4::loading_widgets::LoadingWidgets;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use users::{get_current_uid, get_user_by_uid};
 
-use crate::ui::window::AppMsg;
-use rand;
-use rand::prelude::*;
-use relm4::{adw::prelude::*, gtk, gtk::gio::Settings, prelude::*, view};
+use rand::{self, prelude::*};
+use relm4::{
+    adw::prelude::*, gtk, gtk::gio::Settings, loading_widgets::LoadingWidgets, prelude::*, view,
+};
 use relm4_components::open_dialog::*;
-use std::path::PathBuf;
 
 // default base path for system wallpapers
 const BG_BASE_DIR: &str = "/run/current-system/sw/share/backgrounds";

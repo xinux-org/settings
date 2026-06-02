@@ -1,7 +1,6 @@
 use allmytoes::{AMT, AMTConfiguration, ThumbSize};
 use relm4::gtk;
 use std::path::PathBuf;
-use tracing::Instrument;
 
 use crate::ui::appearance::{
     appearance::{AppearanceModel, AppearanceStyle},
