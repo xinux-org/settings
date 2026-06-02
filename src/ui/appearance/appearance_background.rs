@@ -58,7 +58,7 @@ impl AsyncFactoryComponent for Background {
                         },
 
                         gtk::Picture {
-                            set_content_fit: gtk::ContentFit::Fill,
+                            set_content_fit: gtk::ContentFit::Cover,
                             set_isolate_contents: true,
                             // set_paintable: Some(&self.texture),
                             set_filename: Some(&self.thumb),

@@ -117,13 +117,25 @@ impl AsyncComponent for AppearanceModel {
                 ],
 
                 add_setters: &[
-                    (accent_color_box, "margin_all", &6),
+                    (accent_color_box, "margin_top", &6),
+                    (accent_color_box, "margin_bottom", &6),
+                    (accent_color_box, "margin_start", &6),
+                    (accent_color_box, "margin_end", &6),
                     (accent_color_box, "spacing", &6),
                 ],
 
                 add_setters: &[
                     (recent_wallpaper_box, "margin_all", &6),
                     (wallpaper_box, "margin_all", &6),
+                ],
+
+                add_setters: &[
+                    (&default_style, "height_request", &100),
+                    (&dark_style, "heigh_request", &100),
+                ],
+
+                add_setters:  &[
+                    (&style_box, "maximum_size", &270)
                 ],
             },
 
@@ -151,13 +163,24 @@ impl AsyncComponent for AppearanceModel {
                 ],
 
                 add_setters: &[
-                    (accent_color_box, "margin_all", &12),
+                    (accent_color_box, "margin_top", &12),
+                    (accent_color_box, "margin_bottom", &12),
+                    (accent_color_box, "margin_start", &12),
+                    (accent_color_box, "margin_end", &12),
                     (accent_color_box, "spacing", &12),
                 ],
 
                 add_setters: &[
                     (recent_wallpaper_box, "margin_all", &12),
                     (wallpaper_box, "margin_all", &12),
+                ],
+
+                add_setters: &[
+                    (&default_style, "height_request", &140),
+                    (&dark_style, "heigh_request", &140),],
+
+                add_setters:  &[
+                    (&style_box, "maximum_size", &380)
                 ],
             },
 
@@ -183,8 +206,8 @@ impl AsyncComponent for AppearanceModel {
                                 #[wrap(Some)]
                                 #[name = "style_box"]
                                 set_child = &adw::Clamp {
-                                    set_maximum_size: 270,
-                                    // set_tightening_threshold: 300,
+                                    set_maximum_size: 380,
+
                                     gtk::Grid {
                                         set_focusable: false,
                                         set_orientation: gtk::Orientation::Horizontal,
@@ -203,13 +226,11 @@ impl AsyncComponent for AppearanceModel {
                                             set_overflow: gtk::Overflow::Hidden,
                                             add_css_class: "style-toggle",
                                             set_active: model.style == AppearanceStyle::Default,
-                                            // set_width_request: 220,
-                                            set_height_request: 100,
-
+                                            // set_height_request: 140,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
-                                                set_content_fit: gtk::ContentFit::Fill,
+                                                set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_default)
@@ -229,12 +250,11 @@ impl AsyncComponent for AppearanceModel {
                                             add_css_class: "style-toggle",
                                             set_overflow: gtk::Overflow::Hidden,
                                             set_active: model.style == AppearanceStyle::Dark,
-                                            // set_width_request: 220,
-                                            set_height_request: 100,
+                                            // set_height_request: 140,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
-                                                set_content_fit: gtk::ContentFit::Fill,
+                                                set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
                                                 set_filename: Some(&model.wallpaper_dark)
