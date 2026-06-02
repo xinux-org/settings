@@ -73,23 +73,6 @@ pub enum AppearanceStyle {
     Default,
     Dark,
 }
-impl AppearanceStyle {
-    fn get_picture_uri(self) -> String {
-        match self {
-            Self::Dark => "picture-uri-dark",
-            Self::Default => "picture-uri",
-        }
-        .to_string()
-    }
-
-    fn get_style(self) -> String {
-        match self {
-            Self::Dark => "prefer-dark",
-            Self::Default => "prefer-default",
-        }
-        .to_string()
-    }
-}
 
 #[derive(Debug)]
 pub enum AddBackroundMsg {
