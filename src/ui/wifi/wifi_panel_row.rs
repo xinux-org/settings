@@ -16,6 +16,7 @@ pub struct WifiNetwork {
 #[derive(Debug)]
 pub enum NetworkRowMsg {
     Connect(String),
+    ClickQr(String)
 }
 
 #[derive(Debug)]
@@ -60,6 +61,12 @@ impl FactoryComponent for WifiNetwork {
                     add_css_class: "flat",
                     set_valign: gtk::Align::Center,
                     set_tooltip_text: Some("Share Network"),
+                    // connect_clicked => NetworkRowMsg::ClickQr
+                    connect_clicked[sender, index, ssid = self.ssid.to_owned()] => move |_|
+                        sender.input(NetworkRowMsg::ClickQr(
+                            ssid.to_string()
+                        )
+                    )
                 },
 
                 gtk::Button {
@@ -67,6 +74,7 @@ impl FactoryComponent for WifiNetwork {
                     add_css_class: "flat",
                     set_valign: gtk::Align::Center,
                     set_tooltip_text: Some("Network Options"),
+                    
                 }
             },
 
@@ -108,6 +116,9 @@ impl FactoryComponent for WifiNetwork {
                         });
                     let _ = sender.output(NetworkRowOutput::ConnectResult(result));
                 });
+            },
+            NetworkRowMsg::ClickQr(ssid) => {
+                println!("Clicked: {ssid}")
             }
         }
     }
