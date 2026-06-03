@@ -27,7 +27,6 @@ pub struct Touchpad {
     speed_controller: Controller<PointerSpeed>,
 
     // click-method: "areas"; "fingers"
-    secondary_click: bool,
     secondary_click_controller: Controller<Choice>,
 
     tap_to_click: bool,
@@ -36,7 +35,6 @@ pub struct Touchpad {
     scroll_method: bool,
     scroll_method_data: ScrollMethod,
 
-    natural_scroll: bool,
     natural_scroll_controller: Controller<Choice>,
 }
 
@@ -363,7 +361,6 @@ impl SimpleComponent for Touchpad {
             disable_while_typing,
             speed_controller,
 
-            secondary_click,
             secondary_click_controller,
 
             tap_to_click,
@@ -372,7 +369,6 @@ impl SimpleComponent for Touchpad {
             scroll_method,
             scroll_method_data,
 
-            natural_scroll,
             natural_scroll_controller,
         };
 
