@@ -1,11 +1,11 @@
 pub mod about;
+pub mod appearance;
 pub mod bluetooth;
 pub mod display;
 pub mod network;
 pub mod notifications;
 pub mod sound;
 pub mod wifi;
-pub mod appearance;
 
 // Pages in separate folders
 pub mod apps;

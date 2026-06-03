@@ -9,16 +9,15 @@ use relm4::{
     *,
 };
 
-use crate::ui::search::SearchModal;
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
-    appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
-    mouse::MouseModal, multitasking::MultitaskingModel, network::NetworkModel,
-    notifications::NotificationsModel, power::PowerModel,
-    privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel, sound::SoundModel,
-    system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
+    appearance::appearance::AppearanceModel, apps::AppModal, bluetooth::BluetoothModel,
+    display::DisplayModel, mouse::MouseModal, multitasking::MultitaskingModel,
+    network::NetworkModel, notifications::NotificationsModel, power::PowerModel,
+    privacyandsecurity::PrivacyAndSecurityModel, rebuild::rebuild_dialog::RebuildInput,
+    search::SearchModal, sharing::SharingModel, sound::SoundModel, system::SystemPageModel,
+    wellbeing::WellbeingModel, wifi::WifiModel,
 };
-use crate::ui::{apps::AppModal, rebuild::rebuild_dialog::RebuildInput};
 use crate::utils::modules::load::LoadOutput;
 use crate::{
     config::{APP_ID, PROFILE},
@@ -38,7 +37,7 @@ pub struct App {
     #[allow(dead_code)]
     display: Controller<DisplayModel>,
     #[allow(dead_code)]
-    appearance: Controller<AppearanceModel>,
+    appearance: AsyncController<AppearanceModel>,
     #[allow(dead_code)]
     sound: Controller<SoundModel>,
     #[allow(dead_code)]
@@ -161,8 +160,8 @@ impl SimpleComponent for App {
                 adw::Breakpoint::new(
                     adw::BreakpointCondition::new_length(
                         adw::BreakpointConditionLengthType::MaxWidth,
-                        400.0,
-                        adw::LengthUnit::Sp,
+                        600.0,
+                        adw::LengthUnit::Px,
                     )
                 ),
                 &[
@@ -294,10 +293,10 @@ impl SimpleComponent for App {
         model.stack = view_stack;
         let display_stack = model.stack.page(model.display.widget());
         display_stack.set_starts_section(true);
-        
+
         let apps_stack = model.stack.page(model.apps.widget());
         apps_stack.set_starts_section(true);
-        
+
         let mouse_stack = model.stack.page(model.mouse.widget());
         mouse_stack.set_starts_section(true);
 
