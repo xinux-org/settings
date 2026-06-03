@@ -1,7 +1,6 @@
-use relm4::adw::AccentColor;
-use relm4::adw::prelude::*;
 use relm4::{
     FactorySender,
+    adw::{AccentColor, prelude::*},
     factory::FactoryView,
     gtk,
     prelude::{DynamicIndex, FactoryComponent},
@@ -50,7 +49,8 @@ impl From<AccentColorWrapped> for String {
             AccentColor::Purple => "purple",
             AccentColor::Slate => "slate",
             _ => "blue",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 

@@ -1,19 +1,20 @@
-use crate::ui::appearance::appearance_background::{Background, BackgroundOutput};
-use crate::ui::appearance::components::accent_box::{
-    AccentColorModel, AccentColorOutput, AccentColorWrapped,
+use crate::ui::{
+    appearance::{
+        appearance_background::{Background, BackgroundOutput},
+        components::accent_box::{AccentColorModel, AccentColorOutput, AccentColorWrapped},
+    },
+    window::AppMsg,
 };
-use crate::ui::appearance::util::{add_wallpaper, thumb, wallpaper_filters};
-use crate::ui::window::AppMsg;
-use crate::utils::parse_dconf;
 
-use std::path::{Path, PathBuf};
-use users::{get_current_uid, get_user_by_uid};
-
+use crate::utils::{add_wallpaper, parse_dconf, thumb, wallpaper_filters};
+use allmytoes::{AMT, AMTConfiguration, ThumbSize};
 use rand::{self, prelude::*};
 use relm4::{
     adw::prelude::*, gtk, gtk::gio::Settings, loading_widgets::LoadingWidgets, prelude::*, view,
 };
 use relm4_components::open_dialog::*;
+use std::path::{Path, PathBuf};
+use users::{get_current_uid, get_user_by_uid};
 
 // default base path for system wallpapers
 const BG_BASE_DIR: &str = "/run/current-system/sw/share/backgrounds";
@@ -63,9 +64,6 @@ pub enum AppearanceMsg {
     OpenRequest,
     OpenResponse(PathBuf),
     Ignore,
-    // Default(String, Option<String>),
-    // Local(String, Option<String>),
-    // WallpapersLoaded(Background),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -226,14 +224,13 @@ impl AsyncComponent for AppearanceModel {
                                             set_overflow: gtk::Overflow::Hidden,
                                             add_css_class: "style-toggle",
                                             set_active: model.style == AppearanceStyle::Default,
-                                            // set_height_request: 140,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(&model.wallpaper_default)
+                                                set_filename: Some(thumb(&PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large).unwrap_or_default())
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -250,14 +247,13 @@ impl AsyncComponent for AppearanceModel {
                                             add_css_class: "style-toggle",
                                             set_overflow: gtk::Overflow::Hidden,
                                             set_active: model.style == AppearanceStyle::Dark,
-                                            // set_height_request: 140,
 
                                             #[wrap(Some)]
                                             set_child = &gtk::Picture{
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(&model.wallpaper_dark)
+                                                set_filename: Some(thumb(&PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large).unwrap_or_default())
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
@@ -280,7 +276,6 @@ impl AsyncComponent for AppearanceModel {
                                 set_activatable: false,
                                 set_focusable: false,
 
-                                // #[name = "accent_box"]
                                 #[local_ref]
                                 #[wrap(Some)]
                                 set_child = accent_color_box -> gtk::Box {
@@ -503,18 +498,16 @@ impl AsyncComponent for AppearanceModel {
         match msg {
             AppearanceMsg::OpenRequest => self.open_dialog.emit(OpenDialogMsg::Open),
             AppearanceMsg::OpenResponse(path) => {
-                // let f_name = path.file_name().context("extract filename failed");
-
-                let haha = rand::rng()
-                    .random_iter::<char>()
-                    .take(16)
-                    .collect::<String>();
-
                 // add local wallpaper
                 let dest = PathBuf::from("/home")
                     .join(user.name())
                     .join(".local/share/backgrounds")
-                    .join(haha);
+                    .join(
+                        rand::rng()
+                            .random_iter::<char>()
+                            .take(16)
+                            .collect::<String>(),
+                    );
 
                 let file_path = dest.to_string_lossy().to_string();
                 match std::fs::copy(&path, &dest) {
@@ -523,7 +516,7 @@ impl AsyncComponent for AppearanceModel {
                             path: file_path.clone(),
                             group: self.background_group.clone(),
                             active: false,
-                            thumb: thumb(&dest).unwrap_or(file_path),
+                            thumb: thumb(&dest, ThumbSize::Large).unwrap_or(file_path),
                         });
                     }
                     Err(e) => eprintln!("{e:?}"),
