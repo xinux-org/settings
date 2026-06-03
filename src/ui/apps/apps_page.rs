@@ -13,7 +13,7 @@ pub struct AppModal {
     navigation: adw::NavigationView,
     apps_list: gtk::ListBox,
     default_apps: Controller<DefaultAppsPage>,
-    details_pages: Vec<Controller<AppDetailsPage>>,
+    details_page: Option<Controller<AppDetailsPage>>,
     apps: Vec<AppEntry>,
     filtered_apps: Vec<AppEntry>,
 }
@@ -61,7 +61,7 @@ impl SimpleComponent for AppModal {
 
                                 connect_search_changed[sender] => move |entry| {
                                     sender.input(AppsMsg::SearchChanged(
-                                        entry.text().to_string()
+                                        entry.text().to_string(),
                                     ));
                                 }
                             }
@@ -114,7 +114,7 @@ impl SimpleComponent for AppModal {
             navigation: adw::NavigationView::new(),
             apps_list: gtk::ListBox::new(),
             default_apps,
-            details_pages: Vec::new(),
+            details_page: None,
             apps,
             filtered_apps,
         };
@@ -124,7 +124,11 @@ impl SimpleComponent for AppModal {
         model.navigation = widgets.navigation.clone();
         model.apps_list = widgets.apps_list.clone();
 
-        rebuild_apps_list(&model.apps_list, &model.filtered_apps, sender.clone());
+        rebuild_apps_list(
+            &model.apps_list,
+            &model.filtered_apps,
+            sender.input_sender(),
+        );
 
         ComponentParts { model, widgets }
     }
@@ -163,15 +167,13 @@ impl SimpleComponent for AppModal {
                         .collect()
                 };
 
-                rebuild_apps_list(&self.apps_list, &self.filtered_apps, sender.clone());
+                rebuild_apps_list(&self.apps_list, &self.filtered_apps, sender.input_sender());
             }
 
             AppsMsg::OpenAppDetails(app) => {
                 let details_page = AppDetailsPage::builder().launch(app).detach();
-
                 self.navigation.push(details_page.widget());
-
-                self.details_pages.push(details_page);
+                self.details_page = Some(details_page);
             }
         }
     }
@@ -200,7 +202,7 @@ fn collect_apps() -> Vec<AppEntry> {
     apps.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
     apps.dedup_by(|a, b| {
-        a.name == b.name
+        a.name.to_lowercase() == b.name.to_lowercase()
             && a.executable.as_deref().unwrap_or("") == b.executable.as_deref().unwrap_or("")
     });
 
@@ -222,7 +224,7 @@ fn notification_canonical_id(app_id: &str) -> String {
         .collect()
 }
 
-fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: ComponentSender<AppModal>) {
+fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: &relm4::Sender<AppsMsg>) {
     while let Some(child) = list.first_child() {
         list.remove(&child);
     }
@@ -261,7 +263,7 @@ fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: ComponentSe
         let sender_clone = sender.clone();
 
         row.connect_activated(move |_| {
-            sender_clone.input(AppsMsg::OpenAppDetails(app_clone.clone()));
+            let _ = sender_clone.send(AppsMsg::OpenAppDetails(app_clone.clone()));
         });
 
         list.append(&row);
