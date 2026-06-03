@@ -1,4 +1,5 @@
 pub mod error;
+pub mod input;
 pub mod language;
 pub mod modules;
 pub mod power;

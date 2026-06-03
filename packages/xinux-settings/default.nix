@@ -28,6 +28,7 @@ pkgs.stdenv.mkDerivation {
     polkit
     wrapGAppsHook4
     rustPlatform.cargoSetupHook
+    libinput
   ];
 
   buildInputs = with pkgs; [

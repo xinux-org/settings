@@ -13,7 +13,7 @@ use crate::ui::search::SearchModal;
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
     appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
-    mouse::MouseAndTouchpad, multitasking::MultitaskingModel, network::NetworkModel,
+    mouse::MouseModal, multitasking::MultitaskingModel, network::NetworkModel,
     notifications::NotificationsModel, power::PowerModel,
     privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel, sound::SoundModel,
     system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
@@ -58,7 +58,7 @@ pub struct App {
     #[allow(dead_code)]
     wellbeing: Controller<WellbeingModel>,
     #[allow(dead_code)]
-    mouse: Controller<MouseAndTouchpad>,
+    mouse: Controller<MouseModal>,
     #[allow(dead_code)]
     accessibility: Controller<AccessibilityModel>,
     #[allow(dead_code)]
@@ -219,7 +219,7 @@ impl SimpleComponent for App {
         let wellbeing = WellbeingModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
-        let mouse = MouseAndTouchpad::builder()
+        let mouse = MouseModal::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
         let accessibility = AccessibilityModel::builder()

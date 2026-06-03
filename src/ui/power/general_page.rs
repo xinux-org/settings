@@ -1,7 +1,16 @@
 use crate::{
-    ui::power::{battery_row::BatteryModel, power_page::PowerMsg},
-    utils::power::SCREEN_BLANK_DELAY_VALUES,
+    ui::power::{
+        battery_row::BatteryModel,
+        components::{
+            auto_suspend::{AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput},
+            dim_screen::{DimScreen, DimScreenOutput},
+            screen_black::AutoScreenBlank,
+        },
+        power_page::PowerMsg,
+    },
+    utils::power::{POWER_BUTTON_ACTIONS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
 };
+
 use ppd::PpdProxyBlocking;
 use regex::Regex;
 use relm4::{
@@ -9,20 +18,13 @@ use relm4::{
     gtk::{self},
     prelude::*,
 };
+
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
-use std::process::{Command, Stdio};
-use std::{fmt, fs, path::Path, sync::Arc};
+
+use std::{fmt, fs, path::Path, process::{Command, Stdio}, sync::Arc};
 use zbus::blocking::Connection;
 
-use crate::ui::power::components::auto_suspend::{
-    AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
-};
-use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
-use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
-
 use gtk::gio::Settings;
-
-use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_VALUES};
 
 #[derive(Debug, Clone)]
 pub struct PowerSettings {
@@ -54,9 +56,7 @@ impl fmt::Display for PowerMode {
 }
 
 #[derive(Debug)]
-#[tracker::track]
 pub struct GeneralPowerPageView {
-    #[tracker::do_not_track]
     pub settings: PowerSettings,
 
     pub power_mode: PowerMode,
@@ -68,30 +68,22 @@ pub struct GeneralPowerPageView {
     pub power_button_action: u32,
     pub battery_label_text: String,
 
-    #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
 
-    #[tracker::do_not_track]
     batteries: FactoryVecDeque<BatteryModel>,
 
-    #[tracker::do_not_track]
     pub ppd: Arc<PpdProxyBlocking<'static>>,
 
     // Power Saving Options
     /// Dim screen
     pub idle_dim: bool,
-    #[tracker::do_not_track]
     pub dim_screen_controller: Controller<DimScreen>,
-    #[tracker::do_not_track]
     pub auto_screen_black_controller: Controller<AutoScreenBlank>,
-    #[tracker::do_not_track]
     pub automatic_suspend_controller: Controller<AutomaticSuspend>,
 
     // Automatic Suspend
     /// While plugged in (ac => Alternating Current)
     pub sleep_inactive_ac_type: bool,
-    /// Suspend on AC timeout
-    pub sleep_inactive_ac_timeout: u16,
 }
 
 #[derive(Debug)]
@@ -108,7 +100,6 @@ pub enum GeneralPowerPageViewMsg {
     // no operation needed.
     // we do it just to avoit type Output
     // in child component handling
-    Noop,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -116,13 +107,16 @@ pub enum PowerMode {
     Performance, // performance
     Balanced,    // balanced
     PowerSaver,  // power-saver
-    Disabled     // ppd disabled
+    Disabled,    // ppd disabled
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChargingMode {
-    Preserve,    // with a threshold
-    Maximize,    // 100% without a threshold
+    /// With a threshold
+    Preserve, // with a threshold
+    /// 100% without a threshold
+    Maximize, // 100% without a threshold
+    /// couldn't find the threshold file
     Unsupported, // couldn't find the threshold file
 }
 
@@ -196,7 +190,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Power Mode",
-                set_visible: model.power_mode != PowerMode::Disabled, 
+                set_visible: model.power_mode != PowerMode::Disabled,
 
                 adw::ActionRow {
                     set_title: "Performance",
@@ -345,7 +339,6 @@ impl Component for GeneralPowerPageView {
             (settings.power.string("sleep-inactive-ac-type").as_str(),),
             ("suspend",)
         );
-        let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-ac-timeout") as u16;
         let power_button_action =
             get_power_button_action_enum(settings.power.string("power-button-action").to_string());
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
@@ -393,10 +386,7 @@ impl Component for GeneralPowerPageView {
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
             .launch((settings.to_owned(), SCREEN_BLANK_DELAY_VALUES.to_vec()))
-            .forward(sender.input_sender(), |out| match out {
-                // we do not need child and parent relationship in this case
-                AutoScreenBlankOutput::Noop => GeneralPowerPageViewMsg::Noop,
-            });
+            .detach();
 
         let automatic_suspend_controller = AutomaticSuspend::builder()
             .launch(AutomaticSuspendInit {
@@ -406,7 +396,6 @@ impl Component for GeneralPowerPageView {
                 values: SUSPEND_DELAY_VALUES.to_vec(),
             })
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => {
                     GeneralPowerPageViewMsg::AutomaticSuspendAC(state)
                 }
@@ -426,7 +415,6 @@ impl Component for GeneralPowerPageView {
             power_button_action,
 
             ppd: Arc::new(proxy),
-            tracker: 0,
 
             // In case there is no battery
             idle_dim,
@@ -438,7 +426,6 @@ impl Component for GeneralPowerPageView {
 
             automatic_suspend_controller,
             sleep_inactive_ac_type,
-            sleep_inactive_ac_timeout,
         };
 
         let combo_row = model.power_button_action_row.widget();
@@ -497,13 +484,16 @@ impl Component for GeneralPowerPageView {
             GeneralPowerPageViewMsg::AutomaticSuspendAC(state) => {
                 self.sleep_inactive_ac_type = state
             }
-            GeneralPowerPageViewMsg::Noop => {}
         }
     }
 }
 
 fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
-    match proxy.active_profile().unwrap_or("disabled".to_string()).trim() {
+    match proxy
+        .active_profile()
+        .unwrap_or("disabled".to_string())
+        .trim()
+    {
         "balanced" => PowerMode::Balanced,
         "power-saver" => PowerMode::PowerSaver,
         "performance" => PowerMode::Performance,

@@ -60,4 +60,6 @@ zbus = { version = "5.15", default-features = false }
 notify = { version = "8.1.0", features = ["serde"] }
 regex = "1.12.3"
 nmrs = "2.0.1"
+input = "0.10.0"
+libc = "0.2.186"
 gio-unix = "0.22.6"
