@@ -44,6 +44,7 @@ pkgs.stdenv.mkDerivation {
     bubblewrap
     libglycin
     glycin-loaders
+    gst_all_1.gstreamer
   ];
 
 }

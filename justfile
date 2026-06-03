@@ -30,6 +30,7 @@ install: build
 run: install
     RUST_LOG={{bin}}=DEBUG \
     GSETTINGS_SCHEMA_DIR={{prefix}}/share/glib-2.0/schemas \
+    GST_PLUGIN_PATH=
     XDG_DATA_DIRS="{{prefix}}/share:${XDG_DATA_DIRS}" \
     {{prefix}}/bin/{{bin}}
 

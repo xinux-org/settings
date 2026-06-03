@@ -9,16 +9,15 @@ use relm4::{
     *,
 };
 
-use crate::ui::search::SearchModal;
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
-    appearance::AppearanceModel, bluetooth::BluetoothModel, display::DisplayModel,
-    mouse::MouseModal, multitasking::MultitaskingModel, network::NetworkModel,
-    notifications::NotificationsModel, power::PowerModel,
-    privacyandsecurity::PrivacyAndSecurityModel, sharing::SharingModel, sound::SoundModel,
-    system::SystemPageModel, wellbeing::WellbeingModel, wifi::WifiModel,
+    appearance::appearance::AppearanceModel, apps::AppModal, bluetooth::BluetoothModel,
+    display::DisplayModel, mouse::MouseModal, multitasking::MultitaskingModel,
+    network::NetworkModel, notifications::NotificationsModel, power::PowerModel,
+    privacyandsecurity::PrivacyAndSecurityModel, rebuild::rebuild_dialog::RebuildInput,
+    search::SearchModal, sharing::SharingModel, sound::SoundModel, system::SystemPageModel,
+    wellbeing::WellbeingModel, wifi::WifiModel,
 };
-use crate::ui::{apps::AppModal, rebuild::rebuild_dialog::RebuildInput};
 use crate::utils::modules::load::LoadOutput;
 use crate::{
     config::{APP_ID, PROFILE},
