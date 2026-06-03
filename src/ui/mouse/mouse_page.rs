@@ -1,36 +1,59 @@
+use crate::ui::mouse::mouse::Mouse;
+use crate::ui::mouse::pointing_stick::PointingStick;
 use crate::ui::window::AppMsg;
-use relm4::{adw::prelude::*, gtk, prelude::*};
+use gtk::gio::Settings;
+use relm4::adw::prelude::*;
+use relm4::gtk;
+use relm4::prelude::*;
 use std::convert::identity;
 
-use crate::ui::power::{
-    general_page::{GeneralPowerPageView, get_battery_path},
-    power_saving::SavingPowerPageView,
-};
+use crate::ui::mouse::touchpad::Touchpad;
+use input::event::EventTrait;
 
-#[derive(Debug)]
-pub struct PowerModel {
-    view_stack: adw::ViewStack,
-    general_page: Controller<GeneralPowerPageView>,
-    saving_page: Controller<SavingPowerPageView>,
-    show_view_stack_bar: bool,
+use crate::utils::input::Interface;
+
+use input;
+
+#[derive(Debug, Clone)]
+pub struct MouseSettings {
+    pub mouse: Settings,
+    pub touchpad: Settings,
 }
 
 #[derive(Debug)]
-pub enum PowerMsg {
+pub struct MouseModal {
+    view_stack: adw::ViewStack,
+    mouse: Controller<Mouse>,
+    touchpad: Controller<Touchpad>,
+    pointing_stick: Controller<PointingStick>,
+    show_view_stack_bar: bool,
+}
+
+impl MouseModal {
+    pub fn gsettings() -> MouseSettings {
+        MouseSettings {
+            mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
+            touchpad: Settings::new("org.gnome.desktop.peripherals.touchpad"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum MouseMsg {
     SetViewSwitchBar(bool),
 }
 
 #[relm4::component(pub)]
-impl SimpleComponent for PowerModel {
+impl SimpleComponent for MouseModal {
     type Init = ();
-    type Input = PowerMsg;
+    type Input = MouseMsg;
     type Output = AppMsg;
 
     view! {
         #[root]
         adw::BreakpointBin {
-            // when no battery found itʻs shows only general page,
-            // otherwise shows battery and view_switcher_bar
+            // when no trackpad is found itʻs shows only general page,
+            // otherwise view_switcher_bar
             add_breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
                 adw::BreakpointConditionLengthType::MinWidth,
                 560.0,
@@ -84,17 +107,16 @@ impl SimpleComponent for PowerModel {
 
                         #[local_ref]
                         view_stack -> adw::ViewStack {
-                            add: model.general_page.widget(),
-                            add: model.saving_page.widget(),
+                            add: model.mouse.widget(),
+                            add: model.touchpad.widget(),
+                            add: model.pointing_stick.widget(),
                         },
                     },
-
                 },
 
                 #[name(view_switcher_bar)]
                 add_bottom_bar = &adw::ViewSwitcherBar {
                     set_stack: Some(&view_stack),
-
                 },
             }
         },
@@ -104,7 +126,7 @@ impl SimpleComponent for PowerModel {
             set_policy: adw::ViewSwitcherPolicy::Wide,
         },
         window_title = &adw::WindowTitle {
-            set_title: "General",
+            set_title: "Mouse & Touchpad",
         },
     }
 
@@ -113,38 +135,83 @@ impl SimpleComponent for PowerModel {
         root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let settings = Self::gsettings();
+
         let view_stack = adw::ViewStack::new();
-        let general_page = GeneralPowerPageView::builder()
-            .launch(())
+        let mouse = Mouse::builder()
+            .launch(settings.clone())
             .forward(_sender.input_sender(), identity);
-        let saving_page = SavingPowerPageView::builder()
+
+        let touchpad = Touchpad::builder()
+            .launch(settings.clone())
+            .forward(_sender.input_sender(), identity);
+
+        let pointing_stick = PointingStick::builder()
             .launch(())
             .forward(_sender.input_sender(), identity);
 
         let model = Self {
             view_stack: view_stack.clone(),
-            general_page,
-            saving_page,
+            mouse,
+            touchpad,
+            pointing_stick,
             show_view_stack_bar: false,
         };
 
         let widgets = view_output!();
-
         let view_stack = model.view_stack.clone();
-        let general_view_switcher = widgets.view_stack.page(model.general_page.widget());
-        let saving_view_switcher = widgets.view_stack.page(model.saving_page.widget());
 
-        general_view_switcher.set_title(Some("General"));
-        general_view_switcher.set_name(Some("general")); // do not translate
-        general_view_switcher.set_icon_name(Some("gnome-power-manager"));
+        let mouse_switcher = widgets.view_stack.page(model.mouse.widget());
+        let touchpad_swticher = widgets.view_stack.page(model.touchpad.widget());
+        let pointing_stick_switcher = widgets.view_stack.page(model.pointing_stick.widget());
 
-        saving_view_switcher.set_title(Some("Power Saving"));
-        saving_view_switcher.set_name(Some("power-saving")); // do not translate
-        saving_view_switcher.set_icon_name(Some("power-profile-power-saver"));
+        mouse_switcher.set_title(Some("Mouse"));
+        mouse_switcher.set_name(Some("mouse")); // do not translate
+        mouse_switcher.set_icon_name(Some("input-mouse"));
 
-        // please improve logic and add
-        if get_battery_path().is_empty() {
-            saving_view_switcher.set_visible(false);
+        touchpad_swticher.set_title(Some("Touchpad"));
+        touchpad_swticher.set_name(Some("touchpad")); // do not translate
+        touchpad_swticher.set_icon_name(Some("input-touchpad"));
+
+        pointing_stick_switcher.set_title(Some("Pointing Stick"));
+        pointing_stick_switcher.set_name(Some("pointing_stick")); // do not translate
+        pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
+
+        let mut input = input::Libinput::new_with_udev(Interface);
+
+        // `udev_assign_seat` succeeds even if no input devices are
+        // currently available on this seat, or if devices are available
+        // but fail to open in `LibinputInterface::open_restricted`.
+        input.udev_assign_seat("seat0").unwrap();
+        input.dispatch().unwrap();
+
+        let events: Vec<String> = input
+            .clone()
+            .collect::<Vec<input::Event>>()
+            .into_iter()
+            .map(|event| event.device())
+            .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
+            .map(|device| device.name().to_string())
+            .collect();
+
+        let trackpoints: Vec<String> = events
+            .clone()
+            .iter()
+            .filter(|name| name.contains("TrackPoint"))
+            .map(|name| name.to_string())
+            .collect();
+
+        println!("Events: {:#?}", events);
+
+        if events.is_empty() {
+            touchpad_swticher.set_visible(false);
+        }
+
+        if trackpoints.is_empty() {
+            pointing_stick_switcher.set_visible(false);
+        }
+
+        if events.is_empty() && trackpoints.is_empty() {
             let title_stack = widgets.title_stack.clone();
             title_stack.set_visible_child_name("window_title");
         }
@@ -154,7 +221,7 @@ impl SimpleComponent for PowerModel {
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         match msg {
-            PowerMsg::SetViewSwitchBar(vsbar) => {
+            MouseMsg::SetViewSwitchBar(vsbar) => {
                 self.show_view_stack_bar = vsbar;
             }
         }

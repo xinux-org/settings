@@ -31,6 +31,7 @@ pkgs.stdenv.mkDerivation {
     bubblewrap
     wrapGAppsHook4
     rustPlatform.cargoSetupHook
+    libinput
   ];
 
   buildInputs = with pkgs; [

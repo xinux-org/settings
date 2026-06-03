@@ -48,6 +48,7 @@ pkgs.mkShell {
     pkg-config
     gdk-pixbuf
     libadwaita
+    libinput
     pkg-config
     gnome-desktop
     appstream
@@ -59,6 +60,11 @@ pkgs.mkShell {
     bubblewrap
     glycin-loaders
     rustPlatform.bindgenHook
+  ];
+
+  buildInputs = with pkgs; [
+    libinput
+    gtk4
   ];
 
   # Set Environment Variables

@@ -1,6 +1,6 @@
 use super::app_notification::{
     AppNotificationItem, AppNotificationsInit, AppNotificationsPageModel,
-    AppNotificationsPageOutput, app_bool_from_canonical,
+    AppNotificationsPageOutput, app_settings_for_canonical,
 };
 use gio_unix;
 use relm4::adw;
@@ -21,6 +21,7 @@ pub struct NotificationsModel {
     pub apps: Vec<AppNotificationItem>,
     pub selected_app: Option<usize>,
     pub app_page: Option<Controller<AppNotificationsPageModel>>,
+    settings_watchers: Vec<gio::Settings>,
 }
 
 #[derive(Debug)]
@@ -30,6 +31,7 @@ pub enum NotificationsInput {
     OpenApp(String),
     BackToList,
     AppPageChanged(AppNotificationItem),
+    RefreshApps,
 }
 
 #[relm4::component(pub)]
@@ -70,7 +72,9 @@ impl Component for NotificationsModel {
                                     #[watch]
                                     set_active: model.do_not_disturb,
                                     connect_active_notify[sender] => move |row| {
-                                        sender.input(NotificationsInput::ToggleDoNotDisturb(row.is_active()));
+                                        sender.input(NotificationsInput::ToggleDoNotDisturb(
+                                            row.is_active(),
+                                        ));
                                     }
                                 },
 
@@ -80,14 +84,18 @@ impl Component for NotificationsModel {
                                     #[watch]
                                     set_active: model.lock_screen_notifications,
                                     connect_active_notify[sender] => move |row| {
-                                        sender.input(NotificationsInput::ToggleLockScreen(row.is_active()));
+                                        sender.input(NotificationsInput::ToggleLockScreen(
+                                            row.is_active(),
+                                        ));
                                     }
                                 },
                             },
 
                             add = &adw::PreferencesGroup {
                                 set_title: "App Notifications",
-                                set_description: Some("Choose which applications can show notifications"),
+                                set_description: Some(
+                                    "Choose which applications can show notifications",
+                                ),
 
                                 #[name(app_listbox)]
                                 gtk::ListBox {
@@ -143,13 +151,16 @@ impl Component for NotificationsModel {
         let master_settings = gio::Settings::new(MASTER_SCHEMA);
         let apps = load_notification_apps(&master_settings);
 
-        let model = NotificationsModel {
+        let mut model = NotificationsModel {
             do_not_disturb: !master_settings.boolean("show-banners"),
             lock_screen_notifications: master_settings.boolean("show-in-lock-screen"),
             apps,
             selected_app: None,
             app_page: None,
+            settings_watchers: Vec::new(),
         };
+
+        model.setup_watchers(sender.input_sender());
 
         let widgets = view_output!();
         populate_app_list(&widgets.app_listbox, &model.apps, sender.input_sender());
@@ -168,13 +179,17 @@ impl Component for NotificationsModel {
             NotificationsInput::ToggleDoNotDisturb(value) => {
                 self.do_not_disturb = value;
                 let settings = gio::Settings::new(MASTER_SCHEMA);
-                let _ = settings.set_boolean("show-banners", !value);
+                if let Err(e) = settings.set_boolean("show-banners", !value) {
+                    eprintln!("GSettings 'show-banners' yozishda xato: {e}");
+                }
             }
 
             NotificationsInput::ToggleLockScreen(value) => {
                 self.lock_screen_notifications = value;
                 let settings = gio::Settings::new(MASTER_SCHEMA);
-                let _ = settings.set_boolean("show-in-lock-screen", value);
+                if let Err(e) = settings.set_boolean("show-in-lock-screen", value) {
+                    eprintln!("GSettings 'show-in-lock-screen' yozishda xato: {e}");
+                }
             }
 
             NotificationsInput::OpenApp(app_id) => {
@@ -183,7 +198,6 @@ impl Component for NotificationsModel {
                     self.mount_app_page(index, widgets, &sender);
                     self.update_view(widgets, sender.clone());
                     widgets.nav_view.push_by_tag("detail");
-                    return;
                 }
             }
 
@@ -205,6 +219,15 @@ impl Component for NotificationsModel {
 
                 populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
             }
+
+            NotificationsInput::RefreshApps => {
+                let settings = gio::Settings::new(MASTER_SCHEMA);
+                self.apps = load_notification_apps(&settings);
+
+                self.setup_watchers(sender.input_sender());
+
+                populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
+            }
         }
 
         self.update_view(widgets, sender);
@@ -212,6 +235,21 @@ impl Component for NotificationsModel {
 }
 
 impl NotificationsModel {
+    fn setup_watchers(&mut self, input_sender: &relm4::Sender<NotificationsInput>) {
+        self.settings_watchers.clear();
+
+        for app in &self.apps {
+            let settings = app_settings_for_canonical(&app.canonical_id);
+            let sender_clone = input_sender.clone();
+
+            settings.connect_changed(None, move |_, _| {
+                let _ = sender_clone.send(NotificationsInput::RefreshApps);
+            });
+
+            self.settings_watchers.push(settings);
+        }
+    }
+
     fn mount_app_page(
         &mut self,
         index: usize,
@@ -285,7 +323,6 @@ fn build_app_row(
     suffix_box.append(&arrow);
 
     row.add_suffix(&suffix_box);
-
     row.connect_activated(move |_| {
         let _ = sender.send(NotificationsInput::OpenApp(app.app_id.clone()));
     });
@@ -330,25 +367,20 @@ fn load_notification_apps(master_settings: &gio::Settings) -> Vec<AppNotificatio
 
         let icon = app_info.icon();
 
+        let path = format!("{APP_PREFIX}{canonical_id}/");
+        let settings = gio::Settings::with_path(APP_SCHEMA, &path);
+
         seen.insert(canonical_id.clone());
-        items.push(AppNotificationItem {
-            app_id: strip_desktop_suffix(&app_id),
-            canonical_id: canonical_id.clone(),
+        items.push(app_item_from_settings(
+            &settings,
+            &strip_desktop_suffix(&app_id),
+            &canonical_id,
             title,
             icon,
-            enable: app_bool_from_canonical(&canonical_id, "enable"),
-            enable_sound_alerts: app_bool_from_canonical(&canonical_id, "enable-sound-alerts"),
-            show_banners: app_bool_from_canonical(&canonical_id, "show-banners"),
-            force_expanded: app_bool_from_canonical(&canonical_id, "force-expanded"),
-            show_in_lock_screen: app_bool_from_canonical(&canonical_id, "show-in-lock-screen"),
-            details_in_lock_screen: app_bool_from_canonical(
-                &canonical_id,
-                "details-in-lock-screen",
-            ),
-        });
+        ));
     }
 
-    items.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    items.sort_by_key(|a| a.title.to_lowercase());
     items
 }
 
@@ -377,7 +409,7 @@ fn maybe_add_app_from_canonical(
         return;
     }
 
-    let app_info: gio::AppInfo = desktop.clone().upcast();
+    let app_info: gio::AppInfo = desktop.upcast();
     let title = app_info.name().to_string();
     if title.is_empty() {
         return;
@@ -386,8 +418,25 @@ fn maybe_add_app_from_canonical(
     let icon = app_info.icon();
 
     seen.insert(canonical_id.to_string());
-    items.push(AppNotificationItem {
-        app_id: strip_desktop_suffix(full_app_id.as_str()),
+
+    items.push(app_item_from_settings(
+        &settings,
+        &strip_desktop_suffix(full_app_id.as_str()),
+        canonical_id,
+        title,
+        icon,
+    ));
+}
+
+fn app_item_from_settings(
+    settings: &gio::Settings,
+    app_id: &str,
+    canonical_id: &str,
+    title: String,
+    icon: Option<gio::Icon>,
+) -> AppNotificationItem {
+    AppNotificationItem {
+        app_id: app_id.to_string(),
         canonical_id: canonical_id.to_string(),
         title,
         icon,
@@ -397,7 +446,7 @@ fn maybe_add_app_from_canonical(
         force_expanded: settings.boolean("force-expanded"),
         show_in_lock_screen: settings.boolean("show-in-lock-screen"),
         details_in_lock_screen: settings.boolean("details-in-lock-screen"),
-    });
+    }
 }
 
 fn canonicalize_app_id(app_id: &str) -> String {

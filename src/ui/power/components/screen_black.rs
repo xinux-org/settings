@@ -22,18 +22,13 @@ pub enum AutoScreenBlankMsg {
     Delay(u32),
 }
 
-#[derive(Debug)]
-pub enum AutoScreenBlankOutput {
-    Noop,
-}
-
 const BLANK_SCREEN_DEFAULT: u32 = 300;
 
 #[relm4::component(pub)]
 impl Component for AutoScreenBlank {
     type Init = (PowerSettings, Vec<u32>);
     type Input = AutoScreenBlankMsg;
-    type Output = AutoScreenBlankOutput;
+    type Output = ();
     type CommandOutput = ();
 
     view! {
