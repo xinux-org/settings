@@ -1,14 +1,15 @@
 use relm4::adw::prelude::*;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, Default};
-
-use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
-use crate::ui::mouse::components::single_choice::{
-    RowOption, SingleChoice, SingleChoiceInit, SingleChoiceOutput,
+use crate::ui::mouse::{
+    components::{
+        choice::{Alternate, Choice, ChoiceInit, Default},
+        pointer_speed::{PointerSpeed, PointerSpeedInit},
+        single_choice::{RowOption, SingleChoice, SingleChoiceInit, SingleChoiceOutput},
+        template::ChoiceWidget,
+    },
+    mouse_page::{MouseMsg, MouseSettings},
 };
-use crate::ui::mouse::components::template::ChoiceWidget;
-use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
 
 #[derive(Debug)]
 pub struct ScrollMethod {
@@ -282,7 +283,6 @@ impl SimpleComponent for Touchpad {
                 key: "tap-to-click".to_string(),
                 settings: settings.touchpad.clone(),
                 row_option: RowOption {
-                    value: tap_to_click.to_variant(),
                     media: tap_to_click_media.clone(),
                     title: "Tap to Click".to_string(),
                     subtitle: "Quickly touch the touchpad to click".to_string(),

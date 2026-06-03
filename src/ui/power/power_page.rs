@@ -4,8 +4,10 @@ use relm4::gtk;
 use relm4::prelude::*;
 use std::convert::identity;
 
-use crate::ui::power::general_page::{GeneralPowerPageView, get_battery_path};
-use crate::ui::power::power_saving::SavingPowerPageView;
+use crate::ui::power::{
+    general_page::{GeneralPowerPageView, get_battery_path},
+    power_saving::SavingPowerPageView,
+};
 
 #[derive(Debug)]
 pub struct PowerModel {

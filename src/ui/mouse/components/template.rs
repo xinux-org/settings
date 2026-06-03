@@ -4,7 +4,6 @@ use relm4::{
     prelude::*,
 };
 
-
 #[relm4::widget_template(pub)]
 impl WidgetTemplate for ChoiceWidget {
     view! {
@@ -15,7 +14,7 @@ impl WidgetTemplate for ChoiceWidget {
             set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: false,
-                
+
 
                 #[name(header)]
                 gtk::Box {

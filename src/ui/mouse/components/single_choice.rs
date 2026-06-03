@@ -1,4 +1,3 @@
-use adw::glib::Variant;
 use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
@@ -8,7 +7,6 @@ use relm4::{
 
 #[derive(Debug, Clone)]
 pub struct RowOption {
-    pub value: Variant,
     pub media: gtk::MediaFile,
     pub title: String,
     pub subtitle: String,
@@ -18,9 +16,6 @@ pub struct RowOption {
 
 #[derive(Debug, Clone)]
 pub struct SingleChoice {
-    pub key: String,
-    pub settings: Settings,
-
     pub row_option: RowOption,
 }
 
@@ -181,9 +176,6 @@ impl SimpleComponent for SingleChoice {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
-            key: init.key,
-            settings: init.settings,
-
             row_option: init.row_option,
         };
 

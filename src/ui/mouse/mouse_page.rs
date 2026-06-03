@@ -178,6 +178,10 @@ impl SimpleComponent for MouseModal {
         pointing_stick_switcher.set_icon_name(Some("pointer thinkpad"));
 
         let mut input = input::Libinput::new_with_udev(Interface);
+
+        // `udev_assign_seat` succeeds even if no input devices are
+        // currently available on this seat, or if devices are available
+        // but fail to open in `LibinputInterface::open_restricted`.
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 

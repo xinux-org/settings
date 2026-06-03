@@ -2,9 +2,13 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::components::choice::{Alternate, Choice, ChoiceInit, Default};
-use crate::ui::mouse::components::pointer_speed::{PointerSpeed, PointerSpeedInit};
-use crate::ui::mouse::mouse_page::{MouseMsg, MouseSettings};
+use crate::ui::mouse::{
+    components::{
+        choice::{Alternate, Choice, ChoiceInit, Default},
+        pointer_speed::{PointerSpeed, PointerSpeedInit},
+    },
+    mouse_page::{MouseMsg, MouseSettings},
+};
 
 #[derive(Debug)]
 pub struct Mouse {

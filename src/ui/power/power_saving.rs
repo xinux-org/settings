@@ -2,17 +2,18 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::power::general_page::PowerSettings;
-use crate::ui::power::power_page::PowerMsg;
-
-use crate::ui::power::components::auto_suspend::{
-    AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
+use crate::{
+    ui::power::{
+        components::{
+            auto_suspend::{AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput},
+            dim_screen::{DimScreen, DimScreenOutput},
+            screen_black::{AutoScreenBlank, AutoScreenBlankOutput},
+        },
+        general_page::PowerSettings,
+        power_page::PowerMsg,
+    },
+    utils::power::{SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
 };
-use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
-use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
-
-use crate::utils::power::SCREEN_BLANK_DELAY_VALUES;
-use crate::utils::power::SUSPEND_DELAY_VALUES;
 
 #[derive(Debug)]
 pub struct SavingPowerPageView {

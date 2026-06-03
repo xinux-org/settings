@@ -74,16 +74,9 @@ impl SimpleComponent for Choice {
                 gtk::Box {
                     set_valign: gtk::Align::Center,
 
-                    // styles [
-                    //   "header",
-                    // ]
-
                     #[name(prefixes)]
                     gtk::Box {
                       set_visible: false,
-                      // styles [
-                      //   "prefixes",
-                      // ]
                     },
 
                     #[name(title_box)]
@@ -92,45 +85,12 @@ impl SimpleComponent for Choice {
                         set_valign: gtk::Align::Center,
                         set_hexpand: true,
 
-                        // styles [
-                        //   "title",
-                        // ]
-
                         #[name(title)]
                         gtk::Label {
-                            // visible: bind $string_is_not_empty(title.label) as <bool>;
-                            // ellipsize: none;
                             set_margin_all: 16,
                             set_label: model.title.as_str(),
                             set_align: gtk::Align::Start,
-                            // lines: 0;
-                            // mnemonic-widget: template;
-                            // use-underline: bind template.use-underline;
-                            // selectable: bind template.title-selectable;
-                            // wrap: true;
-                            // wrap-mode: word_char;
-                            // xalign: 0;
-                            // use-markup: bind template.use-markup;
-
-                            // styles [
-                            //   "title",
-                            // ]
                         },
-
-                        // Label subtitle {
-                        //   visible: bind $string_is_not_empty(subtitle.label) as <bool>;
-                        //   ellipsize: none;
-                        //   lines: 0;
-                        //   selectable: bind template.subtitle-selectable;
-                        //   wrap: true;
-                        //   wrap-mode: word_char;
-                        //   xalign: 0;
-                        //   use-markup: bind template.use-markup;
-
-                        //   styles [
-                        //     "subtitle",
-                        //   ]
-                        // }
                     },
 
                     #[name(suffixes)]

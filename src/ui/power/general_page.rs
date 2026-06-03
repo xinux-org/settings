@@ -1,7 +1,16 @@
 use crate::{
-    ui::power::{battery_row::BatteryModel, power_page::PowerMsg},
-    utils::power::SCREEN_BLANK_DELAY_VALUES,
+    ui::power::{
+        battery_row::BatteryModel,
+        components::{
+            auto_suspend::{AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput},
+            dim_screen::{DimScreen, DimScreenOutput},
+            screen_black::AutoScreenBlank,
+        },
+        power_page::PowerMsg,
+    },
+    utils::power::{POWER_BUTTON_ACTIONS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
 };
+
 use ppd::PpdProxyBlocking;
 use regex::Regex;
 use relm4::{
@@ -16,15 +25,7 @@ use std::process::{Command, Stdio};
 use std::{fmt, fs, path::Path, sync::Arc};
 use zbus::blocking::Connection;
 
-use crate::ui::power::components::auto_suspend::{
-    AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
-};
-use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
-use crate::ui::power::components::screen_black::{AutoScreenBlank};
-
 use gtk::gio::Settings;
-
-use crate::utils::power::{POWER_BUTTON_ACTIONS, SUSPEND_DELAY_VALUES};
 
 #[derive(Debug, Clone)]
 pub struct PowerSettings {
@@ -118,15 +119,15 @@ pub enum PowerMode {
     Performance, // performance
     Balanced,    // balanced
     PowerSaver,  // power-saver
-    Disabled     // ppd disabled
+    Disabled,    // ppd disabled
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChargingMode {
     /// With a threshold
-    Preserve,    // with a threshold
+    Preserve, // with a threshold
     /// 100% without a threshold
-    Maximize,    // 100% without a threshold
+    Maximize, // 100% without a threshold
     /// couldn't find the threshold file
     Unsupported, // couldn't find the threshold file
 }
@@ -201,7 +202,7 @@ impl Component for GeneralPowerPageView {
 
             adw::PreferencesGroup {
                 set_title: "Power Mode",
-                set_visible: model.power_mode != PowerMode::Disabled, 
+                set_visible: model.power_mode != PowerMode::Disabled,
 
                 adw::ActionRow {
                     set_title: "Performance",
@@ -505,7 +506,11 @@ impl Component for GeneralPowerPageView {
 }
 
 fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
-    match proxy.active_profile().unwrap_or("disabled".to_string()).trim() {
+    match proxy
+        .active_profile()
+        .unwrap_or("disabled".to_string())
+        .trim()
+    {
         "balanced" => PowerMode::Balanced,
         "power-saver" => PowerMode::PowerSaver,
         "performance" => PowerMode::Performance,
