@@ -7,7 +7,7 @@ use crate::{
         components::{
             auto_suspend::{AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput},
             dim_screen::{DimScreen, DimScreenOutput},
-            screen_black::{AutoScreenBlank, AutoScreenBlankOutput},
+            screen_black::AutoScreenBlank,
         },
         general_page::PowerSettings,
         power_page::PowerMsg,
@@ -42,7 +42,6 @@ pub enum PowerSavingMsg {
     SetIdleDim(bool),
     AutomaticSuspendBattery(bool),
     AutomaticSuspendAC(bool),
-    Noop,
 }
 
 #[relm4::component(pub)]
@@ -120,10 +119,7 @@ impl Component for SavingPowerPageView {
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
             .launch((settings.to_owned(), SCREEN_BLANK_DELAY_VALUES.to_vec()))
-            .forward(sender.input_sender(), |out| match out {
-                // we do not need child and parent relationship in this case
-                AutoScreenBlankOutput::Noop => PowerSavingMsg::Noop,
-            });
+            .detach();
 
         let sleep_inactive_battery_type = matches!(
             (settings
@@ -146,7 +142,6 @@ impl Component for SavingPowerPageView {
                 values: SUSPEND_DELAY_VALUES.to_vec(),
             })
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => PowerSavingMsg::AutomaticSuspendAC(state),
             });
 
@@ -158,7 +153,6 @@ impl Component for SavingPowerPageView {
                 values: SUSPEND_DELAY_VALUES.to_vec(),
             })
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => {
                     PowerSavingMsg::AutomaticSuspendBattery(state)
                 }
@@ -226,7 +220,6 @@ impl Component for SavingPowerPageView {
                     self.sleep_inactive_ac_type = state;
                 }
             },
-            PowerSavingMsg::Noop => {}
         }
     }
 }

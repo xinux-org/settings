@@ -1,12 +1,12 @@
 use relm4::{
     adw::prelude::*,
-    gtk::{self},
+    gtk::{self, StringList},
     prelude::*,
 };
 
 use crate::ui::power::general_page::PowerSettings;
 use gettextrs::gettext;
-use relm4::gtk::StringList;
+
 #[derive(Debug)]
 pub struct AutomaticSuspend {
     power_settings: gtk::gio::Settings,
@@ -26,7 +26,6 @@ pub enum AutomaticSuspendMsg {
 
 #[derive(Debug)]
 pub enum AutomaticSuspendOutput {
-    Noop,
     Toggled(bool),
 }
 

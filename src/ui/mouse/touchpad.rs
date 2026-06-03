@@ -242,7 +242,6 @@ impl SimpleComponent for Touchpad {
             .detach();
 
         let click_method = settings.touchpad.string("click-method").to_string();
-        let secondary_click = click_method == "fingers";
         let secondary_click_controller = Choice::builder()
             .launch(ChoiceInit {
                 key: "click-method".to_string(),
@@ -278,8 +277,6 @@ impl SimpleComponent for Touchpad {
         let tap_to_click = settings.touchpad.boolean("tap-to-click");
         let tap_to_click_controller = SingleChoice::builder()
             .launch(SingleChoiceInit {
-                key: "tap-to-click".to_string(),
-                settings: settings.touchpad.clone(),
                 row_option: RowOption {
                     media: tap_to_click_media.clone(),
                     title: "Tap to Click".to_string(),

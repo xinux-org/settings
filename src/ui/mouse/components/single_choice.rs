@@ -1,4 +1,3 @@
-use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
     gtk::{self},
@@ -32,9 +31,6 @@ pub enum SingleChoiceOutput {
 
 #[derive(Debug)]
 pub struct SingleChoiceInit {
-    pub key: String,
-    pub settings: Settings,
-
     pub row_option: RowOption,
 }
 

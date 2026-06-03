@@ -1,7 +1,5 @@
 use crate::ui::window::AppMsg;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
+use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
 
 use crate::ui::power::{

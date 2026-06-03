@@ -21,8 +21,7 @@ use relm4::{
 
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
 
-use std::process::{Command, Stdio};
-use std::{fmt, fs, path::Path, sync::Arc};
+use std::{fmt, fs, path::Path, process::{Command, Stdio}, sync::Arc};
 use zbus::blocking::Connection;
 
 use gtk::gio::Settings;
@@ -57,9 +56,7 @@ impl fmt::Display for PowerMode {
 }
 
 #[derive(Debug)]
-#[tracker::track]
 pub struct GeneralPowerPageView {
-    #[tracker::do_not_track]
     pub settings: PowerSettings,
 
     pub power_mode: PowerMode,
@@ -71,30 +68,22 @@ pub struct GeneralPowerPageView {
     pub power_button_action: u32,
     pub battery_label_text: String,
 
-    #[tracker::do_not_track]
     pub power_button_action_row: Controller<SimpleComboRow<&'static str>>,
 
-    #[tracker::do_not_track]
     batteries: FactoryVecDeque<BatteryModel>,
 
-    #[tracker::do_not_track]
     pub ppd: Arc<PpdProxyBlocking<'static>>,
 
     // Power Saving Options
     /// Dim screen
     pub idle_dim: bool,
-    #[tracker::do_not_track]
     pub dim_screen_controller: Controller<DimScreen>,
-    #[tracker::do_not_track]
     pub auto_screen_black_controller: Controller<AutoScreenBlank>,
-    #[tracker::do_not_track]
     pub automatic_suspend_controller: Controller<AutomaticSuspend>,
 
     // Automatic Suspend
     /// While plugged in (ac => Alternating Current)
     pub sleep_inactive_ac_type: bool,
-    /// Suspend on AC timeout
-    pub sleep_inactive_ac_timeout: u16,
 }
 
 #[derive(Debug)]
@@ -111,7 +100,6 @@ pub enum GeneralPowerPageViewMsg {
     // no operation needed.
     // we do it just to avoit type Output
     // in child component handling
-    Noop,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -351,7 +339,6 @@ impl Component for GeneralPowerPageView {
             (settings.power.string("sleep-inactive-ac-type").as_str(),),
             ("suspend",)
         );
-        let sleep_inactive_ac_timeout = settings.power.int("sleep-inactive-ac-timeout") as u16;
         let power_button_action =
             get_power_button_action_enum(settings.power.string("power-button-action").to_string());
         let percentages_float = get_battery_percentages_float(read_file("capacity", "0".into()));
@@ -409,7 +396,6 @@ impl Component for GeneralPowerPageView {
                 values: SUSPEND_DELAY_VALUES.to_vec(),
             })
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Noop => GeneralPowerPageViewMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => {
                     GeneralPowerPageViewMsg::AutomaticSuspendAC(state)
                 }
@@ -429,7 +415,6 @@ impl Component for GeneralPowerPageView {
             power_button_action,
 
             ppd: Arc::new(proxy),
-            tracker: 0,
 
             // In case there is no battery
             idle_dim,
@@ -441,7 +426,6 @@ impl Component for GeneralPowerPageView {
 
             automatic_suspend_controller,
             sleep_inactive_ac_type,
-            sleep_inactive_ac_timeout,
         };
 
         let combo_row = model.power_button_action_row.widget();
@@ -500,7 +484,6 @@ impl Component for GeneralPowerPageView {
             GeneralPowerPageViewMsg::AutomaticSuspendAC(state) => {
                 self.sleep_inactive_ac_type = state
             }
-            GeneralPowerPageViewMsg::Noop => {}
         }
     }
 }
