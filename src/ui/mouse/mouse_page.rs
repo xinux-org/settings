@@ -18,6 +18,7 @@ use input;
 pub struct MouseSettings {
     pub mouse: Settings,
     pub touchpad: Settings,
+    pub pointingstick: Settings,
 }
 
 #[derive(Debug)]
@@ -34,6 +35,7 @@ impl MouseModal {
         MouseSettings {
             mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
             touchpad: Settings::new("org.gnome.desktop.peripherals.touchpad"),
+            pointingstick: Settings::new("org.gnome.desktop.peripherals.pointingstick"),
         }
     }
 }
@@ -147,7 +149,7 @@ impl SimpleComponent for MouseModal {
             .forward(_sender.input_sender(), identity);
 
         let pointing_stick = PointingStick::builder()
-            .launch(())
+            .launch(settings.clone())
             .forward(_sender.input_sender(), identity);
 
         let model = Self {
@@ -202,6 +204,7 @@ impl SimpleComponent for MouseModal {
             .collect();
 
         println!("Events: {:#?}", events);
+        println!("Events: {:#?}", trackpoints);
 
         if events.is_empty() {
             touchpad_swticher.set_visible(false);

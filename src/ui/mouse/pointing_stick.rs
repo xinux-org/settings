@@ -2,55 +2,103 @@ use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::ui::mouse::mouse_page::MouseMsg;
+use crate::ui::mouse::components::pointer_speed::PointerSpeedInit;
+use crate::ui::mouse::mouse_page::MouseSettings;
+use crate::ui::mouse::{components::pointer_speed::PointerSpeed, mouse_page::MouseMsg};
 
-#[derive(Debug, Clone)]
-pub struct PointingStick;
+#[derive(Debug)]
+pub struct PointingStick {
+    settings: MouseSettings,
+    speed_controller: Controller<PointerSpeed>,
+    accel_profile: bool,
+}
+
+#[derive(Debug)]
+pub enum PointingStickMsg {
+    MouseAcceleration(bool),
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for PointingStick {
-    type Init = ();
-    type Input = ();
+    type Init = MouseSettings;
+    type Input = PointingStickMsg;
     type Output = MouseMsg;
 
     view! {
         #[root]
         adw::PreferencesPage {
             add = &adw::PreferencesGroup {
-                set_title: "Pointic stick",
+                set_title: "Pointing Stick",
+
+                add = model.speed_controller.widget(),
+
                 add = &adw::ActionRow {
-                    set_title: "Primary Button",
-                    set_subtitle: "Order of physical buttons on mice and touchpads",
+                    set_title: "Pointing Stick Acceleration",
+                    set_subtitle: "Recommended for most users and applications",
+                    set_activatable_widget: Some(&mouse_acceleration),
                     add_suffix = &gtk::Box {
-                        set_spacing: 0,
-                        set_halign: gtk::Align::End,
+                        gtk::MenuButton {
+                            set_icon_name: "help-about",
+                            set_direction: gtk::ArrowType::Down,
+                            #[wrap(Some)]
+                            set_popover = &gtk::Popover {
+                                set_valign: gtk::Align::Center,
+                                gtk::Label {
+                                    set_label: "Turning pointing stick acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
+                                },
+                            },
+                        },
+                    },
+                    #[name = "mouse_acceleration"]
+                    add_suffix = &gtk::Switch {
                         set_valign: gtk::Align::Center,
-                        add_css_class: "linked",
-
-                        #[name= "left" ]
-                        append = &gtk::ToggleButton {
-                            set_group: Some(&right),
-                            set_label: "Left",
-                            set_active: true,
+                        #[watch]
+                        set_active: model.accel_profile,
+                        connect_state_set[sender] => move |_, state| {
+                            sender.input(PointingStickMsg::MouseAcceleration(state));
+                            gtk::glib::Propagation::Proceed
                         },
-
-                        #[name= "right" ]
-                        append = &gtk::ToggleButton {
-                            set_label: "Right",
-                        },
-                    }
+                    },
                 },
             },
         }
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self {};
+        let settings = init;
+
+        let acceleration = settings.pointingstick.string("accel-profile");
+        let accel_profile = acceleration.as_str() == "default";
+
+        let speed = settings.mouse.value("speed").get::<f64>().unwrap();
+        let speed_controller = PointerSpeed::builder()
+            .launch(PointerSpeedInit {
+                speed,
+                settings: settings.pointingstick.clone(),
+            })
+            .detach();
+
+        let model = Self {
+            settings, 
+            accel_profile
+            , speed_controller
+        };
+
         let widgets = view_output!();
         ComponentParts { model, widgets }
+    }
+
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+        match message {
+            PointingStickMsg::MouseAcceleration(state) => {
+                self.accel_profile = state;
+                let profile = if state { "default" } else { "flat" };
+                self.settings.pointingstick.set_string("accel-profile", profile);
+            }
+        }
     }
 }
