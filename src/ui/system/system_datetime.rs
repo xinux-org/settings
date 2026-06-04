@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::ui::system::system_page::SystemPageMsg;
 use gettextrs::gettext;
 use relm4::{
@@ -18,10 +20,10 @@ const _FILECHOOSER_SCHEMA: &str = "org.gtk.Settings.FileChooser";
 const _DATETIME_SCHEMA: &str = "org.gnome.desktop.datetime";
 const _AUTO_TIMEZONE_KEY: &str = "automatic-timezone";
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct SystemDateTimePage {
-    clock_settings: Option<gio::Settings>,
-    calendar_settings: Option<gio::Settings>,
+    clock_settings: gio::Settings,
+    calendar_settings: gio::Settings,
     active_clock_format: String,
     active_week_day: bool,
     active_date: bool,
@@ -30,12 +32,14 @@ pub struct SystemDateTimePage {
 }
 
 #[derive(Debug)]
-pub enum SystemDateTimeMsg {
+pub enum SystemDateTimeMsg<'a> {
     ToggleClockFormat(Option<String>),
     ToggleWeekDay(bool),
     ToggleDate(bool),
     ToggleSeconds(bool),
     ToggleWeekNumbers(bool),
+    ReloadFromGSettingsAll,
+    ReloadFromGSettings(&gio::Settings, &'a str),
 }
 
 #[relm4::component(pub)]
@@ -152,23 +156,44 @@ impl SimpleComponent for SystemDateTimePage {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let clock_settings = gio::Settings::new(CLOCK_SCHEMA);
-        let active_clock_format: String = clock_settings.string(CLOCK_FORMAT_KEY).to_string();
-        let active_week_day: bool = clock_settings.boolean(CLOCK_SHOW_WEEKDAY_KEY);
-        let active_date: bool = clock_settings.boolean(CLOCK_SHOW_DATE_KEY);
-        let active_seconds: bool = clock_settings.boolean(CLOCK_SHOW_SECONDS_KEY);
-
         let calendar_settings = gio::Settings::new(CALENDAR_SCHEMA);
-        let active_week_numbers: bool = calendar_settings.boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY);
+
+        for clock_settings_key in [
+            CLOCK_FORMAT_KEY,
+            CLOCK_SHOW_WEEKDAY_KEY,
+            CLOCK_SHOW_DATE_KEY,
+            CLOCK_SHOW_SECONDS_KEY,
+        ] {
+            let sender = sender.clone();
+
+            clock_settings.connect_changed(Some(clock_settings_key), move |settings, _key| {
+                sender.input(SystemDateTimeMsg::ReloadFromGSettings(
+                    &settings,
+                    clock_settings_key,
+                ));
+            });
+        }
+        for calendar_settings_key in [CALENDAR_SCHEMA, CALENDAR_SHOW_WEEK_NUMBERS_KEY] {
+            let sender = sender.clone();
+
+            calendar_settings.connect_changed(
+                Some(calendar_settings_key),
+                move |_settings, _key| {
+                    sender.input(SystemDateTimeMsg::ReloadFromGSettings);
+                },
+            );
+        }
 
         let model = Self {
-            clock_settings: Some(clock_settings),
-            calendar_settings: Some(calendar_settings),
-            active_clock_format,
-            active_week_day,
-            active_date,
-            active_seconds,
-            active_week_numbers,
+            clock_settings,
+            calendar_settings,
+            active_clock_format: String::default(),
+            active_week_day: false,
+            active_date: false,
+            active_seconds: false,
+            active_week_numbers: false,
         };
+        sender.input(SystemDateTimeMsg::ReloadFromGSettings);
 
         let widgets = view_output!();
 
@@ -186,37 +211,48 @@ impl SimpleComponent for SystemDateTimePage {
             SystemDateTimeMsg::ToggleClockFormat(time_format) => {
                 let _success = self
                     .clock_settings
-                    .clone()
-                    .map(|s| s.set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap()));
+                    .set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap());
                 self.active_clock_format = time_format.unwrap();
             }
             SystemDateTimeMsg::ToggleWeekDay(week_day) => {
                 let _success = self
                     .clock_settings
-                    .clone()
-                    .map(|s| s.set_boolean(CLOCK_SHOW_WEEKDAY_KEY, week_day));
+                    .set_boolean(CLOCK_SHOW_WEEKDAY_KEY, week_day);
                 self.active_week_day = week_day;
             }
             SystemDateTimeMsg::ToggleDate(date) => {
-                let _success = self
-                    .clock_settings
-                    .clone()
-                    .map(|s| s.set_boolean(CLOCK_SHOW_DATE_KEY, date));
+                let _success = self.clock_settings.set_boolean(CLOCK_SHOW_DATE_KEY, date);
                 self.active_date = date;
             }
             SystemDateTimeMsg::ToggleSeconds(seconds) => {
                 let _success = self
                     .clock_settings
-                    .clone()
-                    .map(|s| s.set_boolean(CLOCK_SHOW_SECONDS_KEY, seconds));
+                    .set_boolean(CLOCK_SHOW_SECONDS_KEY, seconds);
                 self.active_seconds = seconds;
             }
             SystemDateTimeMsg::ToggleWeekNumbers(week_numbers) => {
                 let _success = self
                     .calendar_settings
-                    .clone()
-                    .map(|s| s.set_boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY, week_numbers));
+                    .set_boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY, week_numbers);
                 self.active_week_numbers = week_numbers;
+            }
+            SystemDateTimeMsg::ReloadFromGSettingsAll => {
+                self.active_clock_format = self.clock_settings.string(CLOCK_FORMAT_KEY).into();
+                self.active_week_day = self.clock_settings.boolean(CLOCK_SHOW_WEEKDAY_KEY);
+                self.active_date = self.clock_settings.boolean(CLOCK_SHOW_DATE_KEY);
+                self.active_seconds = self.clock_settings.boolean(CLOCK_SHOW_SECONDS_KEY);
+                self.active_week_numbers = self
+                    .calendar_settings
+                    .boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY);
+            }
+            SystemDateTimeMsg::ReloadFromGSettings(settings, key) => {
+                self.active_clock_format = self.clock_settings.string(CLOCK_FORMAT_KEY).into();
+                self.active_week_day = self.clock_settings.boolean(CLOCK_SHOW_WEEKDAY_KEY);
+                self.active_date = self.clock_settings.boolean(CLOCK_SHOW_DATE_KEY);
+                self.active_seconds = self.clock_settings.boolean(CLOCK_SHOW_SECONDS_KEY);
+                self.active_week_numbers = self
+                    .calendar_settings
+                    .boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY);
             }
         }
     }
