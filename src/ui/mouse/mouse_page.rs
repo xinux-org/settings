@@ -2,6 +2,7 @@ use crate::ui::mouse::mouse::Mouse;
 use crate::ui::mouse::pointing_stick::PointingStick;
 use crate::ui::window::AppMsg;
 use gtk::gio::Settings;
+use input::Device;
 use relm4::adw::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
@@ -187,34 +188,55 @@ impl SimpleComponent for MouseModal {
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
-        let events: Vec<String> = input
+        // All Devices that has the Pointer capability
+        // Touchpads have Pointer and Gesture
+        // TrackPad doesn't have Gesture, only Pointer
+        // All Mouses have Pointer but not Gesture
+        let events: Vec<Device> = input
             .clone()
             .collect::<Vec<input::Event>>()
             .into_iter()
             .map(|event| event.device())
+            .filter(|device| device.has_capability(input::DeviceCapability::Pointer))
+            .collect();
+
+        // All Devices but in String
+        let devices: Vec<String> = events
+            .clone()
+            .into_iter()
+            .map(|device| device.name().to_string())
+            .collect();
+
+        // Filter out touchpads with Gesture
+        let touchpads: Vec<String> = events
+            .clone()
+            .into_iter()
             .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
             .map(|device| device.name().to_string())
             .collect();
 
-        let trackpoints: Vec<String> = events
+        // All Mouses and Touchpads has Pointer but only TrackPoint is called so
+        let trackpoint: Vec<String> = events
             .clone()
-            .iter()
+            .into_iter()
+            .filter(|device| device.has_capability(input::DeviceCapability::Pointer))
+            .map(|device| device.name().to_string())
             .filter(|name| name.contains("TrackPoint"))
-            .map(|name| name.to_string())
             .collect();
 
-        println!("Events: {:#?}", events);
-        println!("Events: {:#?}", trackpoints);
+        println!("Devices: {:#?}", devices);
+        println!("Touchpads: {:#?}", touchpads);
+        println!("Trackpoint: {:#?}", trackpoint);
 
-        if events.is_empty() {
+        if touchpads.is_empty() {
             touchpad_swticher.set_visible(false);
         }
 
-        if trackpoints.is_empty() {
+        if trackpoint.is_empty() {
             pointing_stick_switcher.set_visible(false);
         }
 
-        if events.is_empty() && trackpoints.is_empty() {
+        if touchpads.is_empty() && trackpoint.is_empty() {
             let title_stack = widgets.title_stack.clone();
             title_stack.set_visible_child_name("window_title");
         }
