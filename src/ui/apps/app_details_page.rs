@@ -47,7 +47,7 @@ impl SimpleComponent for AppDetailsPage {
                 #[name = "sandbox_banner"]
                 add_top_bar = &adw::Banner {
                     set_title: "App is not sandboxed",
-                    set_revealed: true,
+                    set_revealed: false,
                 },
 
                 #[wrap(Some)]
@@ -105,7 +105,7 @@ impl SimpleComponent for AppDetailsPage {
 
                                         connect_clicked[sender] => move |button| {
                                             sender.input(AppDetailsMsg::ShowDetails(
-                                                button.clone()
+                                                button.clone(),
                                             ));
                                         }
                                     }
@@ -143,6 +143,10 @@ impl SimpleComponent for AppDetailsPage {
                 .set_icon_name(Some("application-x-executable-symbolic"));
         }
 
+        widgets
+            .sandbox_banner
+            .set_revealed(!is_app_sandboxed(&model.app));
+
         setup_notifications_row(&model.app, &widgets.notifications_row);
 
         ComponentParts { model, widgets }
@@ -165,10 +169,23 @@ impl SimpleComponent for AppDetailsPage {
     }
 }
 
+// Detect Flatpak apps via X-Flatpak desktop key
+fn is_app_sandboxed(app: &AppEntry) -> bool {
+    let Some(app_id) = &app.app_id else {
+        return false;
+    };
+
+    let Some(desktop) = gio_unix::DesktopAppInfo::new(app_id) else {
+        return false;
+    };
+
+    desktop.string("X-Flatpak").is_some()
+}
+
 fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
     if let Some(settings) = app.notification_settings() {
         row.set_subtitle("Show system notifications");
-        row.set_sensitive(true);
+
         row.set_active(settings.boolean("enable"));
 
         let settings_for_toggle = settings.clone();
@@ -177,7 +194,9 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
             let value = row.is_active();
 
             if settings_for_toggle.boolean("enable") != value {
-                let _ = settings_for_toggle.set_boolean("enable", value);
+                if let Err(e) = settings_for_toggle.set_boolean("enable", value) {
+                    eprintln!("GSettings 'enable' yozishda xato: {e}");
+                }
             }
         });
 
@@ -210,10 +229,10 @@ impl AppEntry {
         let details = format!(
             "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
             self.name,
-            self.app_id.clone().unwrap_or_else(|| "—".to_string()),
-            self.canonical_id.clone().unwrap_or_else(|| "—".to_string()),
-            self.description.clone().unwrap_or_else(|| "—".to_string()),
-            self.executable.clone().unwrap_or_else(|| "—".to_string()),
+            self.app_id.as_deref().unwrap_or("—"),
+            self.canonical_id.as_deref().unwrap_or("—"),
+            self.description.as_deref().unwrap_or("—"),
+            self.executable.as_deref().unwrap_or("—"),
             if self.app_info.supports_files() {
                 "Yes"
             } else {
@@ -236,16 +255,8 @@ impl AppEntry {
         dialog.set_cancel_button(0);
         dialog.set_default_button(0);
 
-        if let Some(root) = button.root() {
-            if let Ok(window) = root.downcast::<gtk::Window>() {
-                dialog.show(Some(&window));
-            }
-        }
+        let window = button.root().and_then(|r| r.downcast::<gtk::Window>().ok());
+
+        dialog.show(window.as_ref());
     }
 }
-
-// impl AppDetailsPage {
-//     fn show_app_details_dialog(&self, button: &gtk::Button) {
-//         self.app.show_app_details_dialog(button);
-//     }
-// }
