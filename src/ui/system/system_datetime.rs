@@ -5,6 +5,7 @@ use relm4::{
     gtk::{self, gio},
     prelude::*,
 };
+use tracker;
 
 const CLOCK_SCHEMA: &str = "org.gnome.desktop.interface";
 const CLOCK_FORMAT_KEY: &str = "clock-format";
@@ -18,9 +19,12 @@ const _FILECHOOSER_SCHEMA: &str = "org.gtk.Settings.FileChooser";
 const _DATETIME_SCHEMA: &str = "org.gnome.desktop.datetime";
 const _AUTO_TIMEZONE_KEY: &str = "automatic-timezone";
 
+#[tracker::track]
 #[derive(Debug)]
 pub struct SystemDateTimePage {
+    #[tracker::do_not_track]
     clock_settings: gio::Settings,
+    #[tracker::do_not_track]
     calendar_settings: gio::Settings,
     active_clock_format: String,
     active_week_day: bool,
@@ -175,6 +179,7 @@ impl Component for SystemDateTimePage {
             active_date: false,
             active_seconds: false,
             active_week_numbers: false,
+            tracker: 0,
         };
         sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
 
@@ -188,36 +193,37 @@ impl Component for SystemDateTimePage {
         ComponentParts { model, widgets }
     }
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
+        self.reset();
         match message {
             SystemDateTimeMsg::Switcher(ToggleSwitcher::ClockFormat(time_format)) => {
                 let _success = self
                     .clock_settings
                     .set_string(CLOCK_FORMAT_KEY, time_format.as_deref().unwrap());
-                self.active_clock_format = time_format.unwrap();
+                self.set_active_clock_format(time_format.unwrap());
             }
             SystemDateTimeMsg::Switcher(ToggleSwitcher::WeekDay(week_day)) => {
                 self.clock_settings
                     .set_boolean(CLOCK_SHOW_WEEKDAY_KEY, week_day)
                     .ok();
-                self.active_week_day = week_day;
+                self.set_active_week_day(week_day);
             }
             SystemDateTimeMsg::Switcher(ToggleSwitcher::Date(date)) => {
                 self.clock_settings
                     .set_boolean(CLOCK_SHOW_DATE_KEY, date)
                     .ok();
-                self.active_date = date;
+                self.set_active_date(date);
             }
             SystemDateTimeMsg::Switcher(ToggleSwitcher::Seconds(seconds)) => {
                 self.clock_settings
                     .set_boolean(CLOCK_SHOW_SECONDS_KEY, seconds)
                     .ok();
-                self.active_seconds = seconds;
+                self.set_active_seconds(seconds);
             }
             SystemDateTimeMsg::Switcher(ToggleSwitcher::WeekNumbers(week_numbers)) => {
                 self.calendar_settings
                     .set_boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY, week_numbers)
                     .ok();
-                self.active_week_numbers = week_numbers;
+                self.set_active_week_numbers(week_numbers);
             }
             SystemDateTimeMsg::ReloadFromGSettingsAll => {
                 self.active_clock_format = self.clock_settings.string(CLOCK_FORMAT_KEY).into();
