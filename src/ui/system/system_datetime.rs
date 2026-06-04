@@ -32,14 +32,13 @@ pub struct SystemDateTimePage {
 }
 
 #[derive(Debug)]
-pub enum SystemDateTimeMsg<'a> {
+pub enum SystemDateTimeMsg {
     ToggleClockFormat(Option<String>),
     ToggleWeekDay(bool),
     ToggleDate(bool),
     ToggleSeconds(bool),
     ToggleWeekNumbers(bool),
     ReloadFromGSettingsAll,
-    ReloadFromGSettings(&gio::Settings, &'a str),
 }
 
 #[relm4::component(pub)]
@@ -166,11 +165,8 @@ impl SimpleComponent for SystemDateTimePage {
         ] {
             let sender = sender.clone();
 
-            clock_settings.connect_changed(Some(clock_settings_key), move |settings, _key| {
-                sender.input(SystemDateTimeMsg::ReloadFromGSettings(
-                    &settings,
-                    clock_settings_key,
-                ));
+            clock_settings.connect_changed(Some(clock_settings_key), move |_settings, _key| {
+                sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
             });
         }
         for calendar_settings_key in [CALENDAR_SCHEMA, CALENDAR_SHOW_WEEK_NUMBERS_KEY] {
@@ -179,7 +175,7 @@ impl SimpleComponent for SystemDateTimePage {
             calendar_settings.connect_changed(
                 Some(calendar_settings_key),
                 move |_settings, _key| {
-                    sender.input(SystemDateTimeMsg::ReloadFromGSettings);
+                    sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
                 },
             );
         }
@@ -193,7 +189,7 @@ impl SimpleComponent for SystemDateTimePage {
             active_seconds: false,
             active_week_numbers: false,
         };
-        sender.input(SystemDateTimeMsg::ReloadFromGSettings);
+        sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
 
         let widgets = view_output!();
 
@@ -237,15 +233,6 @@ impl SimpleComponent for SystemDateTimePage {
                 self.active_week_numbers = week_numbers;
             }
             SystemDateTimeMsg::ReloadFromGSettingsAll => {
-                self.active_clock_format = self.clock_settings.string(CLOCK_FORMAT_KEY).into();
-                self.active_week_day = self.clock_settings.boolean(CLOCK_SHOW_WEEKDAY_KEY);
-                self.active_date = self.clock_settings.boolean(CLOCK_SHOW_DATE_KEY);
-                self.active_seconds = self.clock_settings.boolean(CLOCK_SHOW_SECONDS_KEY);
-                self.active_week_numbers = self
-                    .calendar_settings
-                    .boolean(CALENDAR_SHOW_WEEK_NUMBERS_KEY);
-            }
-            SystemDateTimeMsg::ReloadFromGSettings(settings, key) => {
                 self.active_clock_format = self.clock_settings.string(CLOCK_FORMAT_KEY).into();
                 self.active_week_day = self.clock_settings.boolean(CLOCK_SHOW_WEEKDAY_KEY);
                 self.active_date = self.clock_settings.boolean(CLOCK_SHOW_DATE_KEY);
