@@ -69,6 +69,7 @@ impl Component for SystemDateTimePage {
                                 set_valign: gtk::Align::Center,
                                 set_homogeneous: true,
                                 #[watch]
+                                #[block_signal(toggle_handler)]
                                 set_active_name: Some(&model.active_clock_format),
                                 add = adw::Toggle {
                                     set_label: Some(&gettext("24-hour")),
@@ -80,9 +81,9 @@ impl Component for SystemDateTimePage {
                                     set_name: Some("12h"), // donʻt trans
                                     set_use_underline: true,
                                 },
-                                connect_active_name_notify[sender] => move |toogle| {
-                                    sender.input(SystemDateTimeMsg::Switcher(ToggleSwitcher::ClockFormat(toogle.active_name().map(|toogle| toogle.to_string()))))
-                                }
+                                connect_active_name_notify[sender] => move |toggle| {
+                                    sender.input(SystemDateTimeMsg::Switcher(ToggleSwitcher::ClockFormat(toggle.active_name().map(|toggle| toggle.to_string()))))
+                                } @toggle_handler,
                             },
                         },
                     },
@@ -186,7 +187,6 @@ impl Component for SystemDateTimePage {
 
         ComponentParts { model, widgets }
     }
-
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             SystemDateTimeMsg::Switcher(ToggleSwitcher::ClockFormat(time_format)) => {
