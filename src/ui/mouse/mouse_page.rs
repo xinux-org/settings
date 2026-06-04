@@ -188,10 +188,14 @@ impl SimpleComponent for MouseModal {
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
-        // All Devices that has the Pointer capability
+        // All Devices that have the Pointer capability
+        // are being filtered out because
         // Touchpads have Pointer and Gesture
         // TrackPad doesn't have Gesture, only Pointer
         // All Mouses have Pointer but not Gesture
+        //          Touchpad | Mouse | TrackPad
+        // Gesture |   ✅    |  ❌   |   ❌
+        // Pointer |   ✅    |  ✅   |   ✅
         let events: Vec<Device> = input
             .clone()
             .collect::<Vec<input::Event>>()
