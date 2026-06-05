@@ -57,19 +57,12 @@ impl Component for SavingPowerPageView {
                 // Dim Screen
                 model.dim_screen_controller.widget(),
 
-
-                adw::ActionRow {
+                adw::SwitchRow {
                     set_title: "Automatic Power Saver",
                     set_subtitle: "Turn on power saver made when battery power is low",
 
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.auto_power_saver,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PowerSavingMsg::SetAutoPowerSaver(state));
-                            gtk::glib::Propagation::Proceed
-                        },
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(PowerSavingMsg::SetAutoPowerSaver(row.is_active()));
                     },
                 }
             },

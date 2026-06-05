@@ -32,10 +32,9 @@ impl SimpleComponent for PointingStick {
 
                 add = model.speed_controller.widget(),
 
-                add = &adw::ActionRow {
+                add = &adw::SwitchRow {
                     set_title: "Pointing Stick Acceleration",
                     set_subtitle: "Recommended for most users and applications",
-                    set_activatable_widget: Some(&mouse_acceleration),
                     add_suffix = &gtk::Box {
                         gtk::MenuButton {
                             set_icon_name: "help-about",
@@ -49,15 +48,9 @@ impl SimpleComponent for PointingStick {
                             },
                         },
                     },
-                    #[name = "mouse_acceleration"]
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.accel_profile,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PointingStickMsg::MouseAcceleration(state));
-                            gtk::glib::Propagation::Proceed
-                        },
+                    
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(PointingStickMsg::MouseAcceleration(row.is_active()));
                     },
                 },
             },

@@ -264,20 +264,14 @@ impl Component for GeneralPowerPageView {
                     set_title: "Power Button Behavior",
                 },
 
-                adw::ActionRow {
+                adw::SwitchRow {
                     set_title: "Show Battery Percentage",
                     set_subtitle: "Show exact charge level in the top bar",
 
                     set_visible: model.show_batteries,
 
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.show_battery_percentage,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(GeneralPowerPageViewMsg::ToggleBatteryPercentage(state));
-                            gtk::glib::Propagation::Proceed
-                        },
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(GeneralPowerPageViewMsg::ToggleBatteryPercentage(row.is_active()));
                     },
                 },
             },

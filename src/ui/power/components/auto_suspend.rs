@@ -40,7 +40,6 @@ pub struct AutomaticSuspendInit {
 
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
-    // Label Text, Key, Settings, Labels, Values
     type Init = AutomaticSuspendInit;
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
@@ -49,18 +48,12 @@ impl Component for AutomaticSuspend {
     view! {
         #[root]
         adw::PreferencesGroup {
-            adw::ActionRow {
+            adw::SwitchRow {
                 set_title: model.suspend_text.as_str(),
 
-                add_suffix = &gtk::Switch {
-                    set_valign: gtk::Align::Center,
-                    #[watch]
-                    set_active: model.enabled,
-                    connect_state_set[sender] => move |_, state| {
-                        sender.input(AutomaticSuspendMsg::Toggle(state));
-                        gtk::glib::Propagation::Proceed
-                    },
-                },
+                connect_active_notify[sender] => move |row| {
+                    sender.input(AutomaticSuspendMsg::Toggle(row.is_active()));
+                }
             },
 
             adw::ComboRow {

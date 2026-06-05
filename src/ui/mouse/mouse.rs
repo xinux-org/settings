@@ -81,10 +81,9 @@ impl SimpleComponent for Mouse {
 
                 add = model.speed_controller.widget(),
 
-                add = &adw::ActionRow {
+                add = &adw::SwitchRow {
                     set_title: "Mouse Acceleration",
                     set_subtitle: "Recommended for most users and applications",
-                    set_activatable_widget: Some(&mouse_acceleration),
                     add_suffix = &gtk::Box {
                         gtk::MenuButton {
                             set_icon_name: "help-about",
@@ -98,16 +97,10 @@ impl SimpleComponent for Mouse {
                             },
                         },
                     },
-                    #[name = "mouse_acceleration"]
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.accel_profile,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(MousePageMsg::MouseAcceleration(state));
-                            gtk::glib::Propagation::Proceed
-                        },
-                    },
+
+                    connect_active_notify[sender] => move |row| {
+                            sender.input(MousePageMsg::MouseAcceleration(row.is_active()));
+                    }
                 },
 
                 add = model.natural_scroll_component.widget(),
