@@ -26,7 +26,7 @@ pub enum LanguageModelMsg {
     ToggleShowall,
     SetSelected(Option<String>, Option<String>),
     CheckSelected,
-    Rebuild(String, String, String), // single line nix path, argument and value
+    Rebuild(String, String), // single line nix argument and value
 }
 
 #[relm4::component(pub)]
@@ -142,10 +142,7 @@ impl SimpleComponent for LanguageModel {
             .map(|(_lang, val)| val.trim())
             .filter(|val| !val.is_empty());
 
-        let defaultlang = match currentlang {
-            Some(val) => val,
-            None => "",
-        };
+        let defaultlang = currentlang.unwrap_or_default();
 
         // List of 6 popular languages
         let mut shortlangs = vec!["uz_UZ.UTF-8", "en_US.UTF-8", "ru_RU.UTF-8"];
@@ -341,18 +338,13 @@ impl SimpleComponent for LanguageModel {
                 );
                 if let Some(val) = &self.selected {
                     sender.input(LanguageModelMsg::Rebuild(
-                        "modules/nixos/l10n/default.nix".to_string(),
                         "i18n.defaultLocale".to_string(),
                         val.to_string(),
                     ));
                 }
             }
-            LanguageModelMsg::Rebuild(relative_config_path, argument, value) => {
-                let _ = sender.output(SystemRegionLanguageMsg::Rebuild(
-                    relative_config_path,
-                    argument,
-                    value,
-                ));
+            LanguageModelMsg::Rebuild(argument, value) => {
+                let _ = sender.output(SystemRegionLanguageMsg::Rebuild(argument, value));
                 let _ = sender.output(SystemRegionLanguageMsg::SetDefaultDisplayLang(
                     self.default_display_lang.clone(),
                 ));

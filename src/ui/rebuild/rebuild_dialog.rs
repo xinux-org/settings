@@ -166,7 +166,7 @@ impl SimpleComponent for RebuildModel {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         self.reset();
         match message {
-            RebuildInput::Rebuild(output, target_config_file) => {
+            RebuildInput::Rebuild(output, target_config_file_path) => {
                 self.set_visible(true);
                 sender.input(RebuildInput::SetStatus(RebuildStatus::Building));
 
@@ -181,7 +181,7 @@ impl SimpleComponent for RebuildModel {
                         "--content",
                         &output,
                         "--path",
-                        &target_config_file,
+                        &target_config_file_path,
                         "--",
                         "switch",
                         "--flake",

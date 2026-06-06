@@ -35,7 +35,7 @@ pub enum RegionModelMsg {
     ToggleShowall,
     SetSelected(Option<String>),
     CheckSelected,
-    Rebuild(String, String, String), // single line nix path, argument and value
+    Rebuild(String, String), // single line nix argument and value
 }
 
 #[relm4::component(pub)]
@@ -371,18 +371,13 @@ impl SimpleComponent for RegionModel {
                 trace!("RegionModelMsg::CheckSelected {}", self.selected.is_some());
                 if let Some(val) = &self.selected {
                     sender.input(RegionModelMsg::Rebuild(
-                        "modules/nixos/l10n/default.nix".to_string(),
                         "time.timeZone".to_string(),
                         val.to_string(),
                     ));
                 }
             }
-            RegionModelMsg::Rebuild(relative_config_path, argument, value) => {
-                let _a = sender.output(SystemRegionLanguageMsg::Rebuild(
-                    relative_config_path,
-                    argument,
-                    value,
-                ));
+            RegionModelMsg::Rebuild(argument, value) => {
+                let _a = sender.output(SystemRegionLanguageMsg::Rebuild(argument, value));
             }
         }
     }

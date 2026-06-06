@@ -155,14 +155,12 @@ impl Component for SystemDateTimePage {
             CLOCK_SHOW_SECONDS_KEY,
         ] {
             let sender = sender.clone();
-
             clock_settings.connect_changed(Some(clock_settings_key), move |_settings, _key| {
                 sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
             });
         }
         for calendar_settings_key in [CALENDAR_SCHEMA, CALENDAR_SHOW_WEEK_NUMBERS_KEY] {
             let sender = sender.clone();
-
             calendar_settings.connect_changed(
                 Some(calendar_settings_key),
                 move |_settings, _key| {

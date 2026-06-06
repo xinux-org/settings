@@ -34,7 +34,7 @@ pub enum SystemPageMsg {
     OpenSystemUsersPage,
     OpenSystemAboutPage,
     OpenSystemUserPage(String),
-    Rebuild(String, String, String), // single line nix path, argument and value
+    Rebuild(String, String), // single line nix argument and value
 }
 
 #[relm4::component(pub)]
@@ -214,8 +214,8 @@ impl SimpleComponent for SystemPageModel {
                 let page = self.system_about.widget();
                 self.navigation.push(page);
             }
-            SystemPageMsg::Rebuild(relative_config_path, argument, value) => {
-                let _a = sender.output(AppMsg::Rebuild(relative_config_path, argument, value));
+            SystemPageMsg::Rebuild(argument, value) => {
+                let _a = sender.output(AppMsg::Rebuild(argument, value));
             }
         }
     }

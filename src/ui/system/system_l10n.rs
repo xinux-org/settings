@@ -23,7 +23,7 @@ pub enum SystemRegionLanguageMsg {
     ShowRegionDialog,
     // single line nix path, argument and value
     SetDefaultDisplayLang(String),
-    Rebuild(String, String, String),
+    Rebuild(String, String), // val, arg
     Close,
     LogOut,
     DoneRebuild,
@@ -128,12 +128,8 @@ impl SimpleComponent for SystemRegionLanguagePage {
             SystemRegionLanguageMsg::SetDefaultDisplayLang(lang) => {
                 self.default_display_lang = lang;
             }
-            SystemRegionLanguageMsg::Rebuild(relative_config_path, argument, value) => {
-                let _a = sender.output(SystemPageMsg::Rebuild(
-                    relative_config_path,
-                    argument,
-                    value,
-                ));
+            SystemRegionLanguageMsg::Rebuild(argument, value) => {
+                sender.output(SystemPageMsg::Rebuild(argument, value));
                 sender.input(SystemRegionLanguageMsg::Close);
                 sender.input(SystemRegionLanguageMsg::DoneRebuild);
             }

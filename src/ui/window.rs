@@ -24,11 +24,10 @@ use crate::{
     ui::rebuild::rebuild_dialog::{RebuildInit, RebuildModel},
 };
 
-use std::{convert::identity, fs, path::Path};
+use std::{convert::identity, fs};
 
 pub struct App {
     stack: adw::ViewStack,
-    #[allow(dead_code)]
     wifi: AsyncController<WifiModel>,
     #[allow(dead_code)]
     network: Controller<NetworkModel>,
@@ -36,17 +35,13 @@ pub struct App {
     bluetooth: Controller<BluetoothModel>,
     #[allow(dead_code)]
     display: Controller<DisplayModel>,
-    #[allow(dead_code)]
     appearance: AsyncController<AppearanceModel>,
     #[allow(dead_code)]
     sound: Controller<SoundModel>,
-    #[allow(dead_code)]
     power: Controller<PowerModel>,
     #[allow(dead_code)]
     multitasking: Controller<MultitaskingModel>,
-    #[allow(dead_code)]
     apps: Controller<AppModal>,
-    #[allow(dead_code)]
     notifications: Controller<NotificationsModel>,
     #[allow(dead_code)]
     search: Controller<SearchModal>,
@@ -56,13 +51,11 @@ pub struct App {
     sharing: Controller<SharingModel>,
     #[allow(dead_code)]
     wellbeing: Controller<WellbeingModel>,
-    #[allow(dead_code)]
     mouse: Controller<MouseModal>,
     #[allow(dead_code)]
     accessibility: Controller<AccessibilityModel>,
     #[allow(dead_code)]
     privacyandsecurity: Controller<PrivacyAndSecurityModel>,
-    #[allow(dead_code)]
     system: Controller<SystemPageModel>,
 
     config: NixDataConfig,
@@ -80,7 +73,7 @@ pub struct AppInit {
 
 #[derive(Debug)]
 pub enum AppMsg {
-    Rebuild(String, String, String), // single line nix path, argument and value
+    Rebuild(String, String), // single line nix argument and value
     Reload,
     Quit,
 }
@@ -110,16 +103,6 @@ impl SimpleComponent for App {
                 sender.input(AppMsg::Quit);
                 glib::Propagation::Stop
             },
-
-            // #[wrap(Some)]
-            // set_help_overlay: shortcuts = &gtk::Builder::from_resource(
-            //         "/uz/xinux/Settings/gtk/help-overlay.ui"
-            //     )
-            //     .object::<gtk::ShortcutsWindow>("help_overlay")
-            //     .unwrap() -> gtk::ShortcutsWindow {and
-            //         set_transient_for: Some(&main_window),
-            //         set_application: Some(&main_application()),
-            // },
 
             add_css_class?: if PROFILE == "Devel" {
                     Some("devel")
@@ -269,11 +252,11 @@ impl SimpleComponent for App {
         relm4::view! {
           view_stack = &adw::ViewStack {
               add_titled_with_icon: (model.wifi.widget(), Some("wifi"), "Wi-Fi", "network-wireless-symbolic"),
-              add_titled_with_icon: (model.network.widget(), Some("network"), "Network", "org.gnome.Settings-network-symbolic"),
-              add_titled_with_icon: (model.bluetooth.widget(), Some("display"), "Bluetooth", "org.gnome.Settings-bluetooth-symbolic"),
-              add_titled_with_icon: (model.display.widget(), Some("display"), "Display", "org.gnome.Settings-display-symbolic"),
+              // add_titled_with_icon: (model.network.widget(), Some("network"), "Network", "org.gnome.Settings-network-symbolic"),
+              // add_titled_with_icon: (model.bluetooth.widget(), Some("bluetooth"), "Bluetooth", "org.gnome.Settings-bluetooth-symbolic"),
+              // add_titled_with_icon: (model.display.widget(), Some("display"), "Display", "org.gnome.Settings-display-symbolic"),
               add_titled_with_icon: (model.appearance.widget(), Some("appearance"), "Appearance", "org.gnome.Settings-appearance-symbolic"),
-              add_titled_with_icon: (model.sound.widget(), Some("sound"), "Sound", "org.gnome.Settings-sound-symbolic"),
+              // add_titled_with_icon: (model.sound.widget(), Some("sound"), "Sound", "org.gnome.Settings-sound-symbolic"),
               add_titled_with_icon: (model.power.widget(), Some("power"), "Power", "org.gnome.Settings-power-symbolic"),
               // add_titled_with_icon: (multitasking.widget(), Some("multitasking"), "Multitasking", "org.gnome.Settings-multitasking-symbolic"),
               add_titled_with_icon: (model.apps.widget(), Some("apps"), "Apps", "org.gnome.Settings-applications-symbolic"),
@@ -334,16 +317,12 @@ impl SimpleComponent for App {
 
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
-            AppMsg::Rebuild(relative_config_path, argument, value) => {
-                // path to be written arg and val usually inside ./modules/nixos/. not configuration.nix
-                let full_config_path = Path::new(&self.config.flake.clone().unwrap())
-                    .parent()
-                    .context("systemconfig parent")
-                    .unwrap()
-                    .join(relative_config_path);
+            AppMsg::Rebuild(argument, value) => {
+                // path to be written arg and val usually inside configuration.nix
+                let configuration_nix: String = self.config.systemconfig.clone().unwrap();
 
                 // String type readed file. e.x: {}, "{...}:\n{\n  i18n.defaultLocale..
-                let full_config_string = fs::read_to_string(&full_config_path)
+                let full_config_string = fs::read_to_string(&configuration_nix)
                     .context("String type readed file")
                     .unwrap();
 
@@ -356,14 +335,9 @@ impl SimpleComponent for App {
                     )
                     .unwrap(),
                 );
-
-                self.rebuild_dialog.emit(RebuildInput::Rebuild(
-                    // self.modified_config.clone(),
-                    output.to_owned(),
-                    full_config_path.into_os_string().into_string().unwrap(),
-                ))
+                self.rebuild_dialog
+                    .emit(RebuildInput::Rebuild(output.to_owned(), configuration_nix))
             }
-
             AppMsg::Reload => {}
             AppMsg::Quit => main_application().quit(),
         }
