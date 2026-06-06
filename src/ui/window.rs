@@ -254,7 +254,7 @@ impl SimpleComponent for App {
               add_titled_with_icon: (model.wifi.widget(), Some("wifi"), "Wi-Fi", "network-wireless-symbolic"),
               // add_titled_with_icon: (model.network.widget(), Some("network"), "Network", "org.gnome.Settings-network-symbolic"),
               // add_titled_with_icon: (model.bluetooth.widget(), Some("bluetooth"), "Bluetooth", "org.gnome.Settings-bluetooth-symbolic"),
-              // add_titled_with_icon: (model.display.widget(), Some("display"), "Display", "org.gnome.Settings-display-symbolic"),
+              add_titled_with_icon: (model.display.widget(), Some("display"), "Display", "org.gnome.Settings-display-symbolic"),
               add_titled_with_icon: (model.appearance.widget(), Some("appearance"), "Appearance", "org.gnome.Settings-appearance-symbolic"),
               // add_titled_with_icon: (model.sound.widget(), Some("sound"), "Sound", "org.gnome.Settings-sound-symbolic"),
               add_titled_with_icon: (model.power.widget(), Some("power"), "Power", "org.gnome.Settings-power-symbolic"),
