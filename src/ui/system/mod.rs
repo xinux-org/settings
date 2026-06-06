@@ -1,5 +1,6 @@
 pub use system_page::SystemPageModel;
 
+mod components;
 mod system_about;
 mod system_datetime;
 mod system_l10n;

@@ -57,8 +57,8 @@ impl SimpleComponent for RebuildModel {
             set_visible: model.visible,
             set_modal: true,
             set_resizable: true,
-            set_default_width: 500,
-            set_default_height: 300,
+            set_default_width: 700,
+            set_default_height: 500,
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 gtk::Box {
@@ -68,21 +68,21 @@ impl SimpleComponent for RebuildModel {
                         RebuildStatus::Building => {
                             gtk::Spinner {
                                 set_spinning: true,
-                                set_height_request: 60,
+                                set_height_request: 32,
                             }
                         },
                         RebuildStatus::Success => {
                             gtk::Image {
                                 add_css_class: "success",
                                 set_icon_name: Some("object-select-symbolic"),
-                                set_pixel_size: 128,
+                                set_pixel_size: 64,
                             }
                         },
                         RebuildStatus::Error => {
                             gtk::Image {
                                 add_css_class: "error",
                                 set_icon_name: Some("dialog-error-symbolic"),
-                                set_pixel_size: 128,
+                                set_pixel_size: 64,
                             }
                         }
                     },
@@ -97,11 +97,11 @@ impl SimpleComponent for RebuildModel {
                     }
                 },
                 gtk::Frame {
-                    set_margin_start: 15,
-                    set_margin_end: 15,
-                    set_margin_bottom: 15,
+                    set_margin_start: 11,
+                    set_margin_end: 11,
+                    set_margin_bottom: 11,
                     gtk::ScrolledWindow {
-                        set_min_content_height: 80,
+                        set_min_content_height: 100,
                         #[local_ref]
                         terminal -> vte::Terminal {
                             set_vexpand: true,
@@ -166,7 +166,7 @@ impl SimpleComponent for RebuildModel {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         self.reset();
         match message {
-            RebuildInput::Rebuild(output, target_config_file) => {
+            RebuildInput::Rebuild(output, target_config_file_path) => {
                 self.set_visible(true);
                 sender.input(RebuildInput::SetStatus(RebuildStatus::Building));
 
@@ -181,7 +181,7 @@ impl SimpleComponent for RebuildModel {
                         "--content",
                         &output,
                         "--path",
-                        &target_config_file,
+                        &target_config_file_path,
                         "--",
                         "switch",
                         "--flake",
