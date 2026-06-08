@@ -135,7 +135,6 @@ impl Component for AutomaticSuspend {
                     None => 0,
                 };
 
-                println!("Seconds: {:?}\nIndex: {:?}\n\n\n\n\n", seconds, index);
                 let _ = self.power_settings.set_int(
                     format!("sleep-inactive-{}-timeout", self.key).as_str(),
                     seconds as i32,

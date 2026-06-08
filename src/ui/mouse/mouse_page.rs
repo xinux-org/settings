@@ -223,10 +223,6 @@ impl SimpleComponent for MouseModal {
             .filter(|name| name.contains("TrackPoint"))
             .collect();
 
-        println!("Devices: {:#?}", devices);
-        println!("Touchpads: {:#?}", touchpads);
-        println!("Trackpoint: {:#?}", trackpoint);
-
         if touchpads.is_empty() {
             touchpad_swticher.set_visible(false);
         }

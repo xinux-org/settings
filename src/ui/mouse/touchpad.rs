@@ -400,8 +400,6 @@ impl SimpleComponent for Touchpad {
             TouchpadMsg::ScrollMethod(state) => {
                 self.scroll_method = state;
 
-                println!("State: {:?}", state);
-
                 if state {
                     self.scroll_method_data.default.enabled = true;
                     self.scroll_method_data.alternate.enabled = false;

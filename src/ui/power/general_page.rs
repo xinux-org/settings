@@ -562,8 +562,6 @@ fn change_battery_threshold(_start: u8, end: u8) {
                 .stdin(Stdio::from(echo_child_stdout))
                 .output()
                 .await;
-
-            println!("{:?}", output.unwrap());
         });
     }
 }
@@ -607,8 +605,6 @@ fn decide_charging_mode() -> ChargingMode {
     if charging_modes.is_empty() {
         return ChargingMode::Unsupported;
     }
-
-    println!("{:?}", charging_modes);
 
     if charging_modes.contains(&(100)) {
         ChargingMode::Maximize
