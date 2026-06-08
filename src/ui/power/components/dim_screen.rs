@@ -1,8 +1,4 @@
-use relm4::{
-    adw::prelude::*,
-    gtk::{self},
-    prelude::*,
-};
+use relm4::{adw::prelude::*, prelude::*};
 
 #[derive(Debug)]
 pub struct DimScreen {

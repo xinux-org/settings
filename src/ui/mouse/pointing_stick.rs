@@ -1,10 +1,8 @@
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
-
-use crate::ui::mouse::components::pointer_speed::PointerSpeedInit;
-use crate::ui::mouse::mouse_page::MouseSettings;
-use crate::ui::mouse::{components::pointer_speed::PointerSpeed, mouse_page::MouseMsg};
+use crate::ui::mouse::{
+    components::pointer_speed::{PointerSpeed, PointerSpeedInit},
+    mouse_page::{MouseMsg, MouseSettings},
+};
+use relm4::{adw::prelude::*, gtk, prelude::*};
 
 #[derive(Debug)]
 pub struct PointingStick {
@@ -48,7 +46,7 @@ impl SimpleComponent for PointingStick {
                             },
                         },
                     },
-                    
+
                     connect_active_notify[sender] => move |row| {
                         sender.input(PointingStickMsg::MouseAcceleration(row.is_active()));
                     },
@@ -76,9 +74,9 @@ impl SimpleComponent for PointingStick {
             .detach();
 
         let model = Self {
-            settings, 
-            accel_profile
-            , speed_controller
+            settings,
+            accel_profile,
+            speed_controller,
         };
 
         let widgets = view_output!();
@@ -90,7 +88,9 @@ impl SimpleComponent for PointingStick {
             PointingStickMsg::MouseAcceleration(state) => {
                 self.accel_profile = state;
                 let profile = if state { "default" } else { "flat" };
-                self.settings.pointingstick.set_string("accel-profile", profile);
+                self.settings
+                    .pointingstick
+                    .set_string("accel-profile", profile);
             }
         }
     }

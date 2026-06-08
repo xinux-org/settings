@@ -21,7 +21,12 @@ use relm4::{
 
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
 
-use std::{fmt, fs, path::Path, process::{Command, Stdio}, sync::Arc};
+use std::{
+    fmt, fs,
+    path::Path,
+    process::{Command, Stdio},
+    sync::Arc,
+};
 use zbus::blocking::Connection;
 
 use gtk::gio::Settings;
@@ -96,7 +101,6 @@ pub enum GeneralPowerPageViewMsg {
     // Automatic Suspend
     SetIdleDim(bool),
     AutomaticSuspendAC(bool),
-
     // no operation needed.
     // we do it just to avoit type Output
     // in child component handling

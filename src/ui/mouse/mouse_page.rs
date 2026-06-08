@@ -1,19 +1,14 @@
-use crate::ui::mouse::mouse::Mouse;
-use crate::ui::mouse::pointing_stick::PointingStick;
-use crate::ui::window::AppMsg;
+use crate::{
+    ui::{
+        mouse::{mouse::Mouse, pointing_stick::PointingStick, touchpad::Touchpad},
+        window::AppMsg,
+    },
+    utils::input::Interface,
+};
 use gtk::gio::Settings;
-use input::Device;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
+use input::{self, Device, event::EventTrait};
+use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
-
-use crate::ui::mouse::touchpad::Touchpad;
-use input::event::EventTrait;
-
-use crate::utils::input::Interface;
-
-use input;
 
 #[derive(Debug, Clone)]
 pub struct MouseSettings {

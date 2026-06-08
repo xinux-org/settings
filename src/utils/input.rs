@@ -1,8 +1,6 @@
 use input::LibinputInterface;
 use libc::{O_ACCMODE, O_RDONLY, O_RDWR, O_WRONLY};
-use std::fs::OpenOptions;
-use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
-use std::path::Path;
+use std::{fs::OpenOptions, os::unix::{fs::OpenOptionsExt, io::OwnedFd}, path::Path};
 
 pub struct Interface;
 

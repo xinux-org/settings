@@ -1,6 +1,4 @@
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
+use relm4::{adw::prelude::*, gtk, prelude::*};
 
 use crate::ui::mouse::{
     components::{
