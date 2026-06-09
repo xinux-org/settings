@@ -1,5 +1,6 @@
 use crate::ui::notifications::app_notification::app_settings_for_canonical;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
+use tracing_subscriber::fmt::format;
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {
@@ -119,6 +120,26 @@ impl SimpleComponent for AppDetailsPage {
                                 adw::SwitchRow {
                                     set_title: "Notifications",
                                 }
+                            },
+
+                            adw::PreferencesGroup {
+                                set_title: "General",
+
+                                #[name = "files_links_row"]
+                                adw::ActionRow {
+                                    set_title: "Files and Links",
+                                    set_subtitle: "File and link types that are opened by the app",
+
+                                    set_activatable: true
+                                },
+
+                                #[name = "storage_row"]
+                                adw::ActionRow {
+                                    set_title: "Storage",
+                                    set_subtitle: "Disk space being used",
+
+                                    set_activatable: true
+                                }
                             }
                         }
                     }
@@ -148,6 +169,7 @@ impl SimpleComponent for AppDetailsPage {
             .set_revealed(!is_app_sandboxed(&model.app));
 
         setup_notifications_row(&model.app, &widgets.notifications_row);
+        setup_files_links_row(&model.app, &widgets.files_links_row);
 
         ComponentParts { model, widgets }
     }
@@ -216,6 +238,24 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
         row.set_active(false);
         row.set_sensitive(false);
     }
+}
+
+fn setup_files_links_row(app: &AppEntry, row: &adw::ActionRow) {
+    let mime_types = app.app_info.supported_types();
+    let count = mime_types.len();
+
+    let label = gtk::Label::new(Some(&format!(
+        "{}, {}",
+        count,
+        if count == 1 { "type" } else { "types" }
+    )));
+
+    label.add_css_class("dim-label");
+
+    let arrow = gtk::Image::from_icon_name("go-next-symbolic");
+
+    row.add_suffix(&label);
+    row.add_suffix(&arrow);
 }
 
 impl AppEntry {

@@ -1,11 +1,8 @@
-use relm4::{
-    adw,
-    adw::prelude::*,
-    gtk,
-    gtk::{gio, glib},
-    prelude::*,
-};
-
+use relm4::adw;
+use relm4::adw::prelude::*;
+use relm4::gtk;
+use relm4::gtk::{gio, glib};
+use relm4::prelude::*;
 use std::collections::BTreeMap;
 
 #[derive(Debug)]
