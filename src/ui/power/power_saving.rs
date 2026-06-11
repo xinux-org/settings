@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 
 use crate::{
@@ -56,8 +57,8 @@ impl Component for SavingPowerPageView {
                 model.dim_screen_controller.widget(),
 
                 adw::SwitchRow {
-                    set_title: "Automatic Power Saver",
-                    set_subtitle: "Turn on power saver made when battery power is low",
+                    set_title: &gettext("Automatic Power Saver"),
+                    set_subtitle: &gettext("Turn on power saver made when battery power is low"),
 
                     connect_active_notify[sender] => move |row| {
                         sender.input(PowerSavingMsg::SetAutoPowerSaver(row.is_active()));
@@ -71,7 +72,7 @@ impl Component for SavingPowerPageView {
             },
 
             adw::PreferencesGroup {
-                set_title: "Automatic Suspend",
+                set_title: &gettext("Automatic Suspend"),
 
                 // On Battery Power
                 add: model.automatic_suspend_controller_battery.widget(),
@@ -84,7 +85,7 @@ impl Component for SavingPowerPageView {
 
             adw::PreferencesGroup {
                 adw::ActionRow {
-                    set_title: "Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled.",
+                    set_title: &gettext("Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled."),
 
                     #[watch]
                     set_visible: !model.sleep_inactive_battery_type || !model.sleep_inactive_ac_type,

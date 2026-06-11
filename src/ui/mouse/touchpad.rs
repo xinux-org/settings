@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 
 use crate::ui::mouse::{
@@ -60,7 +61,7 @@ impl SimpleComponent for Touchpad {
         adw::PreferencesPage {
             add = &adw::PreferencesGroup {
                 add = &adw::SwitchRow {
-                    set_title: "Touchpad",
+                    set_title: &gettext("Touchpad"),
                     set_active: model.send_events,
 
                     connect_active_notify[sender] => move |row| {
@@ -71,10 +72,10 @@ impl SimpleComponent for Touchpad {
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "General",
+                set_title: &gettext("General"),
 
                 add = &adw::SwitchRow {
-                    set_title: "Disable Touchpad While Typing",
+                    set_title: &gettext("Disable Touchpad While Typing"),
                     set_active: model.disable_while_typing,
 
                     connect_active_notify[sender] => move |row| {
@@ -87,7 +88,7 @@ impl SimpleComponent for Touchpad {
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "Clicking",
+                set_title: &gettext("Clicking"),
 
                 add = model.secondary_click_controller.widget(),
             },
@@ -100,7 +101,7 @@ impl SimpleComponent for Touchpad {
             add = &adw::PreferencesGroup {
                 #[watch]
                 set_sensitive: model.send_events,
-                set_title: "Scrolling",
+                set_title: &gettext("Scrolling"),
 
                 #[template]
                 add = &ChoiceWidget {
@@ -209,7 +210,7 @@ impl SimpleComponent for Touchpad {
 
             add = &adw::PreferencesGroup {
                 add = &adw::ButtonRow {
-                    set_title: "Test Settings",
+                    set_title: &gettext("Test Settings"),
                     set_end_icon_name: Some("go-next-symbolic"),
                 },
             },

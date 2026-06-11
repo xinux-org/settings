@@ -2,6 +2,7 @@ use crate::ui::mouse::{
     components::pointer_speed::{PointerSpeed, PointerSpeedInit},
     mouse_page::{MouseMsg, MouseSettings},
 };
+use gettextrs::gettext;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 
 #[derive(Debug)]
@@ -26,13 +27,13 @@ impl SimpleComponent for PointingStick {
         #[root]
         adw::PreferencesPage {
             add = &adw::PreferencesGroup {
-                set_title: "Pointing Stick",
+                set_title: &gettext("Pointing Stick"),
 
                 add = model.speed_controller.widget(),
 
                 add = &adw::SwitchRow {
-                    set_title: "Pointing Stick Acceleration",
-                    set_subtitle: "Recommended for most users and applications",
+                    set_title: &gettext("Pointing Stick Acceleration"),
+                    set_subtitle: &gettext("Recommended for most users and applications"),
                     add_suffix = &gtk::Box {
                         gtk::MenuButton {
                             set_icon_name: "help-about",
@@ -41,7 +42,7 @@ impl SimpleComponent for PointingStick {
                             set_popover = &gtk::Popover {
                                 set_valign: gtk::Align::Center,
                                 gtk::Label {
-                                    set_label: "Turning pointing stick acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
+                                    set_label: &gettext("Turning pointing stick acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use."),
                                 },
                             },
                         },

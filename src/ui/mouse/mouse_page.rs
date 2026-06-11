@@ -10,6 +10,8 @@ use input::{self, Device, event::EventTrait};
 use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
 
+use gettextrs::gettext;
+
 #[derive(Debug, Clone)]
 pub struct MouseSettings {
     pub mouse: Settings,
@@ -124,7 +126,7 @@ impl SimpleComponent for MouseModal {
             set_policy: adw::ViewSwitcherPolicy::Wide,
         },
         window_title = &adw::WindowTitle {
-            set_title: "Mouse & Touchpad",
+            set_title: &gettext("Mouse & Touchpad"),
         },
     }
 

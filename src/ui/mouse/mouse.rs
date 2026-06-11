@@ -1,4 +1,5 @@
 use relm4::{adw::prelude::*, gtk, prelude::*};
+use gettextrs::gettext;
 
 use crate::ui::mouse::{
     components::{
@@ -42,11 +43,11 @@ impl SimpleComponent for Mouse {
         #[name(mouse_stack_page)]
         adw::PreferencesPage {
             add = &adw::PreferencesGroup {
-                set_title: "General",
+                set_title: &gettext("General"),
                 #[name(primary_button_row)]
                 add = &adw::ActionRow {
-                    set_title: "Primary Button",
-                    set_subtitle: "Order of physical buttons on mice and touchpads",
+                    set_title: &gettext("Primary Button"),
+                    set_subtitle: &gettext("Order of physical buttons on mice and touchpads"),
 
                     add_suffix = &gtk::Box {
                         set_spacing: 0,
@@ -57,12 +58,12 @@ impl SimpleComponent for Mouse {
                         adw::ToggleGroup {
                             add = adw::Toggle {
                                 set_label: Some("Left"),
-                                set_name: Some("Left"),
+                                set_name: Some(&gettext("Left")),
                             },
 
                             add = adw::Toggle {
                                 set_label: Some("Right"),
-                                set_name: Some("Right"),
+                                set_name: Some(&gettext("Right")),
                             },
 
                             connect_active_name_notify[sender] => move |toggle| {
@@ -75,13 +76,13 @@ impl SimpleComponent for Mouse {
 
             #[name(mouse_group)]
             add = &adw::PreferencesGroup {
-                set_title: "Mouse",
+                set_title: &gettext("Mouse"),
 
                 add = model.speed_controller.widget(),
 
                 add = &adw::SwitchRow {
-                    set_title: "Mouse Acceleration",
-                    set_subtitle: "Recommended for most users and applications",
+                    set_title: &gettext("Mouse Acceleration"),
+                    set_subtitle: &gettext("Recommended for most users and applications"),
                     add_suffix = &gtk::Box {
                         gtk::MenuButton {
                             set_icon_name: "help-about",
@@ -90,7 +91,7 @@ impl SimpleComponent for Mouse {
                             set_popover = &gtk::Popover {
                                 set_valign: gtk::Align::Center,
                                 gtk::Label {
-                                    set_label: "Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use.",
+                                    set_label: &gettext("Turning mouse acceleration off can allow faster and more\nprecise movements, but can also make the mouse more difficult\nto use."),
                                 },
                             },
                         },
@@ -105,7 +106,7 @@ impl SimpleComponent for Mouse {
             },
             add = &adw::PreferencesGroup {
                 add = &adw::ButtonRow {
-                    set_title: "Test Settings",
+                    set_title: &gettext("Test Settings"),
                     set_end_icon_name: Some("go-next-symbolic"),
                 },
             },
@@ -140,13 +141,13 @@ impl SimpleComponent for Mouse {
             .launch(ChoiceInit {
                 key: "natural-scroll".to_string(),
                 settings: settings.mouse.clone(),
-                title: "Scroll Direction".to_string(),
+                title: gettext("Scroll Direction"),
 
                 default: Default {
                     value: false.to_variant(),
                     media: natural_scroll_default_media,
-                    title: "Traditional".to_string(),
-                    subtitle: "Scrolling moves the view".to_string(),
+                    title: gettext("Traditional"),
+                    subtitle: gettext("Scrolling moves the view"),
 
                     enabled: false.to_variant() == value,
                 },
@@ -154,8 +155,8 @@ impl SimpleComponent for Mouse {
                 alternate: Alternate {
                     value: true.to_variant(),
                     media: natural_scroll_alternate_media,
-                    title: "Natural".to_string(),
-                    subtitle: "Scrolling moves the view".to_string(),
+                    title: gettext("Natural"),
+                    subtitle: gettext("Scrolling moves the view"),
 
                     enabled: true.to_variant() == value,
                 },

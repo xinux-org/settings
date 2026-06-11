@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
 
@@ -106,7 +107,7 @@ impl SimpleComponent for PowerModel {
             set_policy: adw::ViewSwitcherPolicy::Wide,
         },
         window_title = &adw::WindowTitle {
-            set_title: "General",
+            set_title: &gettext("General"),
         },
     }
 

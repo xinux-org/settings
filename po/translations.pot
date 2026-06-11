@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-20 20:44+0500\n"
+"POT-Creation-Date: 2026-06-11 18:55+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,84 +86,181 @@ msgctxt "shortcut window"
 msgid "Quit"
 msgstr ""
 
-#: src/ui/window.rs:134
+#: src/ui/window.rs:135
 msgid "Settings"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:121 src/ui/power/reusables.rs:279
-msgid "15 minute"
+#: src/ui/power/general_page.rs:151
+msgid "Battery Charging"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:122 src/ui/power/reusables.rs:280
-msgid "20 minute"
+#: src/ui/power/general_page.rs:155
+msgid "Maximize Charge"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:123 src/ui/power/reusables.rs:281
-msgid "25 minute"
+#: src/ui/power/general_page.rs:156
+msgid "Uses all battery capacity. Degrades batteries more quickly."
 msgstr ""
 
-#: src/ui/power/power_saving.rs:124 src/ui/power/reusables.rs:282
-msgid "30 minute"
+#: src/ui/power/general_page.rs:176
+msgid "Preserve Battery Health"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:125 src/ui/power/reusables.rs:283
-msgid "45 minute"
+#: src/ui/power/general_page.rs:177
+msgid "Increases battery longevity by maintaining lower charge levels."
 msgstr ""
 
-#: src/ui/power/power_saving.rs:126 src/ui/power/reusables.rs:284
-msgid "1 hour"
+#: src/ui/power/general_page.rs:201
+msgid "Performance"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:127 src/ui/power/reusables.rs:285
-msgid "1 hour 20 minute"
+#: src/ui/power/general_page.rs:202
+msgid "High performance and power usage"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:128 src/ui/power/reusables.rs:286
-msgid "1 hour 30 minute"
+#: src/ui/power/general_page.rs:222
+msgid "Balanced"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:129 src/ui/power/reusables.rs:287
-msgid "1 hour 40 minute"
+#: src/ui/power/general_page.rs:223
+msgid "Standard performance and power usage"
 msgstr ""
 
-#: src/ui/power/power_saving.rs:130 src/ui/power/reusables.rs:288
-msgid "2 hours"
+#: src/ui/power/general_page.rs:243
+msgid "Power Saver"
 msgstr ""
 
-#: src/ui/power/reusables.rs:146 src/ui/power/reusables.rs:322
-msgid "1 minute"
+#: src/ui/power/general_page.rs:244
+msgid "Reduced performance and power usage"
 msgstr ""
 
-#: src/ui/power/reusables.rs:147
-msgid "2 minutes"
+#: src/ui/power/general_page.rs:264 src/ui/power/power_page.rs:110
+#: src/ui/mouse/mouse.rs:46 src/ui/mouse/touchpad.rs:75
+msgid "General"
 msgstr ""
 
-#: src/ui/power/reusables.rs:148
-msgid "3 minutes"
+#: src/ui/power/general_page.rs:269
+msgid "Power Button Behavior"
 msgstr ""
 
-#: src/ui/power/reusables.rs:149
-msgid "4 minutes"
+#: src/ui/power/general_page.rs:273
+msgid "Show Battery Percentage"
 msgstr ""
 
-#: src/ui/power/reusables.rs:150
-msgid "5 minutes"
+#: src/ui/power/general_page.rs:274
+msgid "Show exact charge level in the top bar"
 msgstr ""
 
-#: src/ui/power/reusables.rs:151
-msgid "8 minutes"
+#: src/ui/power/general_page.rs:287
+msgid "Power Saving"
 msgstr ""
 
-#: src/ui/power/reusables.rs:152
-msgid "10 minutes"
+#: src/ui/power/general_page.rs:311 src/ui/power/power_saving.rs:88
+msgid ""
+"Disabling automatic suspend will result in higher power consumption. It is "
+"recomended to keep automatic suspend enabled."
 msgstr ""
 
-#: src/ui/power/reusables.rs:153
-msgid "12 minutes"
+#: src/ui/power/power_saving.rs:60
+msgid "Automatic Power Saver"
 msgstr ""
 
-#: src/ui/power/reusables.rs:154
-msgid "15 minutes"
+#: src/ui/power/power_saving.rs:61
+msgid "Turn on power saver made when battery power is low"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:75
+msgid "Automatic Suspend"
+msgstr ""
+
+#: src/ui/mouse/mouse_page.rs:129
+msgid "Mouse & Touchpad"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:49
+msgid "Primary Button"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:50
+msgid "Order of physical buttons on mice and touchpads"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:61
+msgid "Left"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:66
+msgid "Right"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:79
+msgid "Mouse"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:84
+msgid "Mouse Acceleration"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:85 src/ui/mouse/pointing_stick.rs:36
+msgid "Recommended for most users and applications"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:94
+msgid ""
+"Turning mouse acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/touchpad.rs:213
+msgid "Test Settings"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:144
+msgid "Scroll Direction"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:149
+msgid "Traditional"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:150 src/ui/mouse/mouse.rs:159
+msgid "Scrolling moves the view"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:158
+msgid "Natural"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:30
+msgid "Pointing Stick"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:35
+msgid "Pointing Stick Acceleration"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:45
+msgid ""
+"Turning pointing stick acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:64
+msgid "Touchpad"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:78
+msgid "Disable Touchpad While Typing"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:91
+msgid "Clicking"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:104
+msgid "Scrolling"
 msgstr ""
 
 #: src/main.rs:35

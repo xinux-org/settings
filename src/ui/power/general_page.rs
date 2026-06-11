@@ -11,6 +11,7 @@ use crate::{
     utils::power::{POWER_BUTTON_ACTIONS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
 };
 
+use gettextrs::gettext;
 use ppd::PpdProxyBlocking;
 use regex::Regex;
 use relm4::{
@@ -147,12 +148,12 @@ impl Component for GeneralPowerPageView {
             },
 
             adw::PreferencesGroup {
-                set_title: "Battery Charging",
+                set_title: &gettext("Battery Charging"),
                 set_visible: model.charging_mode != ChargingMode::Unsupported,
 
                 adw::ActionRow {
-                    set_title: "Maximize Charge",
-                    set_subtitle: "Uses all battery capacity. Degrades batteries more quickly.",
+                    set_title: &gettext("Maximize Charge"),
+                    set_subtitle: &gettext("Uses all battery capacity. Degrades batteries more quickly."),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_maximize),
@@ -172,8 +173,8 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
-                    set_title: "Preserve Battery Health",
-                    set_subtitle: "Increases battery longevity by maintaining lower charge levels.",
+                    set_title: &gettext("Preserve Battery Health"),
+                    set_subtitle: &gettext("Increases battery longevity by maintaining lower charge levels."),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_preserve),
@@ -197,8 +198,8 @@ impl Component for GeneralPowerPageView {
                 set_visible: model.power_mode != PowerMode::Disabled,
 
                 adw::ActionRow {
-                    set_title: "Performance",
-                    set_subtitle: "High performance and power usage",
+                    set_title: &gettext("Performance"),
+                    set_subtitle: &gettext("High performance and power usage"),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_performance),
@@ -218,8 +219,8 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
-                    set_title: "Balanced",
-                    set_subtitle: "Standard performance and power usage",
+                    set_title: &gettext("Balanced"),
+                    set_subtitle: &gettext("Standard performance and power usage"),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_balanced),
@@ -239,8 +240,8 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
-                    set_title: "Power Saver",
-                    set_subtitle: "Reduced performance and power usage",
+                    set_title: &gettext("Power Saver"),
+                    set_subtitle: &gettext("Reduced performance and power usage"),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_powersaver),
@@ -260,17 +261,17 @@ impl Component for GeneralPowerPageView {
             },
 
             adw::PreferencesGroup {
-                set_title: "General",
+                set_title: &gettext("General"),
 
                 #[local_ref]
                 combo_row ->
                 adw::ComboRow {
-                    set_title: "Power Button Behavior",
+                    set_title: &gettext("Power Button Behavior"),
                 },
 
                 adw::SwitchRow {
-                    set_title: "Show Battery Percentage",
-                    set_subtitle: "Show exact charge level in the top bar",
+                    set_title: &gettext("Show Battery Percentage"),
+                    set_subtitle: &gettext("Show exact charge level in the top bar"),
 
                     set_visible: model.show_batteries,
 
@@ -283,7 +284,7 @@ impl Component for GeneralPowerPageView {
 
             // Dim Screen
             adw::PreferencesGroup {
-                set_title: "Power Saving",
+                set_title: &gettext("Power Saving"),
                 #[watch]
                 set_visible: !model.show_batteries,
                 add: model.dim_screen_controller.widget(),
@@ -307,7 +308,7 @@ impl Component for GeneralPowerPageView {
                 set_visible: !model.show_batteries,
 
                 adw::ActionRow {
-                    set_title: "Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled.",
+                    set_title: &gettext("Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled."),
 
                     #[watch]
                     set_visible: !model.sleep_inactive_ac_type,

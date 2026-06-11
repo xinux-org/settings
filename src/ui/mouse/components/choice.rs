@@ -1,4 +1,5 @@
 use adw::glib::Variant;
+use gettextrs::gettext;
 use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
@@ -88,7 +89,7 @@ impl SimpleComponent for Choice {
                         #[name(title)]
                         gtk::Label {
                             set_margin_all: 16,
-                            set_label: model.title.as_str(),
+                            set_label: &gettext(model.title.as_str()),
                             set_align: gtk::Align::Start,
                         },
                     },
@@ -195,7 +196,7 @@ impl SimpleComponent for Choice {
                                         set_xalign: 0.0,
                                         set_wrap: true,
                                         set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: model.default.title.as_str(),
+                                        set_label: &gettext(model.default.title.as_str()),
                                         add_css_class: "title",
                                     },
                                     #[name(default_option_subtitle)]
@@ -203,7 +204,7 @@ impl SimpleComponent for Choice {
                                         set_xalign: 0.0,
                                         set_wrap: true,
                                         set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: model.default.subtitle.as_str(),
+                                        set_label: &gettext(model.default.subtitle.as_str()),
                                         add_css_class: "subtitle",
                                     },
                                 },
@@ -299,7 +300,7 @@ impl SimpleComponent for Choice {
                                         set_xalign: 0.0,
                                         set_wrap: true,
                                         set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: model.alternate.title.as_str(),
+                                        set_label: &gettext(model.alternate.title.as_str()),
                                         add_css_class: "title",
                                     },
                                     #[name(alternative_option_subtitle)]
@@ -307,7 +308,7 @@ impl SimpleComponent for Choice {
                                         set_xalign: 0.0,
                                         set_wrap: true,
                                         set_wrap_mode: pango::WrapMode::WordChar,
-                                        set_label: model.alternate.subtitle.as_str(),
+                                        set_label: &gettext(model.alternate.subtitle.as_str()),
                                         add_css_class: "subtitle",
                                     },
                                 },
