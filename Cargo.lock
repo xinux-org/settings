@@ -4808,6 +4808,7 @@ dependencies = [
  "sysinfo",
  "thiserror 2.0.18",
  "tokio",
+ "toml",
  "tracing",
  "tracing-subscriber",
  "tracker",
@@ -4815,6 +4816,7 @@ dependencies = [
  "vte4",
  "walkdir",
  "wgpu",
+ "xdg",
  "zbus",
 ]
 
@@ -6699,6 +6701,12 @@ name = "writeable"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
+
+[[package]]
+name = "xdg"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fb433233f2df9344722454bc7e96465c9d03bff9d77c248f9e7523fe79585b5"
 
 [[package]]
 name = "xdg-mime"

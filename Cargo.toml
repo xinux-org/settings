@@ -46,6 +46,8 @@ thiserror = "2.0.18"
 anyhow = "1.0.102"
 walkdir = "2.3"
 serde = { version = "1.0.228", features = ["derive"] }
+xdg = "3.0.0"
+toml = "1.1.2"
 
 # appearance page
 enquote = "1"

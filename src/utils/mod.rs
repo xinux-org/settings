@@ -3,6 +3,7 @@ pub mod input;
 pub mod language;
 pub mod modules;
 pub mod power;
+pub mod state;
 
 use allmytoes::{AMT, AMTConfiguration, ThumbSize};
 use relm4::gtk;

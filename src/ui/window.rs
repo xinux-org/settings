@@ -19,6 +19,7 @@ use crate::ui::{
     wellbeing::WellbeingModel, wifi::WifiModel,
 };
 use crate::utils::modules::load::LoadOutput;
+use crate::utils::state;
 use crate::{
     config::{APP_ID, PROFILE},
     ui::rebuild::rebuild_dialog::{RebuildInit, RebuildModel},
@@ -273,6 +274,9 @@ impl SimpleComponent for App {
               set_hhomogeneous: false,
           }
         }
+        state::get_state()
+            .and_then(|state| state.page)
+            .map(|page| view_stack.set_visible_child_name(&page.value()));
         model.stack = view_stack;
         let display_stack = model.stack.page(model.display.widget());
         display_stack.set_starts_section(true);
@@ -289,6 +293,14 @@ impl SimpleComponent for App {
             move |_| {
                 split_view.set_show_content(true);
             }
+        });
+
+        model.stack.connect_visible_child_name_notify(|stack| {
+            stack
+                .visible_child_name()
+                .map(|s| s.to_string())
+                .and_then(|name| state::Page::from_str(&name))
+                .map(|page| state::update_state(|state| state.page = Some(page)));
         });
 
         let mut actions = RelmActionGroup::<WindowActionGroup>::new();
