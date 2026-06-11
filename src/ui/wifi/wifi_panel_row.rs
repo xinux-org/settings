@@ -22,6 +22,7 @@ pub enum NetworkRowMsg {
 #[derive(Debug)]
 pub enum NetworkRowOutput {
     ConnectResult(Result<(), String>),
+    ShowQr(String),
 }
 
 #[relm4::factory(pub)]
@@ -118,7 +119,7 @@ impl FactoryComponent for WifiNetwork {
                 });
             },
             NetworkRowMsg::ClickQr(ssid) => {
-                println!("Clicked: {ssid}")
+                let _ = sender.output(NetworkRowOutput::ShowQr(ssid));
             }
         }
     }

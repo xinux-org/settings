@@ -1,9 +1,13 @@
+use core::{clone::Clone, convert::{AsRef, TryInto}};
+
 use crate::ui::{
     wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
+    wifi::wifi_qr_dialog::{WifiQrDialog, WifiQrInput},
     window::AppMsg,
 };
 use nmrs::NetworkManager;
 use relm4::{
+    Controller,
     adw::{self, prelude::*},
     factory::FactoryVecDeque,
     gtk::{
@@ -23,6 +27,7 @@ pub struct WifiModel {
     airplane_mode: bool,
     client: nmrs::NetworkManager,
     active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
+    qr_dialog: Controller<WifiQrDialog>,
     // Store the proxy to call methods later
     // proxy: Option<RfkillProxy<'static>>,
 }
@@ -52,6 +57,7 @@ pub enum WifiInput {
     LoadNetworks,
     ToggleWifi(bool),
     ToggleAirplaneMode(bool),
+    ShowQr(String),
     // Received update from System D-Bus
     // AirplaneModeChanged(bool),
     // ProxyInitialized(RfkillProxy<'static>),
@@ -200,6 +206,7 @@ impl SimpleAsyncComponent for WifiModel {
             .launch(adw::PreferencesGroup::new())
             .forward(sender.input_sender(), |msg| match msg {
                 NetworkRowOutput::ConnectResult(result) => WifiInput::ConnectResult(result),
+                NetworkRowOutput::ShowQr(ssid) => WifiInput::ShowQr(ssid),
             });
 
         let nm = NetworkManager::new()
@@ -212,6 +219,8 @@ impl SimpleAsyncComponent for WifiModel {
             WifiStack::WifiOff
         };
 
+        let qr_dialog = WifiQrDialog::builder().launch(()).detach();
+
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
             wifi_enabled: is_wifi_enabled(&nm).await,
@@ -222,6 +231,7 @@ impl SimpleAsyncComponent for WifiModel {
             airplane_mode: false,
             client: nm,
             active_toggle_task: None,
+            qr_dialog,
             // proxy: None,
         };
         let networks_group = model.networks.widget();
@@ -317,6 +327,10 @@ impl SimpleAsyncComponent for WifiModel {
                 Err(e) => eprintln!("Connection failed: {e}"),
             },
             WifiInput::ClearNetworksList => self.networks.guard().clear(),
+            WifiInput::ShowQr(ssid) => {
+                let (password, security) = get_wifi_credentials(&ssid).await;
+                self.qr_dialog.emit(WifiQrInput::Show { ssid, password, security });
+            }
             WifiInput::ToggleAirplaneMode(on) => {
                 // if let Some(ref proxy) = self.proxy {
                 //     // we let the D-Bus stream (above) tell us when it's done.
@@ -373,6 +387,118 @@ async fn set_wifi_enabled(client: nmrs::NetworkManager, enabled: bool) -> nmrs::
     // Control WiFi
     client.set_wifi_enabled(enabled).await?; // Disable WiFi
     Ok(())
+}
+
+type NMSettingsMap = std::collections::HashMap<String, std::collections::HashMap<String, zbus::zvariant::OwnedValue>>;
+
+#[zbus::proxy(
+    interface = "org.freedesktop.NetworkManager.Settings",
+    default_service = "org.freedesktop.NetworkManager",
+    default_path = "/org/freedesktop/NetworkManager/Settings"
+)]
+trait NMSettings {
+    fn list_connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
+}
+
+#[zbus::proxy(
+    interface = "org.freedesktop.NetworkManager.Settings.Connection",
+    default_service = "org.freedesktop.NetworkManager",
+    default_path = "/org/freedesktop/NetworkManager/Settings/1"
+)]
+trait NMConnection {
+    fn get_settings(&self) -> zbus::Result<NMSettingsMap>;
+    fn get_secrets(&self, setting_name: &str) -> zbus::Result<NMSettingsMap>;
+}
+
+async fn get_wifi_credentials(ssid: &str) -> (Option<String>, String) {
+    get_wifi_credentials_inner(ssid)
+        .await
+        .unwrap_or((None, "nopass".to_string()))
+}
+
+async fn get_wifi_credentials_inner(ssid: &str) -> zbus::Result<(Option<String>, String)> {
+    let conn = zbus::Connection::system().await?;
+    let nm_settings = NMSettingsProxy::new(&conn).await?;
+    let paths = nm_settings.list_connections().await?;
+
+    for path in paths {
+        let nm_conn = NMConnectionProxy::builder(&conn)
+            .path(path)?
+            .build()
+            .await?;
+
+        let Ok(map) = nm_conn.get_settings().await else {
+            continue;
+        };
+
+        let Some(wifi_section) = map.get("802-11-wireless") else {
+            continue;
+        };
+        let Some(ssid_val) = wifi_section.get("ssid") else {
+            continue;
+        };
+        let Some(conn_ssid) = nm_value_as_ssid(ssid_val) else {
+            continue;
+        };
+        if conn_ssid != ssid {
+            continue;
+        }
+
+        let security = map
+            .get("802-11-wireless-security")
+            .and_then(|sec| sec.get("key-mgmt"))
+            .and_then(nm_value_as_str)
+            .map(|km| match km.as_str() {
+                "wpa-psk" | "wpa-eap" | "wpa-eap-suite-b-192" => "WPA",
+                "none" => "WEP",
+                _ => "nopass",
+            })
+            .unwrap_or("nopass")
+            .to_string();
+
+        let password = nm_conn
+            .get_secrets("802-11-wireless-security")
+            .await
+            .ok()
+            .and_then(|secrets| {
+                secrets
+                    .get("802-11-wireless-security")
+                    .and_then(|sec| sec.get("psk"))
+                    .and_then(nm_value_as_str)
+                    .filter(|s| !s.is_empty())
+            });
+
+        return Ok((password, security));
+    }
+
+    Ok((None, "nopass".to_string()))
+}
+
+fn nm_value_as_ssid(val: &zbus::zvariant::OwnedValue) -> Option<String> {
+    if let zbus::zvariant::Value::Array(arr) = &**val {
+        let bytes: Vec<u8> = arr
+            .iter()
+            .filter_map(|v| {
+                if let zbus::zvariant::Value::U8(b) = v {
+                    Some(*b)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        String::from_utf8(bytes).ok()
+    } else {
+        None
+    }
+}
+
+fn nm_value_as_str(val: &zbus::zvariant::OwnedValue) -> Option<String> {
+    // let r = val.clone().try_to_owned();
+    if let zbus::zvariant::Value::Str(s) = &**val {
+        Some(s.as_str().to_string())
+    } else {
+        None
+    }
 }
 
 // async fn is_wifi_enabled() -> bool {
