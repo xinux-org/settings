@@ -53,6 +53,13 @@ impl SimpleComponent for PointingStick {
                     },
                 },
             },
+
+            add = &adw::PreferencesGroup {
+                add = &adw::ButtonRow {
+                    set_title: &gettext("Test Settings"),
+                    set_end_icon_name: Some("go-next-symbolic"),
+                },
+            },
         }
     }
 
