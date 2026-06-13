@@ -46,7 +46,7 @@ pkgs.mkShell {
     appstream
     appstream-glib
     wrapGAppsHook4
-    mold-wrapped
+    mold
     desktop-file-utils
     gobject-introspection
     libglycin
