@@ -10,7 +10,7 @@ pkgs.mkShell {
   name = "${manifest.name}";
 
   # Compile time dependencies
-  nativeBuildInputs = with pkgs; [
+  packages = with pkgs; [
     # Hail the Nix
     nixd
     statix
@@ -46,6 +46,7 @@ pkgs.mkShell {
     appstream
     appstream-glib
     wrapGAppsHook4
+    mold-wrapped
     desktop-file-utils
     gobject-introspection
     libglycin
@@ -65,6 +66,12 @@ pkgs.mkShell {
     libinput
     gtk4
   ];
+
+  shellHook = ''
+    export XDG_DATA_DIRS="${pkgs.gtk4}/share:${pkgs.libadwaita}/share:${pkgs.gsettings-desktop-schemas}/share:${pkgs.glib}/share:$XDG_DATA_DIRS"
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+    export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+  '';
 
   # Set Environment Variables
   RUST_BACKTRACE = "full";
