@@ -190,6 +190,7 @@ impl SimpleComponent for AppDetailsPage {
 }
 
 // Detect Flatpak apps via X-Flatpak desktop key
+// https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L279
 fn is_app_sandboxed(app: &AppEntry) -> bool {
     let Some(app_id) = &app.app_id else {
         return false;
@@ -243,7 +244,7 @@ fn setup_files_links_row(app: &AppEntry, row: &adw::ActionRow) {
     let count = mime_types.len();
 
     let label = gtk::Label::new(Some(&format!(
-        "{}, {}",
+        "{} {}",
         count,
         if count == 1 { "type" } else { "types" }
     )));
@@ -254,13 +255,13 @@ fn setup_files_links_row(app: &AppEntry, row: &adw::ActionRow) {
     row.add_suffix(&label);
     row.add_suffix(&arrow);
 
-    // if count == 0 {
-    //     row.set_sensitive(false);
-    // }
+    if count == 0 {
+        row.set_sensitive(false);
+    }
 }
 
 fn setup_storage_row(app: &AppEntry, row: &adw::ActionRow) {
-    let bytes = flatpak_user_data_size(app);
+    let bytes = flatpak_total_storage_size(app);
 
     let text = if bytes == 0 {
         "—".to_string()
@@ -277,18 +278,27 @@ fn setup_storage_row(app: &AppEntry, row: &adw::ActionRow) {
     row.add_suffix(&arrow);
 }
 
-fn flatpak_user_data_size(app: &AppEntry) -> u64 {
+fn flatpak_total_storage_size(app: &AppEntry) -> u64 {
     let Some(app_id) = &app.app_id else { return 0 };
-
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
 
+    let mut total = 0;
     let home = std::env::var("HOME").unwrap_or_default();
 
-    let path = std::path::PathBuf::from(home)
+    let user_data_path = std::path::PathBuf::from(&home)
         .join(".var/app")
         .join(flatpak_id);
+    total += dir_size(&user_data_path).unwrap_or(0);
 
-    dir_size(&path).unwrap_or(0)
+    let system_app_path = std::path::PathBuf::from("/var/lib/flatpak/app").join(flatpak_id);
+    total += dir_size(&system_app_path).unwrap_or(0);
+
+    let user_app_path = std::path::PathBuf::from(&home)
+        .join(".local/share/flatpak/app")
+        .join(flatpak_id);
+    total += dir_size(&user_app_path).unwrap_or(0);
+
+    total
 }
 
 fn dir_size(path: &std::path::Path) -> std::io::Result<u64> {
@@ -309,13 +319,10 @@ fn dir_size(path: &std::path::Path) -> std::io::Result<u64> {
 }
 
 fn format_bytes(bytes: u64) -> String {
-    match bytes {
-        0 => "—".to_string(),
-        b if b < 1_024 => format!("{} B", b),
-        b if b < 1_048_576 => format!("{:.1} KB", b as f64 / 1_024.0),
-        b if b < 1_073_741_824 => format!("{:.1} MB", b as f64 / 1_048_576.0),
-        b => format!("{:.1} GB", b as f64 / 1_073_741_824.0),
+    if bytes == 0 {
+        return "—".to_string();
     }
+    gtk::glib::format_size(bytes).to_string()
 }
 
 impl AppEntry {
