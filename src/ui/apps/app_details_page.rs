@@ -1,6 +1,5 @@
 use crate::ui::notifications::app_notification::app_settings_for_canonical;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
-use tracing_subscriber::fmt::format;
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {
@@ -127,20 +126,18 @@ impl SimpleComponent for AppDetailsPage {
 
                                 #[name = "files_links_row"]
                                 adw::ActionRow {
-                                    set_title: "Files and Links",
+                                    set_title: "Files & Links",
                                     set_subtitle: "File and link types that are opened by the app",
-
-                                    set_activatable: true
+                                    set_activatable: true,
                                 },
 
                                 #[name = "storage_row"]
                                 adw::ActionRow {
                                     set_title: "Storage",
                                     set_subtitle: "Disk space being used",
-
-                                    set_activatable: true
-                                }
-                            }
+                                    set_activatable: true,
+                                },
+                            },
                         }
                     }
                 }
@@ -170,6 +167,7 @@ impl SimpleComponent for AppDetailsPage {
 
         setup_notifications_row(&model.app, &widgets.notifications_row);
         setup_files_links_row(&model.app, &widgets.files_links_row);
+        setup_storage_row(&model.app, &widgets.storage_row);
 
         ComponentParts { model, widgets }
     }
@@ -249,13 +247,75 @@ fn setup_files_links_row(app: &AppEntry, row: &adw::ActionRow) {
         count,
         if count == 1 { "type" } else { "types" }
     )));
-
     label.add_css_class("dim-label");
 
     let arrow = gtk::Image::from_icon_name("go-next-symbolic");
 
     row.add_suffix(&label);
     row.add_suffix(&arrow);
+
+    // if count == 0 {
+    //     row.set_sensitive(false);
+    // }
+}
+
+fn setup_storage_row(app: &AppEntry, row: &adw::ActionRow) {
+    let bytes = flatpak_user_data_size(app);
+
+    let text = if bytes == 0 {
+        "—".to_string()
+    } else {
+        format_bytes(bytes)
+    };
+
+    let label = gtk::Label::new(Some(&text));
+    label.add_css_class("dim-label");
+
+    let arrow = gtk::Image::from_icon_name("go-next-symbolic");
+
+    row.add_suffix(&label);
+    row.add_suffix(&arrow);
+}
+
+fn flatpak_user_data_size(app: &AppEntry) -> u64 {
+    let Some(app_id) = &app.app_id else { return 0 };
+
+    let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
+
+    let home = std::env::var("HOME").unwrap_or_default();
+
+    let path = std::path::PathBuf::from(home)
+        .join(".var/app")
+        .join(flatpak_id);
+
+    dir_size(&path).unwrap_or(0)
+}
+
+fn dir_size(path: &std::path::Path) -> std::io::Result<u64> {
+    let mut total = 0u64;
+
+    for entry in std::fs::read_dir(path)? {
+        let entry = entry?;
+        let meta = entry.metadata()?;
+
+        if meta.is_dir() {
+            total += dir_size(&entry.path()).unwrap_or(0);
+        } else {
+            total += meta.len();
+        }
+    }
+
+    Ok(total)
+}
+
+fn format_bytes(bytes: u64) -> String {
+    match bytes {
+        0 => "—".to_string(),
+        b if b < 1_024 => format!("{} B", b),
+        b if b < 1_048_576 => format!("{:.1} KB", b as f64 / 1_024.0),
+        b if b < 1_073_741_824 => format!("{:.1} MB", b as f64 / 1_048_576.0),
+        b => format!("{:.1} GB", b as f64 / 1_073_741_824.0),
+    }
 }
 
 impl AppEntry {
