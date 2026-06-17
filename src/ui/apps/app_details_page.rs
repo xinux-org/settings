@@ -1,4 +1,5 @@
 use crate::ui::notifications::app_notification::app_settings_for_canonical;
+use gio_unix;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 
 #[derive(Debug, Clone)]
@@ -12,6 +13,13 @@ pub struct AppEntry {
     pub canonical_id: Option<String>,
 }
 
+pub struct AppStorageInfo {
+    app: u64,
+    data: u64,
+    cache: u64,
+    total: u64,
+}
+
 #[derive(Debug)]
 pub struct AppDetailsPage {
     app: AppEntry,
@@ -21,6 +29,7 @@ pub struct AppDetailsPage {
 pub enum AppDetailsMsg {
     OpenApp,
     ShowDetails(gtk::Button),
+    ShowStorage(adw::ActionRow),
 }
 
 #[relm4::component(pub)]
@@ -136,6 +145,11 @@ impl SimpleComponent for AppDetailsPage {
                                     set_title: "Storage",
                                     set_subtitle: "Disk space being used",
                                     set_activatable: true,
+
+
+                                    connect_activated[sender] => move |row| {
+                                        sender.input(AppDetailsMsg::ShowStorage(row.clone()));
+                                    }
                                 },
                             },
                         }
@@ -184,6 +198,10 @@ impl SimpleComponent for AppDetailsPage {
 
             AppDetailsMsg::ShowDetails(button) => {
                 self.app.show_app_details_dialog(&button);
+            }
+
+            AppDetailsMsg::ShowStorage(row) => {
+                self.app.show_storage_dialog(&row);
             }
         }
     }
@@ -261,12 +279,12 @@ fn setup_files_links_row(app: &AppEntry, row: &adw::ActionRow) {
 }
 
 fn setup_storage_row(app: &AppEntry, row: &adw::ActionRow) {
-    let bytes = flatpak_total_storage_size(app);
+    let info = calculate_storage(app);
 
-    let text = if bytes == 0 {
+    let text = if info.total == 0 {
         "—".to_string()
     } else {
-        format_bytes(bytes)
+        format_bytes(info.total)
     };
 
     let label = gtk::Label::new(Some(&text));
@@ -278,27 +296,51 @@ fn setup_storage_row(app: &AppEntry, row: &adw::ActionRow) {
     row.add_suffix(&arrow);
 }
 
-fn flatpak_total_storage_size(app: &AppEntry) -> u64 {
-    let Some(app_id) = &app.app_id else { return 0 };
-    let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
+fn calculate_storage(app: &AppEntry) -> AppStorageInfo {
+    let Some(app_id) = &app.app_id else {
+        return AppStorageInfo {
+            app: 0,
+            data: 0,
+            cache: 0,
+            total: 0,
+        };
+    };
 
-    let mut total = 0;
+    let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
     let home = std::env::var("HOME").unwrap_or_default();
 
-    let user_data_path = std::path::PathBuf::from(&home)
-        .join(".var/app")
-        .join(flatpak_id);
-    total += dir_size(&user_data_path).unwrap_or(0);
-
-    let system_app_path = std::path::PathBuf::from("/var/lib/flatpak/app").join(flatpak_id);
-    total += dir_size(&system_app_path).unwrap_or(0);
-
-    let user_app_path = std::path::PathBuf::from(&home)
+    let system_app = std::path::PathBuf::from("/var/lib/flatpak/app").join(flatpak_id);
+    let user_app = std::path::PathBuf::from(&home)
         .join(".local/share/flatpak/app")
         .join(flatpak_id);
-    total += dir_size(&user_app_path).unwrap_or(0);
+    let app_size =
+        dir_size(&system_app).unwrap_or(0) + dir_size(&user_app).unwrap_or(0);
 
-    total
+    let data_dir = std::path::PathBuf::from(&home)
+        .join(".var/app")
+        .join(flatpak_id)
+        .join("data");
+    let config_dir = std::path::PathBuf::from(&home)
+        .join(".var/app")
+        .join(flatpak_id)
+        .join("config");
+    let data_size =
+        dir_size(&data_dir).unwrap_or(0) + dir_size(&config_dir).unwrap_or(0);
+
+    let cache_dir = std::path::PathBuf::from(&home)
+        .join(".var/app")
+        .join(flatpak_id)
+        .join("cache");
+    let cache_size = dir_size(&cache_dir).unwrap_or(0);
+
+    let total = app_size + data_size + cache_size;
+
+    AppStorageInfo {
+        app: app_size,
+        data: data_size,
+        cache: cache_size,
+        total,
+    }
 }
 
 fn dir_size(path: &std::path::Path) -> std::io::Result<u64> {
@@ -322,6 +364,7 @@ fn format_bytes(bytes: u64) -> String {
     if bytes == 0 {
         return "—".to_string();
     }
+
     gtk::glib::format_size(bytes).to_string()
 }
 
@@ -365,5 +408,83 @@ impl AppEntry {
         let window = button.root().and_then(|r| r.downcast::<gtk::Window>().ok());
 
         dialog.show(window.as_ref());
+    }
+
+    fn show_storage_dialog(&self, row: &adw::ActionRow) {
+        let info = calculate_storage(self);
+
+        let window = adw::Window::builder()
+            .title("Storage")
+            .modal(true)
+            .hide_on_close(true)
+            .default_width(450)
+            .default_height(450)
+            .build();
+
+        if let Some(parent) = row.root().and_then(|r| r.downcast::<gtk::Window>().ok()) {
+            window.set_transient_for(Some(&parent));
+        }
+
+        let toolbar_view = adw::ToolbarView::new();
+        window.set_content(Some(&toolbar_view));
+
+        let header_bar = adw::HeaderBar::new();
+        toolbar_view.add_top_bar(&header_bar);
+
+        let clamp = adw::Clamp::builder()
+            .maximum_size(450)
+            .tightening_threshold(350)
+            .build();
+
+        let box_layout = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(24)
+            .margin_top(24)
+            .margin_bottom(24)
+            .margin_start(16)
+            .margin_end(16)
+            .build();
+
+        let description_label = gtk::Label::builder()
+            .label(format!(
+                "How much disk space <b>{}</b> is occupying with app data and caches",
+                self.name
+            ))
+            .use_markup(true)
+            .wrap(true)
+            .justify(gtk::Justification::Center)
+            .build();
+        description_label.add_css_class("dim-label");
+
+        let pref_group = adw::PreferencesGroup::new();
+
+        let create_row = |title: &str, bytes: u64| -> adw::ActionRow {
+            let row = adw::ActionRow::builder().title(title).build();
+
+            let text = if bytes == 0 {
+                "0 bytes".to_string()
+            } else {
+                format_bytes(bytes)
+            };
+
+            let label = gtk::Label::new(Some(&text));
+            row.add_suffix(&label);
+            row
+        };
+
+        pref_group.add(&create_row("App", info.app));
+        pref_group.add(&create_row("Data", info.data));
+        pref_group.add(&create_row("Cache", info.cache));
+        pref_group.add(&create_row("Total", info.total));
+
+        box_layout.append(&description_label);
+        box_layout.append(&pref_group);
+        clamp.set_child(Some(&box_layout));
+
+        let scroll = gtk::ScrolledWindow::new();
+        scroll.set_child(Some(&clamp));
+        toolbar_view.set_content(Some(&scroll));
+
+        window.present();
     }
 }
