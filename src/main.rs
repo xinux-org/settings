@@ -1,6 +1,7 @@
 // #[rustfmt::skip]
 use tracing::error;
 
+use clap::{ArgAction, Command, arg, command, value_parser};
 use gettextrs::{LocaleCategory, gettext};
 use gtk::prelude::ApplicationExt;
 use gtk::{gio, glib};
@@ -10,6 +11,7 @@ use relm4::{
     gtk, main_application,
 };
 use settings::utils::modules::load::load;
+use settings::utils::state::{self, Page};
 use settings::{
     config::{APP_ID, GETTEXT_PACKAGE, LOCALEDIR, RESOURCES_FILE},
     ui::window::{App, AppInit},
@@ -19,6 +21,25 @@ relm4::new_action_group!(AppActionGroup, "app");
 relm4::new_stateless_action!(QuitAction, AppActionGroup, "quit");
 
 fn main() {
+    let matches = command!()
+        .subcommand(
+            Command::new("open").about("Page to open").arg(
+                arg!([page])
+                    .value_parser(value_parser!(Page))
+                    .required(true),
+            ),
+        )
+        .get_matches();
+
+    match matches.subcommand() {
+        Some(("open", sub_matches)) => {
+            if let Some(page) = sub_matches.get_one::<Page>("page") {
+                state::update_state(|state| state.page = Some(page.clone()));
+            }
+        }
+        _ => {}
+    };
+
     gtk::init().unwrap();
 
     // Enable logging

@@ -4784,6 +4784,7 @@ version = "0.1.0"
 dependencies = [
  "allmytoes",
  "anyhow",
+ "clap 4.6.1",
  "enquote",
  "futures-util",
  "gettext-rs",
