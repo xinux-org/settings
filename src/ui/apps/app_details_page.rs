@@ -29,6 +29,7 @@ pub struct AppDetailsPage {
 pub enum AppDetailsMsg {
     OpenApp,
     ShowDetails(gtk::Button),
+    ShowFilesLinks(adw::ActionRow),
     ShowStorage(adw::ActionRow),
 }
 
@@ -138,6 +139,10 @@ impl SimpleComponent for AppDetailsPage {
                                     set_title: "Files & Links",
                                     set_subtitle: "File and link types that are opened by the app",
                                     set_activatable: true,
+
+                                    connect_activated[sender] => move |row| {
+                                        sender.input(AppDetailsMsg::ShowFilesLinks(row.clone()));
+                                    }
                                 },
 
                                 #[name = "storage_row"]
@@ -198,6 +203,10 @@ impl SimpleComponent for AppDetailsPage {
 
             AppDetailsMsg::ShowDetails(button) => {
                 self.app.show_app_details_dialog(&button);
+            }
+
+            AppDetailsMsg::ShowFilesLinks(row) => {
+                self.app.show_files_links_dialog(&row);
             }
 
             AppDetailsMsg::ShowStorage(row) => {
@@ -313,8 +322,7 @@ fn calculate_storage(app: &AppEntry) -> AppStorageInfo {
     let user_app = std::path::PathBuf::from(&home)
         .join(".local/share/flatpak/app")
         .join(flatpak_id);
-    let app_size =
-        dir_size(&system_app).unwrap_or(0) + dir_size(&user_app).unwrap_or(0);
+    let app_size = dir_size(&system_app).unwrap_or(0) + dir_size(&user_app).unwrap_or(0);
 
     let data_dir = std::path::PathBuf::from(&home)
         .join(".var/app")
@@ -324,8 +332,7 @@ fn calculate_storage(app: &AppEntry) -> AppStorageInfo {
         .join(".var/app")
         .join(flatpak_id)
         .join("config");
-    let data_size =
-        dir_size(&data_dir).unwrap_or(0) + dir_size(&config_dir).unwrap_or(0);
+    let data_size = dir_size(&data_dir).unwrap_or(0) + dir_size(&config_dir).unwrap_or(0);
 
     let cache_dir = std::path::PathBuf::from(&home)
         .join(".var/app")
@@ -408,6 +415,101 @@ impl AppEntry {
         let window = button.root().and_then(|r| r.downcast::<gtk::Window>().ok());
 
         dialog.show(window.as_ref());
+    }
+
+    fn show_files_links_dialog(&self, row: &adw::ActionRow) {
+        let mime_types = self.app_info.supported_types();
+
+        let window = adw::Window::builder()
+            .title("Files & Links")
+            .modal(true)
+            .hide_on_close(true)
+            .default_width(450)
+            .default_height(450)
+            .build();
+
+        if let Some(parent) = row.root().and_then(|r| r.downcast::<gtk::Window>().ok()) {
+            window.set_transient_for(Some(&parent));
+        }
+
+        let toolbar_view = adw::ToolbarView::new();
+        window.set_content(Some(&toolbar_view));
+
+        let header_bar = adw::HeaderBar::new();
+        toolbar_view.add_top_bar(&header_bar);
+
+        let clamp = adw::Clamp::builder()
+            .maximum_size(450)
+            .tightening_threshold(350)
+            .build();
+
+        let box_layout = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(24)
+            .margin_top(24)
+            .margin_bottom(24)
+            .margin_start(16)
+            .margin_end(16)
+            .build();
+
+        let description_label = gtk::Label::builder()
+            .label(format!(
+                "File and link types that are opened by <b>{}</b>",
+                self.name
+            ))
+            .use_markup(true)
+            .wrap(true)
+            .justify(gtk::Justification::Center)
+            .build();
+        description_label.add_css_class("dim-label");
+        box_layout.append(&description_label);
+
+        if mime_types.is_empty() {
+            let status = adw::StatusPage::builder()
+                .icon_name("text-x-generic-symbolic")
+                .title("No File Types")
+                .description("This app has not registered any file or link types")
+                .build();
+            status.add_css_class("compact");
+            box_layout.append(&status);
+        } else {
+            let pref_group = adw::PreferencesGroup::new();
+            pref_group.set_title(&format!(
+                "{} {}",
+                mime_types.len(),
+                if mime_types.len() == 1 {
+                    "type"
+                } else {
+                    "types"
+                }
+            ));
+
+            for mime in mime_types.iter() {
+                let mime_str = mime.to_string();
+                let description = gio::content_type_get_description(&mime_str);
+
+                let action_row = adw::ActionRow::builder()
+                    .title(gtk::glib::markup_escape_text(&description).as_str())
+                    .subtitle(gtk::glib::markup_escape_text(&mime_str).as_str())
+                    .build();
+
+                let icon = gio::content_type_get_icon(&mime_str);
+                let image = gtk::Image::from_gicon(&icon);
+                action_row.add_prefix(&image);
+
+                pref_group.add(&action_row);
+            }
+
+            box_layout.append(&pref_group);
+        }
+
+        clamp.set_child(Some(&box_layout));
+
+        let scroll = gtk::ScrolledWindow::new();
+        scroll.set_child(Some(&clamp));
+        toolbar_view.set_content(Some(&scroll));
+
+        window.present();
     }
 
     fn show_storage_dialog(&self, row: &adw::ActionRow) {
