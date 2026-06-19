@@ -3,7 +3,7 @@ use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Page {
     WiFi,
     // Network,
