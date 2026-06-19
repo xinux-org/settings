@@ -1,21 +1,20 @@
-// #[rustfmt::skip]
-use tracing::error;
-
-use clap::{ArgAction, Command, arg, command, value_parser};
+use clap::{Command, arg, command, value_parser};
 use gettextrs::{LocaleCategory, gettext};
-use gtk::prelude::ApplicationExt;
-use gtk::{gio, glib};
 use relm4::{
     RelmApp,
     actions::{AccelsPlus, RelmAction, RelmActionGroup},
-    gtk, main_application,
+    gtk::{self, gio, glib, prelude::ApplicationExt},
+    main_application,
 };
-use settings::utils::modules::load::load;
-use settings::utils::state::{self, Page};
 use settings::{
     config::{APP_ID, GETTEXT_PACKAGE, LOCALEDIR, RESOURCES_FILE},
     ui::window::{App, AppInit},
+    utils::{
+        modules::load::load,
+        state::{self, Page},
+    },
 };
+use tracing::error;
 
 relm4::new_action_group!(AppActionGroup, "app");
 relm4::new_stateless_action!(QuitAction, AppActionGroup, "quit");
@@ -31,13 +30,10 @@ fn main() {
         )
         .get_matches();
 
-    match matches.subcommand() {
-        Some(("open", sub_matches)) => {
-            if let Some(page) = sub_matches.get_one::<Page>("page") {
-                state::update_state(|state| state.page = Some(page.clone()));
-            }
-        }
-        _ => {}
+    if let Some(("open", sub_matches)) = matches.subcommand()
+        && let Some(page) = sub_matches.get_one::<Page>("page")
+    {
+        state::update_state(|state| state.page = Some(page.clone()));
     };
 
     gtk::init().unwrap();
