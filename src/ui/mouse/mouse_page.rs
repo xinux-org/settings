@@ -1,23 +1,22 @@
-use crate::ui::mouse::mouse::Mouse;
-use crate::ui::mouse::pointing_stick::PointingStick;
-use crate::ui::window::AppMsg;
+use crate::{
+    ui::{
+        mouse::{mouse::Mouse, pointing_stick::PointingStick, touchpad::Touchpad},
+        window::AppMsg,
+    },
+    utils::input::Interface,
+};
 use gtk::gio::Settings;
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
+use input::{self, Device, event::EventTrait};
+use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
 
-use crate::ui::mouse::touchpad::Touchpad;
-use input::event::EventTrait;
-
-use crate::utils::input::Interface;
-
-use input;
+use gettextrs::gettext;
 
 #[derive(Debug, Clone)]
 pub struct MouseSettings {
     pub mouse: Settings,
     pub touchpad: Settings,
+    pub pointingstick: Settings,
 }
 
 #[derive(Debug)]
@@ -34,6 +33,7 @@ impl MouseModal {
         MouseSettings {
             mouse: Settings::new("org.gnome.desktop.peripherals.mouse"),
             touchpad: Settings::new("org.gnome.desktop.peripherals.touchpad"),
+            pointingstick: Settings::new("org.gnome.desktop.peripherals.pointingstick"),
         }
     }
 }
@@ -126,7 +126,7 @@ impl SimpleComponent for MouseModal {
             set_policy: adw::ViewSwitcherPolicy::Wide,
         },
         window_title = &adw::WindowTitle {
-            set_title: "Mouse & Touchpad",
+            set_title: &gettext("Mouse & Touchpad"),
         },
     }
 
@@ -147,7 +147,7 @@ impl SimpleComponent for MouseModal {
             .forward(_sender.input_sender(), identity);
 
         let pointing_stick = PointingStick::builder()
-            .launch(())
+            .launch(settings.clone())
             .forward(_sender.input_sender(), identity);
 
         let model = Self {
@@ -185,33 +185,55 @@ impl SimpleComponent for MouseModal {
         input.udev_assign_seat("seat0").unwrap();
         input.dispatch().unwrap();
 
-        let events: Vec<String> = input
+        // All Devices that have the Pointer capability
+        // are being filtered out because
+        // Touchpads have Pointer and Gesture
+        // TrackPad doesn't have Gesture, only Pointer
+        // All Mouses have Pointer but not Gesture
+        //          Touchpad | Mouse | TrackPad
+        // Gesture |   ✅    |  ❌   |   ❌
+        // Pointer |   ✅    |  ✅   |   ✅
+        let events: Vec<Device> = input
             .clone()
             .collect::<Vec<input::Event>>()
             .into_iter()
             .map(|event| event.device())
+            .filter(|device| device.has_capability(input::DeviceCapability::Pointer))
+            .collect();
+
+        // All Devices but in String
+        let devices: Vec<String> = events
+            .clone()
+            .into_iter()
+            .map(|device| device.name().to_string())
+            .collect();
+
+        // Filter out touchpads with Gesture
+        let touchpads: Vec<String> = events
+            .clone()
+            .into_iter()
             .filter(|device| device.has_capability(input::DeviceCapability::Gesture))
             .map(|device| device.name().to_string())
             .collect();
 
-        let trackpoints: Vec<String> = events
+        // All Mouses and Touchpads has Pointer but only TrackPoint is called so
+        let trackpoint: Vec<String> = events
             .clone()
-            .iter()
+            .into_iter()
+            .filter(|device| device.has_capability(input::DeviceCapability::Pointer))
+            .map(|device| device.name().to_string())
             .filter(|name| name.contains("TrackPoint"))
-            .map(|name| name.to_string())
             .collect();
 
-        println!("Events: {:#?}", events);
-
-        if events.is_empty() {
+        if touchpads.is_empty() {
             touchpad_swticher.set_visible(false);
         }
 
-        if trackpoints.is_empty() {
+        if trackpoint.is_empty() {
             pointing_stick_switcher.set_visible(false);
         }
 
-        if events.is_empty() && trackpoints.is_empty() {
+        if touchpads.is_empty() && trackpoint.is_empty() {
             let title_stack = widgets.title_stack.clone();
             title_stack.set_visible_child_name("window_title");
         }

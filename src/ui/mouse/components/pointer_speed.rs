@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use gtk::gio::Settings;
 use relm4::{
     adw::prelude::*,
@@ -35,7 +36,7 @@ impl Component for PointerSpeed {
     view! {
         #[name(mouse_row)]
         adw::ActionRow {
-            set_title: "Pointer Speed",
+            set_title: &gettext("Pointer Speed"),
             set_use_underline: true,
 
             #[name(mouse_speed_scale)]

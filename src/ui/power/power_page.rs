@@ -1,10 +1,13 @@
-use crate::ui::window::AppMsg;
+use gettextrs::gettext;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
 
-use crate::ui::power::{
-    general_page::{GeneralPowerPageView, get_battery_path},
-    power_saving::SavingPowerPageView,
+use crate::ui::{
+    power::{
+        general_page::{GeneralPowerPageView, get_battery_path},
+        power_saving::SavingPowerPageView,
+    },
+    window::AppMsg,
 };
 
 #[derive(Debug)]
@@ -104,7 +107,7 @@ impl SimpleComponent for PowerModel {
             set_policy: adw::ViewSwitcherPolicy::Wide,
         },
         window_title = &adw::WindowTitle {
-            set_title: "General",
+            set_title: &gettext("General"),
         },
     }
 

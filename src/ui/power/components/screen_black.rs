@@ -1,12 +1,11 @@
+use crate::ui::power::general_page::PowerSettings;
+use gettextrs::gettext;
 use relm4::{
     adw::prelude::*,
-    gtk::{self},
+    gtk::{self, StringList},
     prelude::*,
 };
 
-use crate::ui::power::general_page::PowerSettings;
-use gettextrs::gettext;
-use relm4::gtk::StringList;
 #[derive(Debug)]
 pub struct AutoScreenBlank {
     session_settings: gtk::gio::Settings,

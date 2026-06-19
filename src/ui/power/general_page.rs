@@ -11,6 +11,7 @@ use crate::{
     utils::power::{POWER_BUTTON_ACTIONS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
 };
 
+use gettextrs::gettext;
 use ppd::PpdProxyBlocking;
 use regex::Regex;
 use relm4::{
@@ -21,7 +22,12 @@ use relm4::{
 
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
 
-use std::{fmt, fs, path::Path, process::{Command, Stdio}, sync::Arc};
+use std::{
+    fmt, fs,
+    path::Path,
+    process::{Command, Stdio},
+    sync::Arc,
+};
 use zbus::blocking::Connection;
 
 use gtk::gio::Settings;
@@ -96,7 +102,6 @@ pub enum GeneralPowerPageViewMsg {
     // Automatic Suspend
     SetIdleDim(bool),
     AutomaticSuspendAC(bool),
-
     // no operation needed.
     // we do it just to avoit type Output
     // in child component handling
@@ -143,12 +148,12 @@ impl Component for GeneralPowerPageView {
             },
 
             adw::PreferencesGroup {
-                set_title: "Battery Charging",
+                set_title: &gettext("Battery Charging"),
                 set_visible: model.charging_mode != ChargingMode::Unsupported,
 
                 adw::ActionRow {
-                    set_title: "Maximize Charge",
-                    set_subtitle: "Uses all battery capacity. Degrades batteries more quickly.",
+                    set_title: &gettext("Maximize Charge"),
+                    set_subtitle: &gettext("Uses all battery capacity. Degrades batteries more quickly."),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_maximize),
@@ -168,8 +173,8 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
-                    set_title: "Preserve Battery Health",
-                    set_subtitle: "Increases battery longevity by maintaining lower charge levels.",
+                    set_title: &gettext("Preserve Battery Health"),
+                    set_subtitle: &gettext("Increases battery longevity by maintaining lower charge levels."),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_preserve),
@@ -193,8 +198,8 @@ impl Component for GeneralPowerPageView {
                 set_visible: model.power_mode != PowerMode::Disabled,
 
                 adw::ActionRow {
-                    set_title: "Performance",
-                    set_subtitle: "High performance and power usage",
+                    set_title: &gettext("Performance"),
+                    set_subtitle: &gettext("High performance and power usage"),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_performance),
@@ -214,8 +219,8 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
-                    set_title: "Balanced",
-                    set_subtitle: "Standard performance and power usage",
+                    set_title: &gettext("Balanced"),
+                    set_subtitle: &gettext("Standard performance and power usage"),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_balanced),
@@ -235,8 +240,8 @@ impl Component for GeneralPowerPageView {
                 },
 
                 adw::ActionRow {
-                    set_title: "Power Saver",
-                    set_subtitle: "Reduced performance and power usage",
+                    set_title: &gettext("Power Saver"),
+                    set_subtitle: &gettext("Reduced performance and power usage"),
                     set_activatable: true,
 
                     set_activatable_widget: Some(&activatable_powersaver),
@@ -256,28 +261,22 @@ impl Component for GeneralPowerPageView {
             },
 
             adw::PreferencesGroup {
-                set_title: "General",
+                set_title: &gettext("General"),
 
                 #[local_ref]
                 combo_row ->
                 adw::ComboRow {
-                    set_title: "Power Button Behavior",
+                    set_title: &gettext("Power Button Behavior"),
                 },
 
-                adw::ActionRow {
-                    set_title: "Show Battery Percentage",
-                    set_subtitle: "Show exact charge level in the top bar",
+                adw::SwitchRow {
+                    set_title: &gettext("Show Battery Percentage"),
+                    set_subtitle: &gettext("Show exact charge level in the top bar"),
 
                     set_visible: model.show_batteries,
 
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.show_battery_percentage,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(GeneralPowerPageViewMsg::ToggleBatteryPercentage(state));
-                            gtk::glib::Propagation::Proceed
-                        },
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(GeneralPowerPageViewMsg::ToggleBatteryPercentage(row.is_active()));
                     },
                 },
             },
@@ -285,7 +284,7 @@ impl Component for GeneralPowerPageView {
 
             // Dim Screen
             adw::PreferencesGroup {
-                set_title: "Power Saving",
+                set_title: &gettext("Power Saving"),
                 #[watch]
                 set_visible: !model.show_batteries,
                 add: model.dim_screen_controller.widget(),
@@ -309,7 +308,7 @@ impl Component for GeneralPowerPageView {
                 set_visible: !model.show_batteries,
 
                 adw::ActionRow {
-                    set_title: "Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled.",
+                    set_title: &gettext("Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled."),
 
                     #[watch]
                     set_visible: !model.sleep_inactive_ac_type,
@@ -564,8 +563,6 @@ fn change_battery_threshold(_start: u8, end: u8) {
                 .stdin(Stdio::from(echo_child_stdout))
                 .output()
                 .await;
-
-            println!("{:?}", output.unwrap());
         });
     }
 }
@@ -609,8 +606,6 @@ fn decide_charging_mode() -> ChargingMode {
     if charging_modes.is_empty() {
         return ChargingMode::Unsupported;
     }
-
-    println!("{:?}", charging_modes);
 
     if charging_modes.contains(&(100)) {
         ChargingMode::Maximize
