@@ -5,6 +5,7 @@ use relm4::{
     gtk::{self, gio},
     prelude::*,
 };
+use std::rc::Rc;
 use tracker;
 
 const CLOCK_SCHEMA: &str = "org.gnome.desktop.interface";
@@ -148,19 +149,20 @@ impl Component for SystemDateTimePage {
         let clock_settings = gio::Settings::new(CLOCK_SCHEMA);
         let calendar_settings = gio::Settings::new(CALENDAR_SCHEMA);
 
+        let sender = Rc::new(sender);
         for clock_settings_key in [
             CLOCK_FORMAT_KEY,
             CLOCK_SHOW_WEEKDAY_KEY,
             CLOCK_SHOW_DATE_KEY,
             CLOCK_SHOW_SECONDS_KEY,
         ] {
-            let sender = sender.clone();
+            let sender = Rc::clone(&sender);
             clock_settings.connect_changed(Some(clock_settings_key), move |_settings, _key| {
                 sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
             });
         }
         for calendar_settings_key in [CALENDAR_SCHEMA, CALENDAR_SHOW_WEEK_NUMBERS_KEY] {
-            let sender = sender.clone();
+            let sender = Rc::clone(&sender);
             calendar_settings.connect_changed(
                 Some(calendar_settings_key),
                 move |_settings, _key| {
