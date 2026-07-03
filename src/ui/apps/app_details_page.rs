@@ -18,6 +18,7 @@ pub struct AppEntry {
     pub app_info: gio::AppInfo,
     pub app_id: Option<String>,
     pub canonical_id: Option<String>,
+    pub source: Option<String>,
 }
 
 #[derive(Debug)]
@@ -314,7 +315,11 @@ impl SimpleComponent for AppDetailsPage {
 
                 self.storage_dialog
                     .sender()
-                    .send(StorageDialogMsg::Show(self.app.name.clone(), info))
+                    .send(StorageDialogMsg::Show(
+                        self.app.name.clone(),
+                        self.app.app_id.clone(),
+                        info,
+                    ))
                     .expect("Failed to update storage dialog");
 
                 self.detail_nav.push(self.storage_dialog.widget());
@@ -344,6 +349,16 @@ fn is_app_sandboxed(app: &AppEntry) -> bool {
         return false;
     };
     desktop.string("X-Flatpak").is_some()
+}
+
+pub fn detect_app_source(app_id: Option<&str>, _executable: Option<&str>) -> Option<String> {
+    let desktop = app_id.and_then(gio_unix::DesktopAppInfo::new)?;
+
+    if desktop.string("X-Flatpak").is_some() {
+        Some("Flatpak".to_string())
+    } else {
+        None
+    }
 }
 
 fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
@@ -387,7 +402,7 @@ impl AppEntry {
 
     fn show_app_details_dialog(&self, button: &gtk::Button) {
         let details = format!(
-            "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}",
+            "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}\nSource: {}",
             self.name,
             self.app_id.as_deref().unwrap_or("—"),
             self.canonical_id.as_deref().unwrap_or("—"),
@@ -403,6 +418,7 @@ impl AppEntry {
             } else {
                 "No"
             },
+            self.source.as_deref().unwrap_or("Unknown"),
         );
 
         let dialog = gtk::AlertDialog::builder()

@@ -1,6 +1,6 @@
 use crate::ui::{
     apps::{
-        app_details_page::{AppDetailsPage, AppEntry},
+        app_details_page::{AppDetailsPage, AppEntry, detect_app_source},
         default_apps::DefaultAppsPage,
     },
     window::AppMsg,
@@ -186,15 +186,18 @@ fn collect_apps() -> Vec<AppEntry> {
         .map(|app| {
             let app_id = app.id().map(|s| s.to_string());
             let canonical_id = app_id.as_deref().map(notification_canonical_id);
+            let executable = Some(app.executable().to_string_lossy().into_owned());
+            let source = detect_app_source(app_id.as_deref(), executable.as_deref());
 
             AppEntry {
                 name: app.display_name().to_string(),
                 description: app.description().map(|s| s.to_string()),
-                executable: Some(app.executable().to_string_lossy().into_owned()),
+                executable,
                 icon: app.icon(),
                 app_info: app,
                 app_id,
                 canonical_id,
+                source,
             }
         })
         .collect();
@@ -254,6 +257,14 @@ fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: &relm4::Sen
         image.set_pixel_size(24);
         image.set_valign(gtk::Align::Center);
         row.add_prefix(&image);
+
+        if let Some(source) = &app.source {
+            let source_label = gtk::Label::new(Some(source));
+            source_label.add_css_class("dim-label");
+            source_label.add_css_class("caption");
+            source_label.set_valign(gtk::Align::Center);
+            row.add_suffix(&source_label);
+        }
 
         let arrow = gtk::Image::from_icon_name("go-next-symbolic");
         arrow.set_valign(gtk::Align::Center);

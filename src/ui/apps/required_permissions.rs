@@ -102,7 +102,7 @@ impl SimpleComponent for RequiredPermissionsDialog {
                 if permissions.is_empty() {
                     let status = adw::StatusPage::builder()
                         .icon_name("security-high-symbolic")
-                        .title("Fully Sandboxed")
+                        .title("Sandboxed")
                         .description("This app does not request any extra permissions")
                         .build();
                     status.add_css_class("compact");
@@ -136,7 +136,9 @@ pub fn load_required_permissions(app_id: Option<&str>) -> Vec<AppPermission> {
         return Vec::new();
     };
 
+    // https://docs.gtk.org/glib/struct.KeyFile.html
     let keyfile = gtk::glib::KeyFile::new();
+    // https://docs.gtk.org/glib/flags.KeyFileFlags.html
     if keyfile
         .load_from_file(&metadata_path, gtk::glib::KeyFileFlags::NONE)
         .is_err()
@@ -162,6 +164,7 @@ fn find_metadata_path(flatpak_id: &str) -> Option<std::path::PathBuf> {
     [user_path, system_path].into_iter().find(|p| p.exists())
 }
 
+// https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
 fn parse_permissions(keyfile: &gtk::glib::KeyFile) -> Vec<AppPermission> {
     let mut result = Vec::new();
 
