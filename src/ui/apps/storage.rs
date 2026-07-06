@@ -2,6 +2,12 @@ use relm4::{
     ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk, gtk::gio,
 };
 
+use dirs::home_dir;
+use std::{
+    fs::{read_dir, remove_dir_all, remove_file},
+    path::PathBuf,
+};
+
 #[derive(Debug, Clone)]
 pub struct AppStorageInfo {
     pub app: u64,
@@ -203,25 +209,25 @@ pub fn calculate_storage(app_id: Option<&String>) -> AppStorageInfo {
     };
 
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
-    let home = std::env::var("HOME").unwrap_or_default();
+    let home = home_dir().unwrap_or_default();
 
-    let system_app = std::path::PathBuf::from("/var/lib/flatpak/app").join(flatpak_id);
-    let user_app = std::path::PathBuf::from(&home)
+    let system_app = PathBuf::from("/var/lib/flatpak/app").join(flatpak_id);
+    let user_app = PathBuf::from(&home)
         .join(".local/share/flatpak/app")
         .join(flatpak_id);
     let app_size = dir_size(&system_app).unwrap_or(0) + dir_size(&user_app).unwrap_or(0);
 
-    let data_dir = std::path::PathBuf::from(&home)
+    let data_dir = PathBuf::from(&home)
         .join(".var/app")
         .join(flatpak_id)
         .join("data");
-    let config_dir = std::path::PathBuf::from(&home)
+    let config_dir = PathBuf::from(&home)
         .join(".var/app")
         .join(flatpak_id)
         .join("config");
     let data_size = dir_size(&data_dir).unwrap_or(0) + dir_size(&config_dir).unwrap_or(0);
 
-    let cache_dir = std::path::PathBuf::from(&home)
+    let cache_dir = PathBuf::from(&home)
         .join(".var/app")
         .join(flatpak_id)
         .join("cache");
@@ -243,9 +249,9 @@ pub fn clear_cache(app_id: Option<&String>) -> std::io::Result<()> {
     };
 
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
-    let home = std::env::var("HOME").unwrap_or_default();
+    let home = home_dir().unwrap_or_default();
 
-    let cache_dir = std::path::PathBuf::from(&home)
+    let cache_dir = PathBuf::from(&home)
         .join(".var/app")
         .join(flatpak_id)
         .join("cache");
@@ -254,14 +260,14 @@ pub fn clear_cache(app_id: Option<&String>) -> std::io::Result<()> {
         return Ok(());
     }
 
-    for entry in std::fs::read_dir(&cache_dir)? {
+    for entry in read_dir(&cache_dir)? {
         let entry = entry?;
         let path = entry.path();
 
         if path.is_dir() {
-            std::fs::remove_dir_all(&path)?;
+            remove_dir_all(&path)?;
         } else {
-            std::fs::remove_file(&path)?;
+            remove_file(&path)?;
         }
     }
 

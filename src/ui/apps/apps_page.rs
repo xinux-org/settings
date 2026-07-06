@@ -6,7 +6,7 @@ use crate::ui::{
     window::AppMsg,
 };
 
-use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
+use relm4::{adw, adw::prelude::*, gtk, gtk::gio::AppInfo, prelude::*};
 
 #[derive(Debug)]
 pub struct AppModal {
@@ -180,7 +180,7 @@ impl SimpleComponent for AppModal {
 }
 
 fn collect_apps() -> Vec<AppEntry> {
-    let mut apps: Vec<AppEntry> = gio::AppInfo::all()
+    let mut apps: Vec<AppEntry> = AppInfo::all()
         .into_iter()
         .filter(|app| app.should_show())
         .map(|app| {

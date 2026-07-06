@@ -1,5 +1,5 @@
 use crate::ui::notifications::app_notification::app_settings_for_canonical;
-use gio_unix;
+use gio_unix::DesktopAppInfo;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 
 use crate::ui::apps::files_links::{FilesLinksDialog, FilesLinksDialogMsg};
@@ -81,7 +81,7 @@ impl SimpleComponent for AppDetailsPage {
                             #[wrap(Some)]
                             set_child = &adw::Clamp {
                                 set_maximum_size: 700,
-                                set_tightening_threshold: 500,
+                                // set_tightening_threshold: 500,
 
                                 #[wrap(Some)]
                                 set_child = &gtk::Box {
@@ -110,7 +110,6 @@ impl SimpleComponent for AppDetailsPage {
                                             add_css_class: "title-1",
                                             set_halign: gtk::Align::Center,
                                         },
-
                                         gtk::Box {
                                             set_orientation: gtk::Orientation::Horizontal,
                                             set_spacing: 12,
@@ -345,14 +344,14 @@ fn is_app_sandboxed(app: &AppEntry) -> bool {
     let Some(app_id) = &app.app_id else {
         return false;
     };
-    let Some(desktop) = gio_unix::DesktopAppInfo::new(app_id) else {
+    let Some(desktop) = DesktopAppInfo::new(app_id) else {
         return false;
     };
     desktop.string("X-Flatpak").is_some()
 }
 
 pub fn detect_app_source(app_id: Option<&str>, _executable: Option<&str>) -> Option<String> {
-    let desktop = app_id.and_then(gio_unix::DesktopAppInfo::new)?;
+    let desktop = app_id.and_then(DesktopAppInfo::new)?;
 
     if desktop.string("X-Flatpak").is_some() {
         Some("Flatpak".to_string())

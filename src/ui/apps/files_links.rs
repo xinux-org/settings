@@ -1,5 +1,11 @@
 use relm4::{
-    ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk, gtk::gio,
+    ComponentParts, ComponentSender, SimpleComponent, adw,
+    adw::prelude::*,
+    gtk,
+    gtk::{
+        gio::{content_type_get_description, content_type_get_icon},
+        glib::markup_escape_text,
+    },
 };
 
 #[derive(Debug)]
@@ -115,14 +121,14 @@ impl SimpleComponent for FilesLinksDialog {
                     ));
 
                     for mime_str in mime_types.iter() {
-                        let description = gio::content_type_get_description(mime_str);
+                        let description = content_type_get_description(mime_str);
 
                         let action_row = adw::ActionRow::builder()
-                            .title(gtk::glib::markup_escape_text(&description).as_str())
-                            .subtitle(gtk::glib::markup_escape_text(mime_str).as_str())
+                            .title(markup_escape_text(&description).as_str())
+                            .subtitle(markup_escape_text(mime_str).as_str())
                             .build();
 
-                        let icon = gio::content_type_get_icon(mime_str);
+                        let icon = content_type_get_icon(mime_str);
                         let image = gtk::Image::from_gicon(&icon);
                         action_row.add_prefix(&image);
 

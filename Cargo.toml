@@ -61,3 +61,4 @@ notify = { version = "8.1.0", features = ["serde"] }
 regex = "1.12.3"
 nmrs = "2.0.1"
 gio-unix = "0.22.6"
+dirs = "6.0.0"
