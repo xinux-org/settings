@@ -2,12 +2,14 @@ use crate::ui::notifications::app_notification::app_settings_for_canonical;
 use gio_unix::DesktopAppInfo;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 
-use crate::ui::apps::files_links::{FilesLinksDialog, FilesLinksDialogMsg};
-use crate::ui::apps::required_permissions::{
+use crate::ui::apps::components::files_links::{FilesLinksDialog, FilesLinksDialogMsg};
+use crate::ui::apps::components::required_permissions::{
     AppPermission, RequiredPermissionsDialog, RequiredPermissionsDialogMsg,
     load_required_permissions,
 };
-use crate::ui::apps::storage::{StorageDialog, StorageDialogMsg, calculate_storage, format_bytes};
+use crate::ui::apps::components::storage::{
+    StorageDialog, StorageDialogMsg, calculate_storage, format_bytes,
+};
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {

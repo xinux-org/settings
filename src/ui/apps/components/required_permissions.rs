@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct AppPermission {
-    pub icon: &'static str,
+    // pub icon: &'static str,
     pub title: &'static str,
     pub subtitle: &'static str,
 }
@@ -109,7 +109,7 @@ impl SimpleComponent for RequiredPermissionsDialog {
 
                 if permissions.is_empty() {
                     let status = adw::StatusPage::builder()
-                        .icon_name("security-high-symbolic")
+                        // .icon_name("security-high-symbolic")
                         .title("Sandboxed")
                         .description("This app does not request any extra permissions")
                         .build();
@@ -123,7 +123,7 @@ impl SimpleComponent for RequiredPermissionsDialog {
                             .title(permission.title)
                             .subtitle(permission.subtitle)
                             .build();
-                        row.add_prefix(&gtk::Image::from_icon_name(permission.icon));
+                        // row.add_prefix(&gtk::Image::from_icon_name(permission.icon));
 
                         self.pref_group.add(&row);
                         self.dynamic_rows.push(row.upcast());
@@ -183,7 +183,7 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
 
     if shared.iter().any(|s| s == "network") {
         result.push(AppPermission {
-            icon: "network-wireless-symbolic",
+            // icon: "network-wireless-symbolic",
             title: "Network",
             subtitle: "Can communicate over the network",
         });
@@ -191,7 +191,7 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
 
     if sockets.iter().any(|s| s == "system-bus") {
         result.push(AppPermission {
-            icon: "applications-system-symbolic",
+            // icon: "applications-system-symbolic",
             title: "System Services",
             subtitle: "Full access to system D-Bus services",
         });
@@ -199,7 +199,7 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
 
     if sockets.iter().any(|s| s == "session-bus") {
         result.push(AppPermission {
-            icon: "preferences-desktop-symbolic",
+            // icon: "preferences-desktop-symbolic",
             title: "Session Services",
             subtitle: "Full access to session D-Bus services",
         });
@@ -207,7 +207,7 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
 
     if devices.iter().any(|d| d == "all") {
         result.push(AppPermission {
-            icon: "drive-harddisk-symbolic",
+            // icon: "drive-harddisk-symbolic",
             title: "Devices",
             subtitle: "Can access system device files",
         });
@@ -215,13 +215,13 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
 
     if filesystems.iter().any(|f| f == "home" || f == "home:rw") {
         result.push(AppPermission {
-            icon: "user-home-symbolic",
+            // icon: "user-home-symbolic",
             title: "Home Folder",
             subtitle: "Can view, edit and create files",
         });
     } else if filesystems.iter().any(|f| f == "home:ro") {
         result.push(AppPermission {
-            icon: "user-home-symbolic",
+            // icon: "user-home-symbolic",
             title: "Home Folder",
             subtitle: "Can view files",
         });
@@ -229,13 +229,13 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
 
     if filesystems.iter().any(|f| f == "host" || f == "host:rw") {
         result.push(AppPermission {
-            icon: "drive-harddisk-symbolic",
+            // icon: "drive-harddisk-symbolic",
             title: "File System",
             subtitle: "Can view, edit and create files",
         });
     } else if filesystems.iter().any(|f| f == "host:ro") {
         result.push(AppPermission {
-            icon: "drive-harddisk-symbolic",
+            // icon: "drive-harddisk-symbolic",
             title: "File System",
             subtitle: "Can view files",
         });
@@ -246,13 +246,13 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
         .any(|f| f.starts_with("xdg-download") && !f.ends_with(":ro"))
     {
         result.push(AppPermission {
-            icon: "folder-download-symbolic",
+            // icon: "folder-download-symbolic",
             title: "Downloads Folder",
             subtitle: "Can view, edit and create files",
         });
     } else if filesystems.iter().any(|f| f.starts_with("xdg-download")) {
         result.push(AppPermission {
-            icon: "folder-download-symbolic",
+            // icon: "folder-download-symbolic",
             title: "Downloads Folder",
             subtitle: "Can view files",
         });
@@ -262,7 +262,7 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
     let has_wayland = sockets.iter().any(|s| s == "wayland");
     if has_x11 && !has_wayland {
         result.push(AppPermission {
-            icon: "dialog-warning-symbolic",
+            // icon: "dialog-warning-symbolic",
             title: "Legacy Display System",
             subtitle: "Uses an old, insecure display system",
         });
