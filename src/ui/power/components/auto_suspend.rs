@@ -1,12 +1,12 @@
 use relm4::{
     adw::prelude::*,
-    gtk::{self},
+    gtk::{self, StringList},
     prelude::*,
 };
 
 use crate::ui::power::general_page::PowerSettings;
 use gettextrs::gettext;
-use relm4::gtk::StringList;
+
 #[derive(Debug)]
 pub struct AutomaticSuspend {
     power_settings: gtk::gio::Settings,
@@ -26,7 +26,6 @@ pub enum AutomaticSuspendMsg {
 
 #[derive(Debug)]
 pub enum AutomaticSuspendOutput {
-    Noop,
     Toggled(bool),
 }
 
@@ -41,7 +40,6 @@ pub struct AutomaticSuspendInit {
 
 #[relm4::component(pub)]
 impl Component for AutomaticSuspend {
-    // Label Text, Key, Settings, Labels, Values
     type Init = AutomaticSuspendInit;
     type Input = AutomaticSuspendMsg;
     type Output = AutomaticSuspendOutput;
@@ -50,18 +48,12 @@ impl Component for AutomaticSuspend {
     view! {
         #[root]
         adw::PreferencesGroup {
-            adw::ActionRow {
+            adw::SwitchRow {
                 set_title: model.suspend_text.as_str(),
 
-                add_suffix = &gtk::Switch {
-                    set_valign: gtk::Align::Center,
-                    #[watch]
-                    set_active: model.enabled,
-                    connect_state_set[sender] => move |_, state| {
-                        sender.input(AutomaticSuspendMsg::Toggle(state));
-                        gtk::glib::Propagation::Proceed
-                    },
-                },
+                connect_active_notify[sender] => move |row| {
+                    sender.input(AutomaticSuspendMsg::Toggle(row.is_active()));
+                }
             },
 
             adw::ComboRow {
@@ -143,7 +135,6 @@ impl Component for AutomaticSuspend {
                     None => 0,
                 };
 
-                println!("Seconds: {:?}\nIndex: {:?}\n\n\n\n\n", seconds, index);
                 let _ = self.power_settings.set_int(
                     format!("sleep-inactive-{}-timeout", self.key).as_str(),
                     seconds as i32,

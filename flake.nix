@@ -16,9 +16,19 @@
     inputs:
     inputs.xinux-lib.mkFlake {
       inherit inputs;
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+
       alias.packages.default = "xinux-settings";
       alias.shells.default = "xinux-settings";
       src = ./.;
+
+      channels-config = {
+        allowUnfree = true;
+        allowUnfreePredicate = _: true;
+      };
       hydraJobs = inputs.self.packages.x86_64-linux;
     };
 }

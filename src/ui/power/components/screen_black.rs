@@ -1,12 +1,11 @@
+use crate::ui::power::general_page::PowerSettings;
+use gettextrs::gettext;
 use relm4::{
     adw::prelude::*,
-    gtk::{self},
+    gtk::{self, StringList},
     prelude::*,
 };
 
-use crate::ui::power::general_page::PowerSettings;
-use gettextrs::gettext;
-use relm4::gtk::StringList;
 #[derive(Debug)]
 pub struct AutoScreenBlank {
     session_settings: gtk::gio::Settings,
@@ -22,18 +21,13 @@ pub enum AutoScreenBlankMsg {
     Delay(u32),
 }
 
-#[derive(Debug)]
-pub enum AutoScreenBlankOutput {
-    Noop,
-}
-
 const BLANK_SCREEN_DEFAULT: u32 = 300;
 
 #[relm4::component(pub)]
 impl Component for AutoScreenBlank {
     type Init = (PowerSettings, Vec<u32>);
     type Input = AutoScreenBlankMsg;
-    type Output = AutoScreenBlankOutput;
+    type Output = ();
     type CommandOutput = ();
 
     view! {

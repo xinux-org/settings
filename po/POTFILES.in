@@ -6,6 +6,11 @@ src/ui/window.rs
 
 src/ui/power/general_page.rs 
 src/ui/power/power_saving.rs 
-src/ui/power/reusables.rs 
+src/ui/power/power_page.rs 
+
+src/ui/mouse/mouse_page.rs 
+src/ui/mouse/mouse.rs 
+src/ui/mouse/pointing_stick.rs 
+src/ui/mouse/touchpad.rs 
 
 src/main.rs

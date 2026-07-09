@@ -1,8 +1,4 @@
-use relm4::{
-    adw::prelude::*,
-    gtk::{self},
-    prelude::*,
-};
+use relm4::{adw::prelude::*, prelude::*};
 
 #[derive(Debug)]
 pub struct DimScreen {
@@ -27,19 +23,13 @@ impl Component for DimScreen {
     type CommandOutput = ();
 
     view! {
-        adw::ActionRow {
+        adw::SwitchRow {
             set_title: "Dim Screen",
             set_subtitle: "Reduce screen brightness when the device is inactive",
 
-            add_suffix = &gtk::Switch {
-                set_valign: gtk::Align::Center,
-                #[watch]
-                set_active: model.idle_dim,
-                connect_state_set[sender] => move |_, state| {
-                    sender.input(DimScreenMsg::Toggle(state));
-                    gtk::glib::Propagation::Proceed
-                },
-            },
+            connect_active_notify[sender] => move |row| {
+                    sender.input(DimScreenMsg::Toggle(row.is_active()));
+            }
         },
     }
 

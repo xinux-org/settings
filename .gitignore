@@ -13,6 +13,6 @@
 /.vscode
 .flatpak-builder/
 .direnv
-result
+result*
 batteries
 .zed

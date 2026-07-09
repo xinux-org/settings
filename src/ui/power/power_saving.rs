@@ -1,18 +1,18 @@
-use relm4::adw::prelude::*;
-use relm4::gtk;
-use relm4::prelude::*;
+use gettextrs::gettext;
+use relm4::{adw::prelude::*, gtk, prelude::*};
 
-use crate::ui::power::general_page::PowerSettings;
-use crate::ui::power::power_page::PowerMsg;
-
-use crate::ui::power::components::auto_suspend::{
-    AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput,
+use crate::{
+    ui::power::{
+        components::{
+            auto_suspend::{AutomaticSuspend, AutomaticSuspendInit, AutomaticSuspendOutput},
+            dim_screen::{DimScreen, DimScreenOutput},
+            screen_black::AutoScreenBlank,
+        },
+        general_page::PowerSettings,
+        power_page::PowerMsg,
+    },
+    utils::power::{SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
 };
-use crate::ui::power::components::dim_screen::{DimScreen, DimScreenOutput};
-use crate::ui::power::components::screen_black::{AutoScreenBlank, AutoScreenBlankOutput};
-
-use crate::utils::power::SCREEN_BLANK_DELAY_VALUES;
-use crate::utils::power::SUSPEND_DELAY_VALUES;
 
 #[derive(Debug)]
 pub struct SavingPowerPageView {
@@ -41,7 +41,6 @@ pub enum PowerSavingMsg {
     SetIdleDim(bool),
     AutomaticSuspendBattery(bool),
     AutomaticSuspendAC(bool),
-    Noop,
 }
 
 #[relm4::component(pub)]
@@ -57,19 +56,12 @@ impl Component for SavingPowerPageView {
                 // Dim Screen
                 model.dim_screen_controller.widget(),
 
+                adw::SwitchRow {
+                    set_title: &gettext("Automatic Power Saver"),
+                    set_subtitle: &gettext("Turn on power saver made when battery power is low"),
 
-                adw::ActionRow {
-                    set_title: "Automatic Power Saver",
-                    set_subtitle: "Turn on power saver made when battery power is low",
-
-                    add_suffix = &gtk::Switch {
-                        set_valign: gtk::Align::Center,
-                        #[watch]
-                        set_active: model.auto_power_saver,
-                        connect_state_set[sender] => move |_, state| {
-                            sender.input(PowerSavingMsg::SetAutoPowerSaver(state));
-                            gtk::glib::Propagation::Proceed
-                        },
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(PowerSavingMsg::SetAutoPowerSaver(row.is_active()));
                     },
                 }
             },
@@ -80,7 +72,7 @@ impl Component for SavingPowerPageView {
             },
 
             adw::PreferencesGroup {
-                set_title: "Automatic Suspend",
+                set_title: &gettext("Automatic Suspend"),
 
                 // On Battery Power
                 add: model.automatic_suspend_controller_battery.widget(),
@@ -93,7 +85,7 @@ impl Component for SavingPowerPageView {
 
             adw::PreferencesGroup {
                 adw::ActionRow {
-                    set_title: "Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled.",
+                    set_title: &gettext("Disabling automatic suspend will result in higher power consumption. It is recomended to keep automatic suspend enabled."),
 
                     #[watch]
                     set_visible: !model.sleep_inactive_battery_type || !model.sleep_inactive_ac_type,
@@ -119,10 +111,7 @@ impl Component for SavingPowerPageView {
 
         let auto_screen_black_controller = AutoScreenBlank::builder()
             .launch((settings.to_owned(), SCREEN_BLANK_DELAY_VALUES.to_vec()))
-            .forward(sender.input_sender(), |out| match out {
-                // we do not need child and parent relationship in this case
-                AutoScreenBlankOutput::Noop => PowerSavingMsg::Noop,
-            });
+            .detach();
 
         let sleep_inactive_battery_type = matches!(
             (settings
@@ -145,7 +134,6 @@ impl Component for SavingPowerPageView {
                 values: SUSPEND_DELAY_VALUES.to_vec(),
             })
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => PowerSavingMsg::AutomaticSuspendAC(state),
             });
 
@@ -157,7 +145,6 @@ impl Component for SavingPowerPageView {
                 values: SUSPEND_DELAY_VALUES.to_vec(),
             })
             .forward(sender.input_sender(), |out| match out {
-                AutomaticSuspendOutput::Noop => PowerSavingMsg::Noop,
                 AutomaticSuspendOutput::Toggled(state) => {
                     PowerSavingMsg::AutomaticSuspendBattery(state)
                 }
@@ -225,7 +212,6 @@ impl Component for SavingPowerPageView {
                     self.sleep_inactive_ac_type = state;
                 }
             },
-            PowerSavingMsg::Noop => {}
         }
     }
 }
