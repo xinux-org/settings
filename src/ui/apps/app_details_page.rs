@@ -297,7 +297,7 @@ impl SimpleComponent for AppDetailsPage {
             }
 
             AppDetailsMsg::ShowDetails(button) => {
-                self.app.show_app_details_dialog(&button);
+                self.app.open_in_software_center(&button);
             }
 
             AppDetailsMsg::ShowFilesLinks(_row) => {
@@ -401,38 +401,57 @@ impl AppEntry {
         Some(app_settings_for_canonical(canonical_id))
     }
 
-    fn show_app_details_dialog(&self, button: &gtk::Button) {
-        let details = format!(
-            "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}\nSource: {}",
-            self.name,
-            self.app_id.as_deref().unwrap_or("—"),
-            self.canonical_id.as_deref().unwrap_or("—"),
-            self.description.as_deref().unwrap_or("—"),
-            self.executable.as_deref().unwrap_or("—"),
-            if self.app_info.supports_files() {
-                "Yes"
-            } else {
-                "No"
-            },
-            if self.app_info.supports_uris() {
-                "Yes"
-            } else {
-                "No"
-            },
-            self.source.as_deref().unwrap_or("Unknown"),
-        );
+    fn open_in_software_center(&self, button: &gtk::Button) {
+        let raw_id = self.app_id.as_deref().or(self.canonical_id.as_deref());
+        let Some(raw_id) = raw_id else {
+            eprintln!("No app_id available: {}", self.name);
+            return;
+        };
+        let component_id = raw_id.strip_suffix(".desktop").unwrap_or(raw_id);
+        let uri = format!("appstream://{component_id}");
 
-        let dialog = gtk::AlertDialog::builder()
-            .modal(true)
-            .message(&self.name)
-            .detail(&details)
-            .build();
-
-        dialog.set_buttons(&["Close"]);
-        dialog.set_cancel_button(0);
-        dialog.set_default_button(0);
-
+        let launcher = gtk::UriLauncher::new(&uri);
         let window = button.root().and_then(|r| r.downcast::<gtk::Window>().ok());
-        dialog.show(window.as_ref());
+
+        launcher.launch(window.as_ref(), gio::Cancellable::NONE, move |res| {
+            if let Err(e) = res {
+                eprintln!("Failed to open software center: {e}");
+            }
+        });
     }
+
+    // fn show_app_details_dialog(&self, button: &gtk::Button) {
+    //     let details = format!(
+    //         "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}\nSource: {}",
+    //         self.name,
+    //         self.app_id.as_deref().unwrap_or("—"),
+    //         self.canonical_id.as_deref().unwrap_or("—"),
+    //         self.description.as_deref().unwrap_or("—"),
+    //         self.executable.as_deref().unwrap_or("—"),
+    //         if self.app_info.supports_files() {
+    //             "Yes"
+    //         } else {
+    //             "No"
+    //         },
+    //         if self.app_info.supports_uris() {
+    //             "Yes"
+    //         } else {
+    //             "No"
+    //         },
+    //         self.source.as_deref().unwrap_or("Unknown"),
+    //     );
+
+    //     let dialog = gtk::AlertDialog::builder()
+    //         .modal(true)
+    //         .message(&self.name)
+    //         .detail(&details)
+    //         .build();
+
+    //     dialog.set_buttons(&["Close"]);
+    //     dialog.set_cancel_button(0);
+    //     dialog.set_default_button(0);
+
+    //     let window = button.root().and_then(|r| r.downcast::<gtk::Window>().ok());
+    //     dialog.show(window.as_ref());
+    // }
 }
