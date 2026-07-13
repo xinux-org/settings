@@ -30,6 +30,14 @@
     opacity: 100%;
 }
 
+.flatpak-text {
+	background-color: rgba(83, 186, 245, 0.2);
+	border: 1px solid rgb(83, 186, 245);
+    padding: 2px 8px;
+	border-radius: 8px;
+    color: rgb(83, 186, 245);
+}
+
 /* Extra small devices (phones, 600px and down) */
 @media only screen and (max-width: 346px) {
     .accent-button {

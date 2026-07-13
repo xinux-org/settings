@@ -4817,6 +4817,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serini"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3948771e3c915493235146627cddf2d65de15396033da39d918637a02fda6fb"
+dependencies = [
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "settings"
 version = "0.1.0"
 dependencies = [
@@ -4845,6 +4855,7 @@ dependencies = [
  "relm4",
  "relm4-components",
  "serde",
+ "serini",
  "sysinfo",
  "thiserror 2.0.18",
  "tokio",

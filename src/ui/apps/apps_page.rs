@@ -260,7 +260,7 @@ fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: &relm4::Sen
 
         if let Some(source) = &app.source {
             let source_label = gtk::Label::new(Some(source));
-            source_label.add_css_class("dim-label");
+            source_label.add_css_class("flatpak-text");
             source_label.add_css_class("caption");
             source_label.set_valign(gtk::Align::Center);
             row.add_suffix(&source_label);

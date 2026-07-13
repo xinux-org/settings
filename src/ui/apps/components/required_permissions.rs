@@ -2,10 +2,12 @@ use relm4::{
     ComponentParts, ComponentSender, SimpleComponent, adw,
     adw::prelude::*,
     gtk,
-    gtk::glib::{KeyFile, KeyFileFlags},
 };
 
 use dirs::home_dir;
+use serde::Deserialize;
+use serini::from_str;
+use std::fs::read_to_string;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
@@ -13,6 +15,20 @@ pub struct AppPermission {
     // pub icon: &'static str,
     pub title: &'static str,
     pub subtitle: &'static str,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct Metadata {
+    #[serde(rename = "Context")]
+    context: Option<Context>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct Context {
+    shared: Option<String>,
+    sockets: Option<String>,
+    devices: Option<String>,
+    filesystems: Option<String>,
 }
 
 #[derive(Debug)]
@@ -98,7 +114,7 @@ impl SimpleComponent for RequiredPermissionsDialog {
                 self.app_name = name;
 
                 let desc = format!(
-                    "System resources that <b>{}</b> is permitted to access outside its sandbox",
+                    "<b>{}</b> requires access to the following system resources. To stop this access, the app must be romoved",
                     self.app_name
                 );
                 self.desc_label.set_label(&desc);
@@ -109,7 +125,7 @@ impl SimpleComponent for RequiredPermissionsDialog {
 
                 if permissions.is_empty() {
                     let status = adw::StatusPage::builder()
-                        // .icon_name("security-high-symbolic")
+                        .icon_name("security-high-symbolic")
                         .title("Sandboxed")
                         .description("This app does not request any extra permissions")
                         .build();
@@ -144,23 +160,25 @@ pub fn load_required_permissions(app_id: Option<&str>) -> Vec<AppPermission> {
         return Vec::new();
     };
 
-    // https://docs.gtk.org/glib/struct.KeyFile.html
-    let keyfile = KeyFile::new();
-    // https://docs.gtk.org/glib/flags.KeyFileFlags.html
-    if keyfile
-        .load_from_file(&metadata_path, KeyFileFlags::NONE)
-        .is_err()
-    {
+    let Ok(raw) = read_to_string(&metadata_path) else {
         return Vec::new();
-    }
+    };
 
-    parse_permissions(&keyfile)
+    let Ok(meta) = from_str::<Metadata>(&raw) else {
+        return Vec::new();
+    };
+
+    let Some(ctx) = meta.context else {
+        return Vec::new();
+    };
+
+    parse_permissions(&ctx)
 }
 
 fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
     let home = home_dir().unwrap_or_default();
 
-    let user_path = PathBuf::from(&home)
+    let user_path = home
         .join(".local/share/flatpak/app")
         .join(flatpak_id)
         .join("current/active/metadata");
@@ -173,13 +191,13 @@ fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
 }
 
 // https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
-fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
+fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
     let mut result = Vec::new();
 
-    let shared = string_list(keyfile, "Context", "shared");
-    let sockets = string_list(keyfile, "Context", "sockets");
-    let devices = string_list(keyfile, "Context", "devices");
-    let filesystems = string_list(keyfile, "Context", "filesystems");
+    let shared = split_list(&ctx.shared);
+    let sockets = split_list(&ctx.sockets);
+    let devices = split_list(&ctx.devices);
+    let filesystems = split_list(&ctx.filesystems);
 
     if shared.iter().any(|s| s == "network") {
         result.push(AppPermission {
@@ -271,9 +289,13 @@ fn parse_permissions(keyfile: &KeyFile) -> Vec<AppPermission> {
     result
 }
 
-fn string_list(keyfile: &KeyFile, group: &str, key: &str) -> Vec<String> {
-    keyfile
-        .string_list(group, key)
-        .map(|list| list.iter().map(|s| s.to_string()).collect())
-        .unwrap_or_default()
+fn split_list(value: &Option<String>) -> Vec<String> {
+    value
+        .as_deref()
+        .unwrap_or("")
+        .split(';')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect()
 }
