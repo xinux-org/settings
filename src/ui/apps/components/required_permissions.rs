@@ -1,20 +1,65 @@
-use relm4::{
-    ComponentParts, ComponentSender, SimpleComponent, adw,
-    adw::prelude::*,
-    gtk,
-};
-
+use relm4::{ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk};
 use dirs::home_dir;
-use serde::Deserialize;
+use serde::{Deserialize};
 use serini::from_str;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct AppPermission {
-    // pub icon: &'static str,
     pub title: &'static str,
     pub subtitle: &'static str,
+}
+
+impl TryFrom<&str> for AppPermission {
+    type Error = ();
+
+    fn try_from(val: &str) -> Result<Self, Self::Error> {
+        let perm = match val {
+            "network" => AppPermission {
+                title: "Network",
+                subtitle: "Can communicate over the network",
+            },
+            "system-bus" => AppPermission {
+                title: "System Services",
+                subtitle: "Full access to system D-Bus services",
+            },
+            "session-bus" => AppPermission {
+                title: "Session Services",
+                subtitle: "Full access to session D-Bus services",
+            },
+            "all" => AppPermission {
+                title: "Devices",
+                subtitle: "Can access system device files",
+            },
+            "home" | "home:rw" => AppPermission {
+                title: "Home Folder",
+                subtitle: "Can view, edit and create files",
+            },
+            "home:ro" => AppPermission {
+                title: "Home Folder",
+                subtitle: "Can view files",
+            },
+            "host" | "host:rw" => AppPermission {
+                title: "File System",
+                subtitle: "Can view, edit and create files",
+            },
+            "host:ro" => AppPermission {
+                title: "File System",
+                subtitle: "Can view files",
+            },
+            s if s.starts_with("xdg-download") && s.ends_with(":ro") => AppPermission {
+                title: "Downloads Folder",
+                subtitle: "Can view files",
+            },
+            s if s.starts_with("xdg-download") => AppPermission {
+                title: "Downloads Folder",
+                subtitle: "Can view, edit and create files",
+            },
+            _ => return Err(()),
+        };
+        Ok(perm)
+    }
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -139,7 +184,6 @@ impl SimpleComponent for RequiredPermissionsDialog {
                             .title(permission.title)
                             .subtitle(permission.subtitle)
                             .build();
-                        // row.add_prefix(&gtk::Image::from_icon_name(permission.icon));
 
                         self.pref_group.add(&row);
                         self.dynamic_rows.push(row.upcast());
@@ -192,99 +236,27 @@ fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
 
 // https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
 fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
-    let mut result = Vec::new();
-
     let shared = split_list(&ctx.shared);
     let sockets = split_list(&ctx.sockets);
     let devices = split_list(&ctx.devices);
     let filesystems = split_list(&ctx.filesystems);
 
-    if shared.iter().any(|s| s == "network") {
-        result.push(AppPermission {
-            // icon: "network-wireless-symbolic",
-            title: "Network",
-            subtitle: "Can communicate over the network",
-        });
-    }
-
-    if sockets.iter().any(|s| s == "system-bus") {
-        result.push(AppPermission {
-            // icon: "applications-system-symbolic",
-            title: "System Services",
-            subtitle: "Full access to system D-Bus services",
-        });
-    }
-
-    if sockets.iter().any(|s| s == "session-bus") {
-        result.push(AppPermission {
-            // icon: "preferences-desktop-symbolic",
-            title: "Session Services",
-            subtitle: "Full access to session D-Bus services",
-        });
-    }
-
-    if devices.iter().any(|d| d == "all") {
-        result.push(AppPermission {
-            // icon: "drive-harddisk-symbolic",
-            title: "Devices",
-            subtitle: "Can access system device files",
-        });
-    }
-
-    if filesystems.iter().any(|f| f == "home" || f == "home:rw") {
-        result.push(AppPermission {
-            // icon: "user-home-symbolic",
-            title: "Home Folder",
-            subtitle: "Can view, edit and create files",
-        });
-    } else if filesystems.iter().any(|f| f == "home:ro") {
-        result.push(AppPermission {
-            // icon: "user-home-symbolic",
-            title: "Home Folder",
-            subtitle: "Can view files",
-        });
-    }
-
-    if filesystems.iter().any(|f| f == "host" || f == "host:rw") {
-        result.push(AppPermission {
-            // icon: "drive-harddisk-symbolic",
-            title: "File System",
-            subtitle: "Can view, edit and create files",
-        });
-    } else if filesystems.iter().any(|f| f == "host:ro") {
-        result.push(AppPermission {
-            // icon: "drive-harddisk-symbolic",
-            title: "File System",
-            subtitle: "Can view files",
-        });
-    }
-
-    if filesystems
+    let result: Vec<AppPermission> = shared
         .iter()
-        .any(|f| f.starts_with("xdg-download") && !f.ends_with(":ro"))
-    {
-        result.push(AppPermission {
-            // icon: "folder-download-symbolic",
-            title: "Downloads Folder",
-            subtitle: "Can view, edit and create files",
-        });
-    } else if filesystems.iter().any(|f| f.starts_with("xdg-download")) {
-        result.push(AppPermission {
-            // icon: "folder-download-symbolic",
-            title: "Downloads Folder",
-            subtitle: "Can view files",
-        });
-    }
+        .chain(&sockets)
+        .chain(&devices)
+        .chain(&filesystems)
+        .filter_map(|v| AppPermission::try_from(v.as_str()).ok())
+        .collect();
 
-    let has_x11 = sockets.iter().any(|s| s == "x11" || s == "fallback-x11");
-    let has_wayland = sockets.iter().any(|s| s == "wayland");
-    if has_x11 && !has_wayland {
-        result.push(AppPermission {
-            // icon: "dialog-warning-symbolic",
-            title: "Legacy Display System",
-            subtitle: "Uses an old, insecure display system",
-        });
-    }
+    // let has_x11 = sockets.iter().any(|s| s == "x11" || s == "fallback-x11");
+    // let has_wayland = sockets.iter().any(|s| s == "wayland");
+    // if has_x11 && !has_wayland {
+    //     result.push(AppPermission {
+    //         title: "Legacy Display System",
+    //         subtitle: "Uses an old, insecure display system",
+    //     });
+    // }
 
     result
 }
