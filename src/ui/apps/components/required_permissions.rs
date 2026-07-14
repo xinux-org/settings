@@ -1,6 +1,6 @@
 use relm4::{ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk};
 use dirs::home_dir;
-use serde::{Deserialize};
+use serde::{Deserialize, Deserializer};
 use serini::from_str;
 use std::fs::read_to_string;
 use std::path::PathBuf;
@@ -70,10 +70,27 @@ struct Metadata {
 
 #[derive(Debug, Default, Deserialize)]
 struct Context {
-    shared: Option<String>,
-    sockets: Option<String>,
-    devices: Option<String>,
-    filesystems: Option<String>,
+    #[serde(default, deserialize_with = "split")]
+    shared: Vec<String>,
+    #[serde(default, deserialize_with = "split")]
+    sockets: Vec<String>,
+    #[serde(default, deserialize_with = "split")]
+    devices: Vec<String>,
+    #[serde(default, deserialize_with = "split")]
+    filesystems: Vec<String>,
+}
+
+fn split<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let raw = String::deserialize(deserializer)?;
+    Ok(raw
+        .split(';')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect())
 }
 
 #[derive(Debug)]
@@ -236,16 +253,17 @@ fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
 
 // https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
 fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
-    let shared = split_list(&ctx.shared);
-    let sockets = split_list(&ctx.sockets);
-    let devices = split_list(&ctx.devices);
-    let filesystems = split_list(&ctx.filesystems);
+    // let shared = split_list(&ctx.shared);
+    // let sockets = split_list(&ctx.sockets);
+    // let devices = split_list(&ctx.devices);
+    // let filesystems = split_list(&ctx.filesystems);
 
-    let result: Vec<AppPermission> = shared
+    let result: Vec<AppPermission> = ctx
+        .shared
         .iter()
-        .chain(&sockets)
-        .chain(&devices)
-        .chain(&filesystems)
+        .chain(&ctx.sockets)
+        .chain(&ctx.devices)
+        .chain(&ctx.filesystems)
         .filter_map(|v| AppPermission::try_from(v.as_str()).ok())
         .collect();
 
@@ -261,13 +279,13 @@ fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
     result
 }
 
-fn split_list(value: &Option<String>) -> Vec<String> {
-    value
-        .as_deref()
-        .unwrap_or("")
-        .split(';')
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(String::from)
-        .collect()
-}
+// fn split_list(value: &Option<String>) -> Vec<String> {
+//     value
+//         .as_deref()
+//         .unwrap_or("")
+//         .split(';')
+//         .map(str::trim)
+//         .filter(|s| !s.is_empty())
+//         .map(String::from)
+//         .collect()
+// }
