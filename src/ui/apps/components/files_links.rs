@@ -29,18 +29,15 @@ impl SimpleComponent for FilesLinksDialog {
     view! {
         adw::NavigationPage {
             set_title: "Files and Links",
-
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
-
                 #[wrap(Some)]
                 set_content = &gtk::ScrolledWindow {
                     #[wrap(Some)]
                     set_child = &adw::Clamp {
                         set_maximum_size: 450,
                         set_tightening_threshold: 350,
-
                         #[wrap(Some)]
                         set_child = &gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
@@ -49,7 +46,6 @@ impl SimpleComponent for FilesLinksDialog {
                             set_margin_bottom: 24,
                             set_margin_start: 16,
                             set_margin_end: 16,
-
                             #[name = "desc_label"]
                             gtk::Label {
                                 set_use_markup: true,
@@ -57,7 +53,6 @@ impl SimpleComponent for FilesLinksDialog {
                                 set_justify: gtk::Justification::Center,
                                 add_css_class: "dim-label",
                             },
-
                             #[name = "content_box"]
                             gtk::Box {
                                 set_orientation: gtk::Orientation::Vertical,
@@ -89,17 +84,14 @@ impl SimpleComponent for FilesLinksDialog {
         match msg {
             FilesLinksDialogMsg::Show(name, mime_types) => {
                 self.app_name = name;
-
                 let desc = format!(
                     "File and link types that are opened by <b>{}</b>",
                     self.app_name
                 );
                 self.desc_label.set_label(&desc);
-
                 while let Some(child) = self.content_box.first_child() {
                     self.content_box.remove(&child);
                 }
-
                 if mime_types.is_empty() {
                     let status = adw::StatusPage::builder()
                         .icon_name("text-x-generic-symbolic")
@@ -119,22 +111,17 @@ impl SimpleComponent for FilesLinksDialog {
                             "types"
                         }
                     ));
-
                     for mime_str in mime_types.iter() {
                         let description = content_type_get_description(mime_str);
-
                         let action_row = adw::ActionRow::builder()
                             .title(markup_escape_text(&description).as_str())
                             .subtitle(markup_escape_text(mime_str).as_str())
                             .build();
-
                         let icon = content_type_get_icon(mime_str);
                         let image = gtk::Image::from_gicon(&icon);
                         action_row.add_prefix(&image);
-
                         pref_group.add(&action_row);
                     }
-
                     self.content_box.append(&pref_group);
                 }
             }

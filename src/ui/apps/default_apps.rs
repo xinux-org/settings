@@ -18,7 +18,7 @@ pub enum DefaultAppsMsg {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DefaultCategory {
+pub enum DefaultCategory {
     Web,
     Mail,
     Calendar,
@@ -100,32 +100,26 @@ impl SimpleComponent for DefaultAppsPage {
                 set_content = &adw::PreferencesPage {
                     adw::PreferencesGroup {
                         set_title: "Default Apps",
-
                         #[name = "web_row"]
                         adw::ComboRow {
                             set_title: "Web",
                         },
-
                         #[name = "mail_row"]
                         adw::ComboRow {
                             set_title: "Mail",
                         },
-
                         #[name = "calendar_row"]
                         adw::ComboRow {
                             set_title: "Calendar",
                         },
-
                         #[name = "music_row"]
                         adw::ComboRow {
                             set_title: "Music",
                         },
-
                         #[name = "video_row"]
                         adw::ComboRow {
                             set_title: "Video",
                         },
-
                         #[name = "photos_row"]
                         adw::ComboRow {
                             set_title: "Photos",
@@ -142,46 +136,20 @@ impl SimpleComponent for DefaultAppsPage {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let widgets = view_output!();
-
         let mut model = DefaultAppsPage { rows: Vec::new() };
 
-        setup_row(
-            &mut model,
-            &widgets.web_row,
-            DefaultCategory::Web,
-            sender.clone(),
-        );
-        setup_row(
-            &mut model,
-            &widgets.mail_row,
-            DefaultCategory::Mail,
-            sender.clone(),
-        );
-        setup_row(
-            &mut model,
-            &widgets.calendar_row,
-            DefaultCategory::Calendar,
-            sender.clone(),
-        );
-        setup_row(
-            &mut model,
-            &widgets.music_row,
-            DefaultCategory::Music,
-            sender.clone(),
-        );
-        setup_row(
-            &mut model,
-            &widgets.video_row,
-            DefaultCategory::Video,
-            sender.clone(),
-        );
-        setup_row(
-            &mut model,
-            &widgets.photos_row,
-            DefaultCategory::Photos,
-            sender.clone(),
-        );
+        let rows = [
+            (&widgets.web_row, DefaultCategory::Web),
+            (&widgets.mail_row, DefaultCategory::Mail),
+            (&widgets.calendar_row, DefaultCategory::Calendar),
+            (&widgets.music_row, DefaultCategory::Music),
+            (&widgets.video_row, DefaultCategory::Video),
+            (&widgets.photos_row, DefaultCategory::Photos)
+        ];
 
+        for (row, kind) in rows {
+            setup_row(&mut model, row, kind, sender.clone());
+        }
         ComponentParts { model, widgets }
     }
 
@@ -262,10 +230,8 @@ fn collect_apps_for_row(content_type: &str) -> Vec<AppChoice> {
         if is_same_as_default {
             continue;
         }
-
         insert_app_choice(&mut map, app);
     }
-
     map.into_values().collect()
 }
 
@@ -319,7 +285,6 @@ fn set_default_for_row(row: &RowState, app: &gio::AppInfo) -> Result<(), glib::E
 
         for mime in supported_types.iter() {
             let mime = mime.as_str();
-
             let matched = patterns
                 .iter()
                 .any(|pattern| mime_matches_filter(mime, pattern));
@@ -338,6 +303,5 @@ fn set_default_for_row(row: &RowState, app: &gio::AppInfo) -> Result<(), glib::E
             }
         }
     }
-
     Ok(())
 }

@@ -13,7 +13,6 @@ pub struct AppPermission {
 
 impl TryFrom<&str> for AppPermission {
     type Error = ();
-
     fn try_from(val: &str) -> Result<Self, Self::Error> {
         let perm = match val {
             "network" => AppPermission {
@@ -115,18 +114,15 @@ impl SimpleComponent for RequiredPermissionsDialog {
     view! {
         adw::NavigationPage {
             set_title: "Permissions",
-
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
-
                 #[wrap(Some)]
                 set_content = &gtk::ScrolledWindow {
                     #[wrap(Some)]
                     set_child = &adw::Clamp {
                         set_maximum_size: 420,
                         set_tightening_threshold: 350,
-
                         #[wrap(Some)]
                         set_child = &gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
@@ -135,7 +131,6 @@ impl SimpleComponent for RequiredPermissionsDialog {
                             set_margin_bottom: 24,
                             set_margin_start: 16,
                             set_margin_end: 16,
-
                             #[name = "desc_label"]
                             gtk::Label {
                                 set_use_markup: true,
@@ -143,7 +138,6 @@ impl SimpleComponent for RequiredPermissionsDialog {
                                 set_justify: gtk::Justification::Center,
                                 add_css_class: "dim-label",
                             },
-
                             #[name = "pref_group"]
                             adw::PreferencesGroup {}
                         }
@@ -174,17 +168,14 @@ impl SimpleComponent for RequiredPermissionsDialog {
         match msg {
             RequiredPermissionsDialogMsg::Show(name, permissions) => {
                 self.app_name = name;
-
                 let desc = format!(
                     "<b>{}</b> requires access to the following system resources. To stop this access, the app must be romoved",
                     self.app_name
                 );
                 self.desc_label.set_label(&desc);
-
                 for row in self.dynamic_rows.drain(..) {
                     self.pref_group.remove(&row);
                 }
-
                 if permissions.is_empty() {
                     let status = adw::StatusPage::builder()
                         .icon_name("security-high-symbolic")
@@ -201,7 +192,6 @@ impl SimpleComponent for RequiredPermissionsDialog {
                             .title(permission.title)
                             .subtitle(permission.subtitle)
                             .build();
-
                         self.pref_group.add(&row);
                         self.dynamic_rows.push(row.upcast());
                     }
@@ -216,23 +206,18 @@ pub fn load_required_permissions(app_id: Option<&str>) -> Vec<AppPermission> {
         return Vec::new();
     };
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
-
     let Some(metadata_path) = find_metadata_path(flatpak_id) else {
         return Vec::new();
     };
-
     let Ok(raw) = read_to_string(&metadata_path) else {
         return Vec::new();
     };
-
     let Ok(meta) = from_str::<Metadata>(&raw) else {
         return Vec::new();
     };
-
     let Some(ctx) = meta.context else {
         return Vec::new();
     };
-
     parse_permissions(&ctx)
 }
 
@@ -253,11 +238,6 @@ fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
 
 // https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
 fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
-    // let shared = split_list(&ctx.shared);
-    // let sockets = split_list(&ctx.sockets);
-    // let devices = split_list(&ctx.devices);
-    // let filesystems = split_list(&ctx.filesystems);
-
     let result: Vec<AppPermission> = ctx
         .shared
         .iter()
@@ -278,14 +258,3 @@ fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
 
     result
 }
-
-// fn split_list(value: &Option<String>) -> Vec<String> {
-//     value
-//         .as_deref()
-//         .unwrap_or("")
-//         .split(';')
-//         .map(str::trim)
-//         .filter(|s| !s.is_empty())
-//         .map(String::from)
-//         .collect()
-// }

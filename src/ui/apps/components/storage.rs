@@ -5,7 +5,8 @@ use relm4::{
 use dirs::home_dir;
 use std::{
     fs::{read_dir, remove_dir_all, remove_file},
-    path::PathBuf,
+    path::{PathBuf, Path},
+    io::Result,
 };
 
 #[derive(Debug, Clone)]
@@ -43,18 +44,15 @@ impl SimpleComponent for StorageDialog {
     view! {
         adw::NavigationPage {
             set_title: "Storage",
-
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
-
                 #[wrap(Some)]
                 set_content = &gtk::ScrolledWindow {
                     #[wrap(Some)]
                     set_child = &adw::Clamp {
                         set_maximum_size: 450,
                         set_tightening_threshold: 350,
-
                         #[wrap(Some)]
                         set_child = &gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
@@ -63,7 +61,6 @@ impl SimpleComponent for StorageDialog {
                             set_margin_bottom: 24,
                             set_margin_start: 16,
                             set_margin_end: 16,
-
                             #[name = "desc_label"]
                             gtk::Label {
                                 set_use_markup: true,
@@ -71,17 +68,14 @@ impl SimpleComponent for StorageDialog {
                                 set_justify: gtk::Justification::Center,
                                 add_css_class: "dim-label",
                             },
-
                             #[name = "pref_group"]
                             adw::PreferencesGroup {},
-
                             #[name = "clear_cache_button"]
                             gtk::Button {
                                 set_label: "Clear Cache",
                                 add_css_class: "pill",
                                 set_halign: gtk::Align::Center,
                                 set_sensitive: false,
-
                                 connect_clicked[sender] => move |button| {
                                     sender.input(StorageDialogMsg::ClearCacheClicked(button.clone()));
                                 }
@@ -126,7 +120,6 @@ impl SimpleComponent for StorageDialog {
                 self.info = info;
                 self.refresh_rows();
             }
-
             StorageDialogMsg::ClearCacheClicked(button) => {
                 let dialog = gtk::AlertDialog::builder()
                     .modal(true)
@@ -150,7 +143,6 @@ impl SimpleComponent for StorageDialog {
                     }
                 });
             }
-
             StorageDialogMsg::ConfirmClearCache => {
                 if let Err(e) = clear_cache(self.app_id.as_ref()) {
                     eprintln!("Cache tozalashda xato: {e}");
@@ -243,7 +235,7 @@ pub fn calculate_storage(app_id: Option<&String>) -> AppStorageInfo {
     }
 }
 
-pub fn clear_cache(app_id: Option<&String>) -> std::io::Result<()> {
+pub fn clear_cache(app_id: Option<&String>) -> Result<()> {
     let Some(app_id) = app_id else {
         return Ok(());
     };
@@ -274,12 +266,12 @@ pub fn clear_cache(app_id: Option<&String>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn dir_size(path: &std::path::Path) -> std::io::Result<u64> {
+fn dir_size(path: &Path) -> Result<u64> {
     let mut total = 0u64;
     if !path.exists() {
         return Ok(0);
     }
-    for entry in std::fs::read_dir(path)? {
+    for entry in read_dir(path)? {
         let entry = entry?;
         let meta = entry.metadata()?;
 

@@ -143,9 +143,9 @@ impl SimpleAsyncComponent for WifiModel {
                         #[watch]
                         set_visible_child_name: match model.wifi_stack_page {
                           // donʻt translate
-                            WifiStack::WifiOn => "wifi-connections",
-                            WifiStack::WifiOff => "wifi-off",
-                            WifiStack::Airplane => "airplane-mode",
+                          WifiStack::WifiOn => "wifi-connections",
+                          WifiStack::WifiOff => "wifi-off",
+                          WifiStack::Airplane => "airplane-mode",
                         },
                         // donʻt translate
                         add_named: (&wifi_off, Some("wifi-off")),

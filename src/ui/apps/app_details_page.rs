@@ -51,40 +51,33 @@ impl SimpleComponent for AppDetailsPage {
     view! {
         adw::NavigationPage {
             set_title: &model.app.name,
-
             #[name = "detail_nav"]
             #[wrap(Some)]
             set_child = &adw::NavigationView {
                 add = &adw::NavigationPage {
                     set_title: &model.app.name,
-
                     #[wrap(Some)]
                     set_child = &adw::ToolbarView {
                         set_top_bar_style: adw::ToolbarStyle::Flat,
-
                         add_top_bar = &adw::HeaderBar {
                             #[wrap(Some)]
                             set_title_widget = &adw::WindowTitle {
                                 set_title: &model.app.name
                             }
                         },
-
                         #[name = "sandbox_banner"]
                         add_top_bar = &adw::Banner {
                             set_title: "App is not sandboxed",
                             set_revealed: false,
                         },
-
                         #[wrap(Some)]
                         set_content = &gtk::ScrolledWindow {
                             set_vexpand: true,
                             set_hexpand: true,
-
                             #[wrap(Some)]
                             set_child = &adw::Clamp {
                                 set_maximum_size: 700,
                                 // set_tightening_threshold: 500,
-
                                 #[wrap(Some)]
                                 set_child = &gtk::Box {
                                     set_orientation: gtk::Orientation::Vertical,
@@ -93,20 +86,17 @@ impl SimpleComponent for AppDetailsPage {
                                     set_margin_bottom: 24,
                                     set_margin_start: 24,
                                     set_margin_end: 24,
-
                                     gtk::Box {
                                         set_orientation: gtk::Orientation::Vertical,
                                         set_spacing: 16,
                                         set_halign: gtk::Align::Center,
                                         set_margin_top: 12,
                                         set_margin_bottom: 12,
-
                                         #[name = "app_icon"]
                                         gtk::Image {
                                             set_pixel_size: 96,
                                             set_halign: gtk::Align::Center,
                                         },
-
                                         gtk::Label {
                                             set_label: &model.app.name,
                                             add_css_class: "title-1",
@@ -116,13 +106,11 @@ impl SimpleComponent for AppDetailsPage {
                                             set_orientation: gtk::Orientation::Horizontal,
                                             set_spacing: 12,
                                             set_halign: gtk::Align::Center,
-
                                             gtk::Button {
                                                 set_label: "Open",
                                                 add_css_class: "suggested-action",
                                                 connect_clicked => AppDetailsMsg::OpenApp,
                                             },
-
                                             gtk::Button {
                                                 set_label: "App Details",
                                                 connect_clicked[sender] => move |button| {
@@ -131,19 +119,14 @@ impl SimpleComponent for AppDetailsPage {
                                             }
                                         }
                                     },
-
-
                                     adw::PreferencesGroup {
                                         set_title: "Permissions",
-
                                         #[name = "notifications_row"]
                                         adw::SwitchRow {
                                             set_title: "Notifications",
                                             set_visible: false,
                                         },
                                     },
-
-
                                     #[name = "required_permissions_group"]
                                     adw::PreferencesGroup {
                                         #[name = "required_permissions_row"]
@@ -151,53 +134,43 @@ impl SimpleComponent for AppDetailsPage {
                                             set_title: "Required Permissions",
                                             set_subtitle: "System permissions that the app requires",
                                             set_activatable: true,
-
                                             #[name = "required_permissions_count"]
                                             add_suffix = &gtk::Label {
                                                 add_css_class: "dim-label",
                                             },
                                             add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
-
                                             connect_activated[sender] => move |row| {
                                                 sender.input(AppDetailsMsg::ShowRequiredPermissions(row.clone()));
                                             }
                                         },
                                     },
-
-
                                     #[name = "general_group"]
                                     adw::PreferencesGroup {
                                         set_title: "General",
-
                                         #[name = "files_links_row"]
                                         adw::ActionRow {
                                             set_title: "Files and Links",
                                             set_subtitle: "File and link types that are opened by the app",
                                             set_activatable: true,
-
                                             #[name = "files_links_count"]
                                             add_suffix = &gtk::Label {
                                                 add_css_class: "dim-label",
                                             },
                                             add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
-
                                             connect_activated[sender] => move |row| {
                                                 sender.input(AppDetailsMsg::ShowFilesLinks(row.clone()));
                                             }
                                         },
-
                                         #[name = "storage_row"]
                                         adw::ActionRow {
                                             set_title: "Storage",
                                             set_subtitle: "Disk space being used",
                                             set_activatable: true,
-
                                             #[name = "storage_size"]
                                             add_suffix = &gtk::Label {
                                                 add_css_class: "dim-label",
                                             },
                                             add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
-
                                             connect_activated[sender] => move |row| {
                                                 sender.input(AppDetailsMsg::ShowStorage(row.clone()));
                                             }
@@ -220,9 +193,7 @@ impl SimpleComponent for AppDetailsPage {
         let files_links_dialog = FilesLinksDialog::builder().launch(()).detach();
         let storage_dialog = StorageDialog::builder().launch(()).detach();
         let required_permissions_dialog = RequiredPermissionsDialog::builder().launch(()).detach();
-
         let required_permissions = load_required_permissions(app.app_id.as_deref());
-
         let mut model = Self {
             app,
             detail_nav: adw::NavigationView::new(),
@@ -232,9 +203,7 @@ impl SimpleComponent for AppDetailsPage {
             required_permissions,
         };
         let widgets = view_output!();
-
         model.detail_nav = widgets.detail_nav.clone();
-
         if let Some(icon) = &model.app.icon {
             widgets.app_icon.set_from_gicon(icon);
         } else {
@@ -295,25 +264,19 @@ impl SimpleComponent for AppDetailsPage {
                     eprintln!("Failed to launch app '{}': {err}", self.app.name);
                 }
             }
-
             AppDetailsMsg::ShowDetails(button) => {
                 self.app.open_in_software_center(&button);
             }
-
             AppDetailsMsg::ShowFilesLinks(_row) => {
                 let mime_types = self.app.app_info.supported_types();
-
                 self.files_links_dialog
                     .sender()
                     .send(FilesLinksDialogMsg::Show(self.app.name.clone(), mime_types))
                     .expect("Failed to update files links dialog");
-
                 self.detail_nav.push(self.files_links_dialog.widget());
             }
-
             AppDetailsMsg::ShowStorage(_row) => {
                 let info = calculate_storage(self.app.app_id.as_ref());
-
                 self.storage_dialog
                     .sender()
                     .send(StorageDialogMsg::Show(
@@ -325,7 +288,6 @@ impl SimpleComponent for AppDetailsPage {
 
                 self.detail_nav.push(self.storage_dialog.widget());
             }
-
             AppDetailsMsg::ShowRequiredPermissions(_row) => {
                 self.required_permissions_dialog
                     .sender()
@@ -334,7 +296,6 @@ impl SimpleComponent for AppDetailsPage {
                         self.required_permissions.clone(),
                     ))
                     .expect("Failed to update required permissions dialog");
-
                 self.detail_nav
                     .push(self.required_permissions_dialog.widget());
             }
@@ -354,7 +315,6 @@ fn is_app_sandboxed(app: &AppEntry) -> bool {
 
 pub fn detect_app_source(app_id: Option<&str>, _executable: Option<&str>) -> Option<String> {
     let desktop = app_id.and_then(DesktopAppInfo::new)?;
-
     if desktop.string("X-Flatpak").is_some() {
         Some("Flatpak".to_string())
     } else {
@@ -419,39 +379,4 @@ impl AppEntry {
             }
         });
     }
-
-    // fn show_app_details_dialog(&self, button: &gtk::Button) {
-    //     let details = format!(
-    //         "Name: {}\nApp ID: {}\nCanonical ID: {}\nDescription: {}\nExecutable: {}\nSupports files: {}\nSupports URIs: {}\nSource: {}",
-    //         self.name,
-    //         self.app_id.as_deref().unwrap_or("—"),
-    //         self.canonical_id.as_deref().unwrap_or("—"),
-    //         self.description.as_deref().unwrap_or("—"),
-    //         self.executable.as_deref().unwrap_or("—"),
-    //         if self.app_info.supports_files() {
-    //             "Yes"
-    //         } else {
-    //             "No"
-    //         },
-    //         if self.app_info.supports_uris() {
-    //             "Yes"
-    //         } else {
-    //             "No"
-    //         },
-    //         self.source.as_deref().unwrap_or("Unknown"),
-    //     );
-
-    //     let dialog = gtk::AlertDialog::builder()
-    //         .modal(true)
-    //         .message(&self.name)
-    //         .detail(&details)
-    //         .build();
-
-    //     dialog.set_buttons(&["Close"]);
-    //     dialog.set_cancel_button(0);
-    //     dialog.set_default_button(0);
-
-    //     let window = button.root().and_then(|r| r.downcast::<gtk::Window>().ok());
-    //     dialog.show(window.as_ref());
-    // }
 }

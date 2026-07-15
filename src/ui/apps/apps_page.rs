@@ -36,29 +36,23 @@ impl SimpleComponent for AppModal {
         adw::NavigationView {
             add = &adw::NavigationPage {
                 set_title: "Apps",
-
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
                     set_top_bar_style: adw::ToolbarStyle::Flat,
-
                     add_top_bar = &adw::HeaderBar {
                         #[wrap(Some)]
                         set_title_widget = &adw::WindowTitle {
                             set_title: "Apps"
                         }
                     },
-
                     #[wrap(Some)]
                     set_content = &adw::PreferencesPage {
                         set_title: "Apps",
                         set_icon_name: Some("application-x-executable-symbolic"),
-
                         add = &adw::PreferencesGroup {
                             set_title: "Search",
-
                             gtk::SearchEntry {
                                 set_placeholder_text: Some("Search apps"),
-
                                 connect_search_changed[sender] => move |entry| {
                                     sender.input(AppsMsg::SearchChanged(
                                         entry.text().to_string(),
@@ -66,28 +60,22 @@ impl SimpleComponent for AppModal {
                                 }
                             }
                         },
-
                         add = &adw::PreferencesGroup {
                             set_title: "General",
-
                             adw::ActionRow {
                                 set_use_markup: false,
                                 set_title: "Default Apps",
                                 set_subtitle: "Set which apps open links, files, and media",
                                 set_activatable: true,
-
                                 connect_activated => AppsMsg::OpenDefaultApps,
-
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_valign: gtk::Align::Center,
                                 }
                             }
                         },
-
                         add = &adw::PreferencesGroup {
                             set_title: "Installed Apps",
-
                             #[name = "apps_list"]
                             gtk::ListBox {
                                 add_css_class: "boxed-list",
@@ -106,10 +94,8 @@ impl SimpleComponent for AppModal {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let default_apps = DefaultAppsPage::builder().launch(()).detach();
-
         let apps = collect_apps();
         let filtered_apps = apps.clone();
-
         let mut model = Self {
             navigation: adw::NavigationView::new(),
             apps_list: gtk::ListBox::new(),
@@ -118,18 +104,14 @@ impl SimpleComponent for AppModal {
             apps,
             filtered_apps,
         };
-
         let widgets = view_output!();
-
         model.navigation = widgets.navigation.clone();
         model.apps_list = widgets.apps_list.clone();
-
         rebuild_apps_list(
             &model.apps_list,
             &model.filtered_apps,
             sender.input_sender(),
         );
-
         ComponentParts { model, widgets }
     }
 
@@ -139,7 +121,6 @@ impl SimpleComponent for AppModal {
                 let page = self.default_apps.widget();
                 self.navigation.push(page);
             }
-
             AppsMsg::SearchChanged(query) => {
                 let query = query.trim().to_lowercase();
 
@@ -166,10 +147,8 @@ impl SimpleComponent for AppModal {
                         .cloned()
                         .collect()
                 };
-
                 rebuild_apps_list(&self.apps_list, &self.filtered_apps, sender.input_sender());
             }
-
             AppsMsg::OpenAppDetails(app) => {
                 let details_page = AppDetailsPage::builder().launch(app).detach();
                 self.navigation.push(details_page.widget());
@@ -208,13 +187,11 @@ fn collect_apps() -> Vec<AppEntry> {
         a.name.to_lowercase() == b.name.to_lowercase()
             && a.executable.as_deref().unwrap_or("") == b.executable.as_deref().unwrap_or("")
     });
-
     apps
 }
 
 fn notification_canonical_id(app_id: &str) -> String {
     let app_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
-
     app_id
         .chars()
         .map(|c| {
@@ -231,7 +208,6 @@ fn rebuild_apps_list(list: &gtk::ListBox, apps: &[AppEntry], sender: &relm4::Sen
     while let Some(child) = list.first_child() {
         list.remove(&child);
     }
-
     for app in apps {
         let row = adw::ActionRow::new();
 
