@@ -1,7 +1,6 @@
 use relm4::{
     ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk, gtk::gio,
 };
-
 use dirs::home_dir;
 use std::{
     fs::{read_dir, remove_dir_all, remove_file},
@@ -9,7 +8,7 @@ use std::{
     io::Result,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AppStorageInfo {
     pub app: u64,
     pub data: u64,
@@ -22,10 +21,6 @@ pub struct StorageDialog {
     app_name: String,
     app_id: Option<String>,
     info: AppStorageInfo,
-    desc_label: gtk::Label,
-    pref_group: adw::PreferencesGroup,
-    clear_cache_button: gtk::Button,
-    dynamic_rows: Vec<gtk::Widget>,
 }
 
 #[derive(Debug, Clone)]
@@ -48,41 +43,56 @@ impl SimpleComponent for StorageDialog {
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
                 #[wrap(Some)]
-                set_content = &gtk::ScrolledWindow {
-                    #[wrap(Some)]
-                    set_child = &adw::Clamp {
-                        set_maximum_size: 450,
-                        set_tightening_threshold: 350,
-                        #[wrap(Some)]
-                        set_child = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_spacing: 24,
-                            set_margin_top: 24,
-                            set_margin_bottom: 24,
-                            set_margin_start: 16,
-                            set_margin_end: 16,
-                            #[name = "desc_label"]
-                            gtk::Label {
-                                set_use_markup: true,
-                                set_wrap: true,
-                                set_justify: gtk::Justification::Center,
-                                add_css_class: "dim-label",
+                set_content = &adw::PreferencesPage {
+                    #[watch]
+                    set_description: &format!(
+                        "How much disk space <b>{}</b> is occupying with app data and caches",
+                        model.app_name
+                    ),
+                    adw::PreferencesGroup {
+                        adw::ActionRow {
+                            set_title: "App",
+                            add_suffix = &gtk::Label {
+                                #[watch]
+                                set_label: &row_text(model.info.app),
                             },
-                            #[name = "pref_group"]
-                            adw::PreferencesGroup {},
-                            #[name = "clear_cache_button"]
-                            gtk::Button {
-                                set_label: "Clear Cache",
-                                add_css_class: "pill",
-                                set_halign: gtk::Align::Center,
-                                set_sensitive: false,
-                                connect_clicked[sender] => move |button| {
-                                    sender.input(StorageDialogMsg::ClearCacheClicked(button.clone()));
-                                }
+                        },
+                        adw::ActionRow {
+                            set_title: "Data",
+                            add_suffix = &gtk::Label {
+                                #[watch]
+                                set_label: &row_text(model.info.data),
+                            },
+                        },
+                        adw::ActionRow {
+                            set_title: "Cache",
+                            add_suffix = &gtk::Label {
+                                #[watch]
+                                set_label: &row_text(model.info.cache),
+                            },
+                        },
+                        adw::ActionRow {
+                            set_title: "Total",
+                            add_suffix = &gtk::Label {
+                                #[watch]
+                                set_label: &row_text(model.info.total),
+                            },
+                        },
+                    },
+
+                    adw::PreferencesGroup {
+                        gtk::Button {
+                            set_label: "Clear Cache",
+                            add_css_class: "pill",
+                            set_halign: gtk::Align::Center,
+                            #[watch]
+                            set_sensitive: model.info.cache > 0,
+                            connect_clicked[sender] => move |button| {
+                                sender.input(StorageDialogMsg::ClearCacheClicked(button.clone()));
                             }
                         }
-                    }
-                }
+                    },
+                },
             }
         }
     }
@@ -92,23 +102,12 @@ impl SimpleComponent for StorageDialog {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let widgets = view_output!();
-
         let model = Self {
             app_name: String::new(),
             app_id: None,
-            info: AppStorageInfo {
-                app: 0,
-                data: 0,
-                cache: 0,
-                total: 0,
-            },
-            desc_label: widgets.desc_label.clone(),
-            pref_group: widgets.pref_group.clone(),
-            clear_cache_button: widgets.clear_cache_button.clone(),
-            dynamic_rows: Vec::new(),
+            info: AppStorageInfo::default(),
         };
-
+        let widgets = view_output!();
         ComponentParts { model, widgets }
     }
 
@@ -118,7 +117,6 @@ impl SimpleComponent for StorageDialog {
                 self.app_name = name;
                 self.app_id = app_id;
                 self.info = info;
-                self.refresh_rows();
             }
             StorageDialogMsg::ClearCacheClicked(button) => {
                 let dialog = gtk::AlertDialog::builder()
@@ -144,60 +142,28 @@ impl SimpleComponent for StorageDialog {
                 });
             }
             StorageDialogMsg::ConfirmClearCache => {
-                if let Some(id) = self.app_id.as_deref(){
+                if let Some(id) = self.app_id.as_deref() {
                     if let Err(e) = clear_cache(id) {
                         eprintln!("Cache tozalashda xato: {e}");
                     }
                 }
                 self.info = calculate_storage(self.app_id.as_ref());
-                self.refresh_rows();
             }
         }
     }
 }
 
-impl StorageDialog {
-    fn refresh_rows(&mut self) {
-        let desc = format!(
-            "How much disk space <b>{}</b> is occupying with app data and caches",
-            self.app_name
-        );
-        self.desc_label.set_label(&desc);
 
-        for row in self.dynamic_rows.drain(..) {
-            self.pref_group.remove(&row);
-        }
-
-        let mut add_row = |title: &str, bytes: u64| {
-            let row = adw::ActionRow::builder().title(title).build();
-            let text = match bytes {
-                0 => "0 bytes".to_string(),
-                _ => format_bytes(bytes)
-            };
-            let label = gtk::Label::new(Some(&text));
-            row.add_suffix(&label);
-
-            self.pref_group.add(&row);
-            self.dynamic_rows.push(row.upcast());
-        };
-
-        add_row("App", self.info.app);
-        add_row("Data", self.info.data);
-        add_row("Cache", self.info.cache);
-        add_row("Total", self.info.total);
-
-        self.clear_cache_button.set_sensitive(self.info.cache > 0);
+fn row_text(bytes: u64) -> String {
+    match bytes {
+        0 => "0 bytes".to_string(),
+        _ => format_bytes(bytes),
     }
 }
 
 pub fn calculate_storage(app_id: Option<&String>) -> AppStorageInfo {
     let Some(app_id) = app_id else {
-        return AppStorageInfo {
-            app: 0,
-            data: 0,
-            cache: 0,
-            total: 0,
-        };
+        return AppStorageInfo::default();
     };
 
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
@@ -236,10 +202,6 @@ pub fn calculate_storage(app_id: Option<&String>) -> AppStorageInfo {
 }
 
 pub fn clear_cache(app_id: &str) -> Result<()> {
-    // let Some(app_id) = app_id else {
-    //     return Ok(());
-    // };
-
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
     let home = home_dir().unwrap_or_default();
 
@@ -262,7 +224,6 @@ pub fn clear_cache(app_id: &str) -> Result<()> {
             remove_file(&path)?;
         }
     }
-
     Ok(())
 }
 
