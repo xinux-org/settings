@@ -238,23 +238,12 @@ fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
 
 // https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
 fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
-    let result: Vec<AppPermission> = ctx
+    ctx
         .shared
         .iter()
         .chain(&ctx.sockets)
         .chain(&ctx.devices)
         .chain(&ctx.filesystems)
         .filter_map(|v| AppPermission::try_from(v.as_str()).ok())
-        .collect();
-
-    // let has_x11 = sockets.iter().any(|s| s == "x11" || s == "fallback-x11");
-    // let has_wayland = sockets.iter().any(|s| s == "wayland");
-    // if has_x11 && !has_wayland {
-    //     result.push(AppPermission {
-    //         title: "Legacy Display System",
-    //         subtitle: "Uses an old, insecure display system",
-    //     });
-    // }
-
-    result
+        .collect()
 }

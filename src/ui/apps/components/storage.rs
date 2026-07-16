@@ -144,10 +144,11 @@ impl SimpleComponent for StorageDialog {
                 });
             }
             StorageDialogMsg::ConfirmClearCache => {
-                if let Err(e) = clear_cache(self.app_id.as_ref()) {
-                    eprintln!("Cache tozalashda xato: {e}");
+                if let Some(id) = self.app_id.as_deref(){
+                    if let Err(e) = clear_cache(id) {
+                        eprintln!("Cache tozalashda xato: {e}");
+                    }
                 }
-
                 self.info = calculate_storage(self.app_id.as_ref());
                 self.refresh_rows();
             }
@@ -169,10 +170,9 @@ impl StorageDialog {
 
         let mut add_row = |title: &str, bytes: u64| {
             let row = adw::ActionRow::builder().title(title).build();
-            let text = if bytes == 0 {
-                "0 bytes".to_string()
-            } else {
-                format_bytes(bytes)
+            let text = match bytes {
+                0 => "0 bytes".to_string(),
+                _ => format_bytes(bytes)
             };
             let label = gtk::Label::new(Some(&text));
             row.add_suffix(&label);
@@ -235,10 +235,10 @@ pub fn calculate_storage(app_id: Option<&String>) -> AppStorageInfo {
     }
 }
 
-pub fn clear_cache(app_id: Option<&String>) -> Result<()> {
-    let Some(app_id) = app_id else {
-        return Ok(());
-    };
+pub fn clear_cache(app_id: &str) -> Result<()> {
+    // let Some(app_id) = app_id else {
+    //     return Ok(());
+    // };
 
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
     let home = home_dir().unwrap_or_default();
@@ -267,21 +267,18 @@ pub fn clear_cache(app_id: Option<&String>) -> Result<()> {
 }
 
 fn dir_size(path: &Path) -> Result<u64> {
-    let mut total = 0u64;
-    if !path.exists() {
-        return Ok(0);
+    match read_dir(path) {
+        Ok(mut entries) => entries.try_fold(0u64, |total, entry| {
+            let entry = entry?;
+            let meta = entry.metadata()?;
+            Ok(total + if meta.is_dir() {
+                dir_size(&entry.path())?
+            } else {
+                meta.len()
+            })
+        }),
+        Err(e) => Err(e),
     }
-    for entry in read_dir(path)? {
-        let entry = entry?;
-        let meta = entry.metadata()?;
-
-        if meta.is_dir() {
-            total += dir_size(&entry.path()).unwrap_or(0);
-        } else {
-            total += meta.len();
-        }
-    }
-    Ok(total)
 }
 
 pub fn format_bytes(bytes: u64) -> String {

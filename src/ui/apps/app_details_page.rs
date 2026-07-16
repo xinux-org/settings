@@ -126,6 +126,7 @@ impl SimpleComponent for AppDetailsPage {
                                             set_title: "Notifications",
                                             set_visible: false,
                                         },
+                                        // Run Background, Search feature and other XDG desktop permissions will be implemented in future updates.
                                     },
                                     #[name = "required_permissions_group"]
                                     adw::PreferencesGroup {
