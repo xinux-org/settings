@@ -1,5 +1,9 @@
-use relm4::{ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk};
 use dirs::home_dir;
+use relm4::{
+    ComponentParts, ComponentSender, SimpleComponent, adw,
+    adw::prelude::*,
+    factory::{DynamicIndex, FactoryComponent, FactorySender, FactoryVecDeque},
+};
 use serde::{Deserialize, Deserializer};
 use serini::from_str;
 use std::fs::read_to_string;
@@ -93,11 +97,38 @@ where
 }
 
 #[derive(Debug)]
+struct PermissionRow {
+    permission: AppPermission,
+}
+
+#[relm4::factory]
+impl FactoryComponent for PermissionRow {
+    type Init = AppPermission;
+    type Input = ();
+    type Output = ();
+    type CommandOutput = ();
+    type ParentWidget = adw::PreferencesGroup;
+
+    view! {
+        adw::ActionRow {
+            set_title: self.permission.title,
+            set_subtitle: self.permission.subtitle,
+        }
+    }
+
+    fn init_model(
+        permission: Self::Init,
+        _index: &DynamicIndex,
+        _sender: FactorySender<Self>,
+    ) -> Self {
+        Self { permission }
+    }
+}
+
+#[derive(Debug)]
 pub struct RequiredPermissionsDialog {
     app_name: String,
-    desc_label: gtk::Label,
-    pref_group: adw::PreferencesGroup,
-    dynamic_rows: Vec<gtk::Widget>,
+    rows: FactoryVecDeque<PermissionRow>,
 }
 
 #[derive(Debug, Clone)]
@@ -118,31 +149,28 @@ impl SimpleComponent for RequiredPermissionsDialog {
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
                 #[wrap(Some)]
-                set_content = &gtk::ScrolledWindow {
-                    #[wrap(Some)]
-                    set_child = &adw::Clamp {
-                        set_maximum_size: 420,
-                        set_tightening_threshold: 350,
-                        #[wrap(Some)]
-                        set_child = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_spacing: 24,
-                            set_margin_top: 24,
-                            set_margin_bottom: 24,
-                            set_margin_start: 16,
-                            set_margin_end: 16,
-                            #[name = "desc_label"]
-                            gtk::Label {
-                                set_use_markup: true,
-                                set_wrap: true,
-                                set_justify: gtk::Justification::Center,
-                                add_css_class: "dim-label",
-                            },
-                            #[name = "pref_group"]
-                            adw::PreferencesGroup {}
+                set_content = &adw::PreferencesPage {
+                    #[watch]
+                    set_description: &format!(
+                        "<b>{}</b> requires access to the following system resources. To stop this access, the app must be removed",
+                        model.app_name
+                    ),
+                    #[local_ref]
+                    perm_group -> adw::PreferencesGroup {
+                        #[watch]
+                        set_visible: !model.rows.is_empty(),
+                    },
+                    add = &adw::PreferencesGroup {
+                        #[watch]
+                        set_visible: model.rows.is_empty(),
+                        adw::StatusPage {
+                            set_icon_name: Some("security-high-symbolic"),
+                            set_title: "Sandboxed",
+                            set_description: Some("This app does not request any extra permissions"),
+                            add_css_class: "compact",
                         }
-                    }
-                }
+                    },
+                },
             }
         }
     }
@@ -152,15 +180,14 @@ impl SimpleComponent for RequiredPermissionsDialog {
         _root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let widgets = view_output!();
-
         let model = Self {
             app_name: String::new(),
-            desc_label: widgets.desc_label.clone(),
-            pref_group: widgets.pref_group.clone(),
-            dynamic_rows: Vec::new(),
+            rows: FactoryVecDeque::builder()
+                .launch(adw::PreferencesGroup::new())
+                .detach(),
         };
-
+        let perm_group = model.rows.widget();
+        let widgets = view_output!();
         ComponentParts { model, widgets }
     }
 
@@ -168,33 +195,10 @@ impl SimpleComponent for RequiredPermissionsDialog {
         match msg {
             RequiredPermissionsDialogMsg::Show(name, permissions) => {
                 self.app_name = name;
-                let desc = format!(
-                    "<b>{}</b> requires access to the following system resources. To stop this access, the app must be romoved",
-                    self.app_name
-                );
-                self.desc_label.set_label(&desc);
-                for row in self.dynamic_rows.drain(..) {
-                    self.pref_group.remove(&row);
-                }
-                if permissions.is_empty() {
-                    let status = adw::StatusPage::builder()
-                        .icon_name("security-high-symbolic")
-                        .title("Sandboxed")
-                        .description("This app does not request any extra permissions")
-                        .build();
-                    status.add_css_class("compact");
-
-                    self.pref_group.add(&status);
-                    self.dynamic_rows.push(status.upcast());
-                } else {
-                    for permission in &permissions {
-                        let row = adw::ActionRow::builder()
-                            .title(permission.title)
-                            .subtitle(permission.subtitle)
-                            .build();
-                        self.pref_group.add(&row);
-                        self.dynamic_rows.push(row.upcast());
-                    }
+                let mut guard = self.rows.guard();
+                guard.clear();
+                for permission in permissions {
+                    guard.push_back(permission);
                 }
             }
         }
@@ -202,23 +206,16 @@ impl SimpleComponent for RequiredPermissionsDialog {
 }
 
 pub fn load_required_permissions(app_id: Option<&str>) -> Vec<AppPermission> {
-    let Some(app_id) = app_id else {
-        return Vec::new();
-    };
-    let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
-    let Some(metadata_path) = find_metadata_path(flatpak_id) else {
-        return Vec::new();
-    };
-    let Ok(raw) = read_to_string(&metadata_path) else {
-        return Vec::new();
-    };
-    let Ok(meta) = from_str::<Metadata>(&raw) else {
-        return Vec::new();
-    };
-    let Some(ctx) = meta.context else {
-        return Vec::new();
-    };
-    parse_permissions(&ctx)
+    app_id
+        .and_then(|app_id| {
+            let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
+            find_metadata_path(flatpak_id)
+        })
+        .and_then(|metadata_path| read_to_string(&metadata_path).ok())
+        .and_then(|raw| from_str::<Metadata>(&raw).ok())
+        .and_then(|meta| meta.context)
+        .map(|ctx| parse_permissions(&ctx))
+        .unwrap_or_default()
 }
 
 fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
@@ -238,8 +235,7 @@ fn find_metadata_path(flatpak_id: &str) -> Option<PathBuf> {
 
 // https://gitlab.gnome.org/GNOME/gnome-control-center/-/blob/main/panels/applications/cc-applications-panel.c?ref_type=heads#L808
 fn parse_permissions(ctx: &Context) -> Vec<AppPermission> {
-    ctx
-        .shared
+    ctx.shared
         .iter()
         .chain(&ctx.sockets)
         .chain(&ctx.devices)
