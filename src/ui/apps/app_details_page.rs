@@ -126,6 +126,13 @@ impl SimpleComponent for AppDetailsPage {
                                             set_title: "Notifications",
                                             set_visible: false,
                                         },
+
+                                        #[name = "background_row"]
+                                        adw::SwitchRow {
+                                            set_title: "Run in Background",
+                                            set_visible: true,
+                                        }
+
                                         // Run Background, Search feature and other XDG desktop permissions will be implemented in future updates.
                                     },
                                     #[name = "required_permissions_group"]
@@ -360,6 +367,11 @@ impl AppEntry {
     fn notification_settings(&self) -> Option<gio::Settings> {
         let canonical_id = self.canonical_id.as_deref()?;
         Some(app_settings_for_canonical(canonical_id))
+    }
+
+    fn flatpak_id(&self) -> Option<String> {
+        let raw = self.app_id.as_deref().or(self.canonical_id.as_deref())?;
+        Some(raw.strip_suffix(".desktop").unwrap_or(raw).to_string())
     }
 
     fn open_in_software_center(&self, button: &gtk::Button) {

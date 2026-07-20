@@ -83,6 +83,7 @@ struct Context {
     filesystems: Vec<String>,
 }
 
+// https://www.carolinemorton.co.uk/blog/rust-serde-data-pipelines/
 fn split<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where
     D: Deserializer<'de>,
