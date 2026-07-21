@@ -1,14 +1,18 @@
 use crate::ui::notifications::app_notification::app_settings_for_canonical;
 use gio_unix::DesktopAppInfo;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
-
-use crate::ui::apps::components::files_links::{FilesLinksDialog, FilesLinksDialogMsg};
-use crate::ui::apps::components::required_permissions::{
-    AppPermission, RequiredPermissionsDialog, RequiredPermissionsDialogMsg,
-    load_required_permissions,
-};
-use crate::ui::apps::components::storage::{
-    StorageDialog, StorageDialogMsg, calculate_storage, format_bytes,
+use crate::ui::apps::{
+    components::{
+        files_links::{FilesLinksDialog, FilesLinksDialogMsg},
+        required_permissions::{
+            AppPermission, RequiredPermissionsDialog, RequiredPermissionsDialogMsg,
+            load_required_permissions,
+        },
+        storage::{
+            StorageDialog, StorageDialogMsg, calculate_storage, format_bytes,
+        }
+    },
+    background::BackgroundPermission
 };
 
 #[derive(Debug, Clone)]
@@ -231,6 +235,12 @@ impl SimpleComponent for AppDetailsPage {
             setup_notifications_row(&model.app, &widgets.notifications_row);
         }
 
+        if sandboxed {
+            setup_notifications_row(&model.app, &widgets.background_row);
+        } else {
+            widgets.background_row.set_visible(false);
+        }
+
         let mime_types = model.app.app_info.supported_types();
         let count = mime_types.len();
         widgets.files_links_count.set_label(&format!(
@@ -238,9 +248,8 @@ impl SimpleComponent for AppDetailsPage {
             count,
             if count == 1 { "type" } else { "types" }
         ));
-        if count == 0 {
-            widgets.files_links_row.set_sensitive(false);
-        }
+        count.eq(&0).then(|| widgets.files_links_row.set_sensitive(false)); 
+        
 
         let storage_info = calculate_storage(model.app.app_id.as_ref());
         let storage_text = if storage_info.total == 0 {
@@ -361,6 +370,30 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
         row.set_sensitive(false);
         row.set_visible(true);
     }
+}
+
+fn setup_background_row(app_id: &AppEntry, row: adw::SwitchRow) {
+    let Some(app_id) = app_id.flatpak_id() else {
+        row.set_subtitle("not available for this app");
+        row.set_sensitive(false);
+        return;
+    };
+
+    let Some(perm) = BackgroundPermission::new(&app_id) else {
+        row.set_subtitle("not available for this app");
+        row.set_sensitive(false);
+        return;
+    };
+
+    row.set_subtitle("Allow the app to run in the background");
+    row.set_active(perm.get_perm());
+
+    row.connect_active_notify(move | row| {
+        let value = row.is_active();
+        if let Err(e) = perm.set_allowed(value) {
+            eprintln!("error writing background permission: {e}");
+        }
+    });
 }
 
 impl AppEntry {
