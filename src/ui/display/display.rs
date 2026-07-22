@@ -4,7 +4,9 @@ use relm4::gtk;
 use relm4::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
-pub struct DisplayModel {}
+pub struct DisplayModel {
+    
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplayModel {

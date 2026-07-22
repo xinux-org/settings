@@ -156,7 +156,6 @@ impl SimpleComponent for AppDetailsPage {
         match msg {
             AppDetailsMsg::OpenApp => {
                 let ctx = gio::AppLaunchContext::new();
-
                 if let Err(err) = self.app.app_info.launch(&[], Some(&ctx)) {
                     eprintln!("Failed to launch app '{}': {err}", self.app.name);
                 }
