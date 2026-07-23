@@ -9,7 +9,7 @@ use crate::ui::apps::{
             load_required_permissions,
         },
         storage::{
-            StorageDialog, StorageDialogMsg, calculate_storage, format_bytes,
+            StorageDialog, StorageDialogMsg, calculate_storage, format_bytes
         }
     },
     background::BackgroundPermission
@@ -35,15 +35,18 @@ pub struct AppDetailsPage {
     storage_dialog: Controller<StorageDialog>,
     required_permissions_dialog: Controller<RequiredPermissionsDialog>,
     required_permissions: Vec<AppPermission>,
+    sandboxed: bool,
+    mime_count: usize,
+    storage_total: u64,
 }
 
 #[derive(Debug, Clone)]
 pub enum AppDetailsMsg {
     OpenApp,
     ShowDetails(gtk::Button),
-    ShowFilesLinks(adw::ActionRow),
-    ShowStorage(adw::ActionRow),
-    ShowRequiredPermissions(adw::ActionRow),
+    ShowFilesLinks,
+    ShowStorage,
+    ShowRequiredPermissions,
 }
 
 #[relm4::component(pub)]
@@ -66,129 +69,107 @@ impl SimpleComponent for AppDetailsPage {
                         add_top_bar = &adw::HeaderBar {
                             #[wrap(Some)]
                             set_title_widget = &adw::WindowTitle {
-                                set_title: &model.app.name
+                                set_title: &model.app.name,
                             }
                         },
-                        #[name = "sandbox_banner"]
                         add_top_bar = &adw::Banner {
                             set_title: "App is not sandboxed",
-                            set_revealed: false,
+                            set_revealed: !model.sandboxed,
                         },
                         #[wrap(Some)]
-                        set_content = &gtk::ScrolledWindow {
-                            set_vexpand: true,
-                            set_hexpand: true,
-                            #[wrap(Some)]
-                            set_child = &adw::Clamp {
-                                set_maximum_size: 700,
-                                // set_tightening_threshold: 500,
-                                #[wrap(Some)]
-                                set_child = &gtk::Box {
+                        set_content = &adw::PreferencesPage {
+                            adw::PreferencesGroup {
+                                gtk::Box {
                                     set_orientation: gtk::Orientation::Vertical,
-                                    set_spacing: 20,
-                                    set_margin_top: 24,
-                                    set_margin_bottom: 24,
-                                    set_margin_start: 24,
-                                    set_margin_end: 24,
-                                    gtk::Box {
-                                        set_orientation: gtk::Orientation::Vertical,
-                                        set_spacing: 16,
+                                    set_spacing: 16,
+                                    set_halign: gtk::Align::Center,
+                                    set_margin_top: 12,
+                                    set_margin_bottom: 12,
+                                    gtk::Image {
+                                        set_pixel_size: 96,
                                         set_halign: gtk::Align::Center,
-                                        set_margin_top: 12,
-                                        set_margin_bottom: 12,
-                                        #[name = "app_icon"]
-                                        gtk::Image {
-                                            set_pixel_size: 96,
-                                            set_halign: gtk::Align::Center,
+                                        set_icon_name: Some("application-x-executable-symbolic"),
+                                        set_from_gicon?: model.app.icon.as_ref(),
+                                    },
+                                    gtk::Label {
+                                        set_label: &model.app.name,
+                                        add_css_class: "title-1",
+                                        set_halign: gtk::Align::Center,
+                                    },
+                                    gtk::Box {
+                                        set_orientation: gtk::Orientation::Horizontal,
+                                        set_spacing: 12,
+                                        set_halign: gtk::Align::Center,
+                                        gtk::Button {
+                                            set_label: "Open",
+                                            add_css_class: "suggested-action",
+                                            connect_clicked => AppDetailsMsg::OpenApp,
                                         },
-                                        gtk::Label {
-                                            set_label: &model.app.name,
-                                            add_css_class: "title-1",
-                                            set_halign: gtk::Align::Center,
-                                        },
-                                        gtk::Box {
-                                            set_orientation: gtk::Orientation::Horizontal,
-                                            set_spacing: 12,
-                                            set_halign: gtk::Align::Center,
-                                            gtk::Button {
-                                                set_label: "Open",
-                                                add_css_class: "suggested-action",
-                                                connect_clicked => AppDetailsMsg::OpenApp,
-                                            },
-                                            gtk::Button {
-                                                set_label: "App Details",
-                                                connect_clicked[sender] => move |button| {
-                                                    sender.input(AppDetailsMsg::ShowDetails(button.clone()));
-                                                }
+                                        gtk::Button {
+                                            set_label: "App Details",
+                                            connect_clicked[sender] => move |button| {
+                                                sender.input(AppDetailsMsg::ShowDetails(button.clone()));
                                             }
                                         }
-                                    },
-                                    adw::PreferencesGroup {
-                                        set_title: "Permissions",
-                                        #[name = "notifications_row"]
-                                        adw::SwitchRow {
-                                            set_title: "Notifications",
-                                            set_visible: false,
-                                        },
-
-                                        #[name = "background_row"]
-                                        adw::SwitchRow {
-                                            set_title: "Run in Background",
-                                            set_visible: true,
-                                        }
-
-                                        // Run Background, Search feature and other XDG desktop permissions will be implemented in future updates.
-                                    },
-                                    #[name = "required_permissions_group"]
-                                    adw::PreferencesGroup {
-                                        #[name = "required_permissions_row"]
-                                        adw::ActionRow {
-                                            set_title: "Required Permissions",
-                                            set_subtitle: "System permissions that the app requires",
-                                            set_activatable: true,
-                                            #[name = "required_permissions_count"]
-                                            add_suffix = &gtk::Label {
-                                                add_css_class: "dim-label",
-                                            },
-                                            add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
-                                            connect_activated[sender] => move |row| {
-                                                sender.input(AppDetailsMsg::ShowRequiredPermissions(row.clone()));
-                                            }
-                                        },
-                                    },
-                                    #[name = "general_group"]
-                                    adw::PreferencesGroup {
-                                        set_title: "General",
-                                        #[name = "files_links_row"]
-                                        adw::ActionRow {
-                                            set_title: "Files and Links",
-                                            set_subtitle: "File and link types that are opened by the app",
-                                            set_activatable: true,
-                                            #[name = "files_links_count"]
-                                            add_suffix = &gtk::Label {
-                                                add_css_class: "dim-label",
-                                            },
-                                            add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
-                                            connect_activated[sender] => move |row| {
-                                                sender.input(AppDetailsMsg::ShowFilesLinks(row.clone()));
-                                            }
-                                        },
-                                        #[name = "storage_row"]
-                                        adw::ActionRow {
-                                            set_title: "Storage",
-                                            set_subtitle: "Disk space being used",
-                                            set_activatable: true,
-                                            #[name = "storage_size"]
-                                            add_suffix = &gtk::Label {
-                                                add_css_class: "dim-label",
-                                            },
-                                            add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
-                                            connect_activated[sender] => move |row| {
-                                                sender.input(AppDetailsMsg::ShowStorage(row.clone()));
-                                            }
-                                        },
-                                    },
+                                    }
                                 }
+                            },
+                            adw::PreferencesGroup {
+                                set_title: "Permissions",
+                                #[name = "notifications_row"]
+                                adw::SwitchRow {
+                                    set_title: "Notifications",
+                                    set_visible: false,
+                                },
+                                #[name = "background_row"]
+                                adw::SwitchRow {
+                                    set_title: "Run in Background",
+                                    set_visible: model.sandboxed,
+                                }
+                            },
+                            adw::PreferencesGroup {
+                                set_visible: model.sandboxed,
+                                    adw::ActionRow {
+                                        set_title: "Required Permissions",
+                                        set_subtitle: "System permissions that the app requires",
+                                        set_activatable: true,
+                                        add_suffix = &gtk::Label {
+                                            add_css_class: "dim-label",
+                                            #[watch]
+                                            set_label: &model.permissions_label(),
+                                        },
+                                        add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
+                                        connect_activated => AppDetailsMsg::ShowRequiredPermissions,
+                                    },
+                            },
+                            adw::PreferencesGroup {
+                                set_title: "General",
+                                set_visible: model.sandboxed,
+                                    adw::ActionRow {
+                                        set_title: "Files and Links",
+                                        set_subtitle: "File and link types that are opened by the app",
+                                        set_activatable: true,
+                                        set_sensitive: model.mime_count > 0,
+                                        add_suffix = &gtk::Label {
+                                            add_css_class: "dim-label",
+                                            #[watch]
+                                            set_label: &model.files_links_label(),
+                                        },
+                                        add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
+                                        connect_activated => AppDetailsMsg::ShowFilesLinks,
+                                    },
+                                    adw::ActionRow {
+                                        set_title: "Storage",
+                                        set_subtitle: "Disk space being used",
+                                        set_activatable: true,
+                                        add_suffix = &gtk::Label {
+                                            add_css_class: "dim-label",
+                                            #[watch]
+                                            set_label: &model.storage_label(),
+                                        },
+                                        add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
+                                        connect_activated => AppDetailsMsg::ShowStorage,
+                                    }
                             }
                         }
                     }
@@ -197,78 +178,31 @@ impl SimpleComponent for AppDetailsPage {
         }
     }
 
-    fn init(
-        app: Self::Init,
-        _root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
-        let files_links_dialog = FilesLinksDialog::builder().launch(()).detach();
-        let storage_dialog = StorageDialog::builder().launch(()).detach();
-        let required_permissions_dialog = RequiredPermissionsDialog::builder().launch(()).detach();
+    fn init(app: Self::Init, _root: Self::Root, sender: ComponentSender<Self>) -> ComponentParts<Self> {
+        let sandboxed = is_app_sandboxed(&app);
+        let mime_count = app.app_info.supported_types().len();
+        let storage_total = calculate_storage(app.app_id.as_ref()).total;
         let required_permissions = load_required_permissions(app.app_id.as_deref());
+
         let mut model = Self {
             app,
+            sandboxed,
+            mime_count,
+            storage_total,
             detail_nav: adw::NavigationView::new(),
-            files_links_dialog,
-            storage_dialog,
-            required_permissions_dialog,
+            files_links_dialog: FilesLinksDialog::builder().launch(()).detach(),
+            storage_dialog: StorageDialog::builder().launch(()).detach(),
+            required_permissions_dialog: RequiredPermissionsDialog::builder().launch(()).detach(),
             required_permissions,
         };
+
         let widgets = view_output!();
         model.detail_nav = widgets.detail_nav.clone();
-        if let Some(icon) = &model.app.icon {
-            widgets.app_icon.set_from_gicon(icon);
-        } else {
-            widgets
-                .app_icon
-                .set_icon_name(Some("application-x-executable-symbolic"));
+
+        setup_notifications_row(&model.app, &widgets.notifications_row);
+        if model.sandboxed {
+            setup_background_row(&model.app, &widgets.background_row);
         }
-
-        let sandboxed = is_app_sandboxed(&model.app);
-
-        widgets.sandbox_banner.set_revealed(!sandboxed);
-
-        widgets.general_group.set_visible(sandboxed);
-        widgets.required_permissions_group.set_visible(sandboxed);
-
-        if !sandboxed {
-            setup_notifications_row(&model.app, &widgets.notifications_row);
-        }
-
-        if sandboxed {
-            setup_notifications_row(&model.app, &widgets.background_row);
-        } else {
-            widgets.background_row.set_visible(false);
-        }
-
-        let mime_types = model.app.app_info.supported_types();
-        let count = mime_types.len();
-        widgets.files_links_count.set_label(&format!(
-            "{} {}",
-            count,
-            if count == 1 { "type" } else { "types" }
-        ));
-        count.eq(&0).then(|| widgets.files_links_row.set_sensitive(false)); 
-        
-
-        let storage_info = calculate_storage(model.app.app_id.as_ref());
-        let storage_text = if storage_info.total == 0 {
-            "—".to_string()
-        } else {
-            format_bytes(storage_info.total)
-        };
-        widgets.storage_size.set_label(&storage_text);
-
-        let perm_count = model.required_permissions.len();
-        widgets.required_permissions_count.set_label(&format!(
-            "{} {}",
-            perm_count,
-            if perm_count == 1 {
-                "permission"
-            } else {
-                "permissions"
-            }
-        ));
 
         ComponentParts { model, widgets }
     }
@@ -284,59 +218,66 @@ impl SimpleComponent for AppDetailsPage {
             AppDetailsMsg::ShowDetails(button) => {
                 self.app.open_in_software_center(&button);
             }
-            AppDetailsMsg::ShowFilesLinks(_row) => {
+            AppDetailsMsg::ShowFilesLinks => {
                 let mime_types = self.app.app_info.supported_types();
-                self.files_links_dialog
-                    .sender()
-                    .send(FilesLinksDialogMsg::Show(self.app.name.clone(), mime_types))
-                    .expect("Failed to update files links dialog");
-                self.detail_nav.push(self.files_links_dialog.widget());
+                let msg = FilesLinksDialogMsg::Show(self.app.name.clone(), mime_types);
+                if self.files_links_dialog.sender().send(msg).is_ok() {
+                    self.detail_nav.push(self.files_links_dialog.widget());
+                }
             }
-            AppDetailsMsg::ShowStorage(_row) => {
+            AppDetailsMsg::ShowStorage => {
                 let info = calculate_storage(self.app.app_id.as_ref());
-                self.storage_dialog
-                    .sender()
-                    .send(StorageDialogMsg::Show(
-                        self.app.name.clone(),
-                        self.app.app_id.clone(),
-                        info,
-                    ))
-                    .expect("Failed to update storage dialog");
-
-                self.detail_nav.push(self.storage_dialog.widget());
+                self.storage_total = info.total;
+                let msg =
+                    StorageDialogMsg::Show(self.app.name.clone(), self.app.app_id.clone(), info);
+                if self.storage_dialog.sender().send(msg).is_ok() {
+                    self.detail_nav.push(self.storage_dialog.widget());
+                }
             }
-            AppDetailsMsg::ShowRequiredPermissions(_row) => {
-                self.required_permissions_dialog
-                    .sender()
-                    .send(RequiredPermissionsDialogMsg::Show(
-                        self.app.name.clone(),
-                        self.required_permissions.clone(),
-                    ))
-                    .expect("Failed to update required permissions dialog");
-                self.detail_nav
-                    .push(self.required_permissions_dialog.widget());
+            AppDetailsMsg::ShowRequiredPermissions => {
+                let msg = RequiredPermissionsDialogMsg::Show(
+                    self.app.name.clone(),
+                    self.required_permissions.clone(),
+                );
+                if self.required_permissions_dialog.sender().send(msg).is_ok() {
+                    self.detail_nav
+                        .push(self.required_permissions_dialog.widget());
+                }
             }
         }
     }
 }
 
+impl AppDetailsPage {
+    fn files_links_label(&self) -> String {
+        let n = self.mime_count;
+        format!("{n} {}", if n == 1 { "type" } else { "types" })
+    }
+
+    fn storage_label(&self) -> String {
+        if self.storage_total == 0 {
+            "—".to_string()
+        } else {
+            format_bytes(self.storage_total)
+        }
+    }
+
+    fn permissions_label(&self) -> String {
+        let n = self.required_permissions.len();
+        format!("{n} {}", if n == 1 { "permission" } else { "permissions" })
+    }
+}
+
 fn is_app_sandboxed(app: &AppEntry) -> bool {
-    let Some(app_id) = &app.app_id else {
-        return false;
-    };
-    let Some(desktop) = DesktopAppInfo::new(app_id) else {
-        return false;
-    };
-    desktop.string("X-Flatpak").is_some()
+    app.app_id
+        .as_deref()
+        .and_then(DesktopAppInfo::new)
+        .is_some_and(|desktop| desktop.string("X-Flatpak").is_some())
 }
 
 pub fn detect_app_source(app_id: Option<&str>, _executable: Option<&str>) -> Option<String> {
     let desktop = app_id.and_then(DesktopAppInfo::new)?;
-    if desktop.string("X-Flatpak").is_some() {
-        Some("Flatpak".to_string())
-    } else {
-        None
-    }
+    desktop.string("X-Flatpak").map(|_| "Flatpak".to_string())
 }
 
 fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
@@ -372,41 +313,34 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
     }
 }
 
-fn setup_background_row(app_id: &AppEntry, row: adw::SwitchRow) {
-    let Some(app_id) = app_id.flatpak_id() else {
-        row.set_subtitle("not available for this app");
-        row.set_sensitive(false);
+fn setup_background_row(app: &AppEntry, row: &adw::SwitchRow) {
+    let Some(app_id) = app.flatpak_id() else {
         return;
     };
-
-    let Some(perm) = BackgroundPermission::new(&app_id) else {
-        row.set_subtitle("not available for this app");
-        row.set_sensitive(false);
-        return;
+    let perm = match BackgroundPermission::new(&app_id) {
+        Ok(perm) => perm,
+        Err(e) => {
+            eprintln!("PermissionStore unavailable: {e}");
+            return;
+        }
     };
-
     row.set_subtitle("Allow the app to run in the background");
-    row.set_active(perm.get_perm());
-
-    row.connect_active_notify(move | row| {
-        let value = row.is_active();
-        if let Err(e) = perm.set_allowed(value) {
-            eprintln!("error writing background permission: {e}");
+    row.set_active(perm.is_allowed());
+    row.connect_active_notify(move |row| {
+        if let Err(e) = perm.set_allowed(row.is_active()) {
+            eprintln!("Error writing background permission: {e}");
         }
     });
 }
 
 impl AppEntry {
     fn notification_settings(&self) -> Option<gio::Settings> {
-        let canonical_id = self.canonical_id.as_deref()?;
-        Some(app_settings_for_canonical(canonical_id))
+        Some(app_settings_for_canonical(self.canonical_id.as_deref()?))
     }
-
     fn flatpak_id(&self) -> Option<String> {
         let raw = self.app_id.as_deref().or(self.canonical_id.as_deref())?;
         Some(raw.strip_suffix(".desktop").unwrap_or(raw).to_string())
     }
-
     fn open_in_software_center(&self, button: &gtk::Button) {
         let raw_id = self.app_id.as_deref().or(self.canonical_id.as_deref());
         let Some(raw_id) = raw_id else {

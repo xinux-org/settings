@@ -1,8 +1,9 @@
 use crate::ui::apps::permission_store::PermissionStoreProxyBlocking;
 use zbus::blocking::Connection;
+use zbus::Result;
 
-// const TABLE: &str = "background";
-// const ID: &str = "background";
+const TABLE: &str = "background";
+const ID: &str = "background";
 
 pub struct BackgroundPermission {
     proxy: PermissionStoreProxyBlocking<'static>,
@@ -10,26 +11,22 @@ pub struct BackgroundPermission {
 }
 
 impl BackgroundPermission {
-    pub fn new(app_id: &str) -> Option<Self> {
-        let conn = Connection::session()
-            .map_err(|e| eprintln!("Session bus ochilmadi: {e}"))
-            .ok()?;
-        let proxy = PermissionStoreProxyBlocking::new(&conn)
-            .map_err(|e| eprintln!("PermissionStore proxy xato: {e}"))
-            .ok()?;
-        Some(Self { proxy, app_id: app_id.to_string() })
+    pub fn new(app_id: &str) -> Result<Self> {
+        let conn = Connection::session()?;
+        let proxy = PermissionStoreProxyBlocking::new(&conn)?;
+        Ok(Self { proxy, app_id: app_id.to_string() })
     }
 
-    pub fn get_perm(&self) -> bool {
-        match self.proxy.get_permission("background", "background", &self.app_id){
-            Ok(perms) => perms.iter().any(|p| p == "no"),
-            Err(_) => true
+    pub fn is_allowed(&self) -> bool {
+        match self.proxy.get_permission(TABLE, ID, &self.app_id){
+            Ok(perms) => perms.iter().any(|p| p == "yes"),
+            Err(_) => false
         }
     }
 
-    pub fn set_allowed(&self, allow: bool) -> zbus::Result<()> {
+    pub fn set_allowed(&self, allow: bool) -> Result<()> {
         let value = if allow { "yes" } else { "no" };
         self.proxy
-            .set_permission("background", true, "background", &self.app_id, &[value])
+            .set_permission(TABLE, true, ID, &self.app_id, &[value])
     }
 }
