@@ -54,28 +54,28 @@ impl SimpleComponent for StorageDialog {
                             set_title: "App",
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &row_text(model.info.app),
+                                set_label: &format_bytes(model.info.app),
                             },
                         },
                         adw::ActionRow {
                             set_title: "Data",
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &row_text(model.info.data),
+                                set_label: &format_bytes(model.info.data),
                             },
                         },
                         adw::ActionRow {
                             set_title: "Cache",
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &row_text(model.info.cache),
+                                set_label: &format_bytes(model.info.cache),
                             },
                         },
                         adw::ActionRow {
                             set_title: "Total",
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &row_text(model.info.total),
+                                set_label: &format_bytes(model.info.total),
                             },
                         },
                     },
@@ -150,14 +150,6 @@ impl SimpleComponent for StorageDialog {
                 self.info = calculate_storage(self.app_id.as_ref());
             }
         }
-    }
-}
-
-
-fn row_text(bytes: u64) -> String {
-    match bytes {
-        0 => "0 bytes".to_string(),
-        _ => format_bytes(bytes),
     }
 }
 
@@ -244,7 +236,7 @@ fn dir_size(path: &Path) -> Result<u64> {
 
 pub fn format_bytes(bytes: u64) -> String {
     if bytes == 0 {
-        return "—".to_string();
+        return "0 bytes".to_string();
     }
     gtk::glib::format_size(bytes).to_string()
 }
