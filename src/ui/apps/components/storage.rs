@@ -7,6 +7,7 @@ use std::{
     path::{PathBuf, Path},
     io::Result,
 };
+use gettextrs::gettext;
 
 #[derive(Debug, Clone, Default)]
 pub struct AppStorageInfo {
@@ -38,51 +39,51 @@ impl SimpleComponent for StorageDialog {
 
     view! {
         adw::NavigationPage {
-            set_title: "Storage",
+            set_title: &gettext("Storage"),
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     #[watch]
-                    set_description: &format!(
+                    set_description: &gettext(&format!(
                         "How much disk space <b>{}</b> is occupying with app data and caches",
                         model.app_name
-                    ),
+                    )),
                     adw::PreferencesGroup {
                         adw::ActionRow {
-                            set_title: "App",
+                            set_title: &gettext("App"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &format_bytes(model.info.app),
+                                set_label: &gettext(&format_bytes(model.info.app)),
                             },
                         },
                         adw::ActionRow {
-                            set_title: "Data",
+                            set_title: &gettext("Data"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &format_bytes(model.info.data),
+                                set_label: &gettext(&format_bytes(model.info.data)),
                             },
                         },
                         adw::ActionRow {
-                            set_title: "Cache",
+                            set_title: &gettext("Cache"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &format_bytes(model.info.cache),
+                                set_label: &gettext(&format_bytes(model.info.cache)),
                             },
                         },
                         adw::ActionRow {
-                            set_title: "Total",
+                            set_title: &gettext("Total"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &format_bytes(model.info.total),
+                                set_label: &gettext(&format_bytes(model.info.total)),
                             },
                         },
                     },
 
                     adw::PreferencesGroup {
                         gtk::Button {
-                            set_label: "Clear Cache",
+                            set_label: &gettext("Clear Cache"),
                             add_css_class: "pill",
                             set_halign: gtk::Align::Center,
                             #[watch]
@@ -128,7 +129,7 @@ impl SimpleComponent for StorageDialog {
                     ))
                     .build();
 
-                dialog.set_buttons(&["Cancel", "Clear Cache"]);
+                dialog.set_buttons(&[&gettext("Cancel"), &gettext("Clear Cache")]);
                 dialog.set_cancel_button(0);
                 dialog.set_default_button(0);
 

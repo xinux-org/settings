@@ -8,6 +8,7 @@ use relm4::{
         glib::markup_escape_text,
     },
 };
+use gettextrs::gettext;
 
 #[derive(Debug)]
 struct MimeRow {
@@ -24,8 +25,8 @@ impl FactoryComponent for MimeRow {
 
     view! {
         adw::ActionRow {
-            set_title: markup_escape_text(&content_type_get_description(&self.mime)).as_str(),
-            set_subtitle: markup_escape_text(&self.mime).as_str(),
+            set_title: &gettext(markup_escape_text(&content_type_get_description(&self.mime)).as_str()),
+            set_subtitle: &gettext(markup_escape_text(&self.mime).as_str()),
             add_prefix = &gtk::Image {
                 set_from_gicon: &content_type_get_icon(&self.mime),
             },
@@ -56,35 +57,35 @@ impl SimpleComponent for FilesLinksDialog {
 
     view! {
         adw::NavigationPage {
-            set_title: "Files and Links",
+            set_title: &gettext("Files and Links"),
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     #[watch]
-                    set_description: &format!(
+                    set_description: &gettext(&format!(
                         "File and link types that are opened by <b>{}</b>",
                         model.app_name
-                    ),
+                    )),
                     #[local_ref]
                     mime_group -> adw::PreferencesGroup {
                         #[watch]
                         set_visible: !model.rows.is_empty(),
                         #[watch]
-                        set_title: &format!(
+                        set_title: &gettext(&format!(
                             "{} {}",
                             model.rows.len(),
                             if model.rows.len() == 1 { "type" } else { "types" }
-                        ),
+                        )),
                     },
                     adw::PreferencesGroup {
                         #[watch]
                         set_visible: model.rows.is_empty(),
                         adw::StatusPage {
                             set_icon_name: Some("text-x-generic-symbolic"),
-                            set_title: "No File Types",
-                            set_description: Some("This app has not registered any file or link types"),
+                            set_title: &gettext("No File Types"),
+                            set_description: Some(&gettext("This app has not registered any file or link types")),
                             add_css_class: "compact",
                         }
                     },

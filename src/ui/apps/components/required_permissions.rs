@@ -8,11 +8,12 @@ use serde::{Deserialize, Deserializer};
 use serini::from_str;
 use std::fs::read_to_string;
 use std::path::PathBuf;
+use gettextrs::gettext;
 
 #[derive(Debug, Clone)]
 pub struct AppPermission {
-    pub title: &'static str,
-    pub subtitle: &'static str,
+    pub title: String,
+    pub subtitle: String,
 }
 
 impl TryFrom<&str> for AppPermission {
@@ -20,44 +21,44 @@ impl TryFrom<&str> for AppPermission {
     fn try_from(val: &str) -> Result<Self, Self::Error> {
         let perm = match val {
             "network" => AppPermission {
-                title: "Network",
-                subtitle: "Can communicate over the network",
+                title: gettext("Network"),
+                subtitle: gettext("Can communicate over the network"),
             },
             "system-bus" => AppPermission {
-                title: "System Services",
-                subtitle: "Full access to system D-Bus services",
+                title: gettext("System Services"),
+                subtitle: gettext("Full access to system D-Bus services"),
             },
             "session-bus" => AppPermission {
-                title: "Session Services",
-                subtitle: "Full access to session D-Bus services",
+                title: gettext("Session Services"),
+                subtitle: gettext("Full access to session D-Bus services"),
             },
             "all" => AppPermission {
-                title: "Devices",
-                subtitle: "Can access system device files",
+                title: gettext("Devices"),
+                subtitle: gettext("Can access system device files"),
             },
             "home" | "home:rw" => AppPermission {
-                title: "Home Folder",
-                subtitle: "Can view, edit and create files",
+                title: gettext("Home Folder"),
+                subtitle: gettext("Can view, edit and create files"),
             },
             "home:ro" => AppPermission {
-                title: "Home Folder",
-                subtitle: "Can view files",
+                title: gettext("Home Folder"),
+                subtitle: gettext("Can view files"),
             },
             "host" | "host:rw" => AppPermission {
-                title: "File System",
-                subtitle: "Can view, edit and create files",
+                title: gettext("File System"),
+                subtitle: gettext("Can view, edit and create files"),
             },
             "host:ro" => AppPermission {
-                title: "File System",
-                subtitle: "Can view files",
+                title: gettext("File System"),
+                subtitle: gettext("Can view files"),
             },
             s if s.starts_with("xdg-download") && s.ends_with(":ro") => AppPermission {
-                title: "Downloads Folder",
-                subtitle: "Can view files",
+                title: gettext("Downloads Folder"),
+                subtitle: gettext("Can view files"),
             },
             s if s.starts_with("xdg-download") => AppPermission {
-                title: "Downloads Folder",
-                subtitle: "Can view, edit and create files",
+                title: gettext("Downloads Folder"),
+                subtitle: gettext("Can view, edit and create files"),
             },
             _ => return Err(()),
         };
@@ -112,8 +113,8 @@ impl FactoryComponent for PermissionRow {
 
     view! {
         adw::ActionRow {
-            set_title: self.permission.title,
-            set_subtitle: self.permission.subtitle,
+            set_title: &self.permission.title,
+            set_subtitle: &self.permission.subtitle,
         }
     }
 
@@ -145,17 +146,17 @@ impl SimpleComponent for RequiredPermissionsDialog {
 
     view! {
         adw::NavigationPage {
-            set_title: "Permissions",
+            set_title: &gettext("Permissions"),
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 add_top_bar = &adw::HeaderBar {},
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     #[watch]
-                    set_description: &format!(
+                    set_description: &gettext(&format!(
                         "<b>{}</b> requires access to the following system resources. To stop this access, the app must be removed",
                         model.app_name
-                    ),
+                    )),
                     #[local_ref]
                     perm_group -> adw::PreferencesGroup {
                         #[watch]
@@ -166,8 +167,8 @@ impl SimpleComponent for RequiredPermissionsDialog {
                         set_visible: model.rows.is_empty(),
                         adw::StatusPage {
                             set_icon_name: Some("security-high-symbolic"),
-                            set_title: "Sandboxed",
-                            set_description: Some("This app does not request any extra permissions"),
+                            set_title: &gettext("Sandboxed"),
+                            set_description: Some(&gettext("This app does not request any extra permissions")),
                             add_css_class: "compact",
                         }
                     },

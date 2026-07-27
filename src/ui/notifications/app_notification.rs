@@ -1,4 +1,5 @@
 use relm4::{adw, adw::prelude::*, gtk::gio, prelude::*};
+use gettextrs::gettext;
 
 const GLOBAL_SCHEMA: &str = "org.gnome.desktop.notifications";
 const APP_SCHEMA: &str = "org.gnome.desktop.notifications.application";
@@ -59,92 +60,70 @@ impl SimpleComponent for AppNotificationsPageModel {
         #[root]
         adw::PreferencesPage {
             set_vexpand: true,
-
             add = &adw::PreferencesGroup {
                 #[name(notifications_row)]
                 adw::SwitchRow {
-                    set_title: "Notifications",
-                    set_subtitle: "Show in notifications list",
-
+                    set_title: &gettext("Notifications"),
+                    set_subtitle: &gettext("Show in notifications list"),
                     #[watch]
                     set_active: model.app.enable,
-
                     set_sensitive: true,
-
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetNotifications(row.is_active()));
                     }
                 },
-
                 #[name(sound_alerts_row)]
                 adw::SwitchRow {
-                    set_title: "Sound",
-                    set_subtitle: "Allow notification sounds from app",
-
+                    set_title: &gettext("Sound"),
+                    set_subtitle: &gettext("Allow notification sounds from app"),
                     #[watch]
                     set_active: model.app.enable_sound_alerts,
-
                     #[watch]
                     set_sensitive: model.app.enable,
-
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetSoundAlerts(row.is_active()));
                     }
                 },
             },
-
             add = &adw::PreferencesGroup {
-                set_title: "Banners",
-
+                set_title: &gettext("Banners"),
                 #[name(banners_row)]
                 adw::SwitchRow {
-                    set_title: "Show Banners",
-                    set_subtitle: "Show notifications above apps",
-
+                    set_title: &gettext("Show Banners"),
+                    set_subtitle: &gettext("Show notifications above apps"),
                     #[watch]
                     set_active: model.app.show_banners,
-
                     #[watch]
                     set_sensitive: model.app.enable && !model.do_not_disturb,
-
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetShowBanners(row.is_active()));
                     }
                 },
-
                 #[name(banner_content_row)]
                 adw::SwitchRow {
-                    set_title: "Show Content",
-                    set_subtitle: "Include message details in notification banners",
-
+                    set_title: &gettext("Show Content"),
+                    set_subtitle: &gettext("Include message details in notification banners"),
                     #[watch]
                     set_active: model.app.force_expanded,
-
                     #[watch]
                     set_sensitive: model.app.enable
                         && model.app.show_banners
                         && !model.do_not_disturb,
-
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetForceExpanded(row.is_active()));
                     }
                 },
             },
-
             add = &adw::PreferencesGroup {
-                set_title: "Lock Screen",
-
+                set_title: &gettext("Lock Screen"),
                 #[name(lock_screen_row)]
                 adw::SwitchRow {
-                    set_title: "Show Banners",
-                    set_subtitle: "Show notifications on lock screen",
-
+                    set_title: &gettext("Show Banners"),
+                    set_subtitle: &gettext("Show notifications on lock screen"),
                     #[watch]
                     set_active: model.app.show_in_lock_screen,
-
                     #[watch]
                     set_sensitive: model.app.enable && model.lock_screen_notifications,
-
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetShowInLockScreen(row.is_active()));
                     }
@@ -152,17 +131,14 @@ impl SimpleComponent for AppNotificationsPageModel {
 
                 #[name(lock_screen_content_row)]
                 adw::SwitchRow {
-                    set_title: "Show Content",
-                    set_subtitle: "Include message details on lock screen",
-
+                    set_title: &gettext("Show Content"),
+                    set_subtitle: &gettext("Include message details on lock screen"),
                     #[watch]
                     set_active: model.app.details_in_lock_screen,
-
                     #[watch]
                     set_sensitive: model.app.enable
                         && model.app.show_in_lock_screen
                         && model.lock_screen_notifications,
-
                     connect_active_notify[sender] => move |row| {
                         sender.input(AppNotificationsPageInput::SetDetailsInLockScreen(row.is_active()));
                     }
@@ -212,7 +188,6 @@ impl SimpleComponent for AppNotificationsPageModel {
 
     fn update(&mut self, msg: AppNotificationsPageInput, sender: ComponentSender<Self>) {
         let mut changed = false;
-
         match msg {
             AppNotificationsPageInput::SetNotifications(value) => {
                 if self.app.enable != value {
@@ -221,7 +196,6 @@ impl SimpleComponent for AppNotificationsPageModel {
                     changed = true;
                 }
             }
-
             AppNotificationsPageInput::SetSoundAlerts(value) => {
                 if self.app.enable && self.app.enable_sound_alerts != value {
                     self.app.enable_sound_alerts = value;
@@ -229,20 +203,17 @@ impl SimpleComponent for AppNotificationsPageModel {
                     changed = true;
                 }
             }
-
             AppNotificationsPageInput::SetShowBanners(value) => {
                 if self.app.enable && !self.do_not_disturb && self.app.show_banners != value {
                     self.app.show_banners = value;
                     Self::save_app_bool(&self.settings, "show-banners", value);
                     changed = true;
-
                     if !value && self.app.force_expanded {
                         self.app.force_expanded = false;
                         Self::save_app_bool(&self.settings, "force-expanded", false);
                     }
                 }
             }
-
             AppNotificationsPageInput::SetForceExpanded(value) => {
                 if self.app.enable
                     && self.app.show_banners
@@ -254,7 +225,6 @@ impl SimpleComponent for AppNotificationsPageModel {
                     changed = true;
                 }
             }
-
             AppNotificationsPageInput::SetShowInLockScreen(value) => {
                 if self.app.enable
                     && self.lock_screen_notifications
@@ -270,7 +240,6 @@ impl SimpleComponent for AppNotificationsPageModel {
                     }
                 }
             }
-
             AppNotificationsPageInput::SetDetailsInLockScreen(value) => {
                 if self.app.enable
                     && self.app.show_in_lock_screen
@@ -282,12 +251,9 @@ impl SimpleComponent for AppNotificationsPageModel {
                     changed = true;
                 }
             }
-
             AppNotificationsPageInput::ReloadFromGSettings => {
                 let old_app = self.app.clone();
-
                 reload_app_from_settings(&mut self.app, &self.settings);
-
                 if old_app.enable != self.app.enable
                     || old_app.enable_sound_alerts != self.app.enable_sound_alerts
                     || old_app.show_banners != self.app.show_banners
@@ -299,7 +265,6 @@ impl SimpleComponent for AppNotificationsPageModel {
                 }
             }
         }
-
         if changed {
             let _ = sender.output(AppNotificationsPageOutput::Changed(self.app.clone()));
         }
@@ -316,21 +281,16 @@ impl AppNotificationsPageModel {
 
 pub fn ensure_app_notification_child(canonical_id: &str) {
     let global_settings = gio::Settings::new(GLOBAL_SCHEMA);
-
     let mut children: Vec<String> = global_settings
         .strv("application-children")
         .iter()
         .map(|child| child.to_string())
         .collect();
-
     if children.iter().any(|child| child == canonical_id) {
         return;
     }
-
     children.push(canonical_id.to_string());
-
     let children_refs: Vec<&str> = children.iter().map(String::as_str).collect();
-
     let _ = global_settings.set_strv("application-children", children_refs.as_slice());
 }
 

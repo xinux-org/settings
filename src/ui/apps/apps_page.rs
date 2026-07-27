@@ -7,6 +7,7 @@ use crate::ui::{
 };
 
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio::AppInfo, prelude::*};
+use gettextrs::gettext;
 
 #[derive(Debug)]
 pub struct AppModal {
@@ -35,22 +36,22 @@ impl SimpleComponent for AppModal {
         #[name = "navigation"]
         adw::NavigationView {
             add = &adw::NavigationPage {
-                set_title: "Apps",
+                set_title: &gettext("Apps"),
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
                     set_top_bar_style: adw::ToolbarStyle::Flat,
                     add_top_bar = &adw::HeaderBar {
                         #[wrap(Some)]
                         set_title_widget = &adw::WindowTitle {
-                            set_title: "Apps"
+                            set_title: &gettext("Apps")
                         }
                     },
                     #[wrap(Some)]
                     set_content = &adw::PreferencesPage {
-                        set_title: "Apps",
+                        set_title: &gettext("Apps"),
                         set_icon_name: Some("application-x-executable-symbolic"),
                         add = &adw::PreferencesGroup {
-                            set_title: "Search",
+                            set_title: &gettext("Search"),
                             gtk::SearchEntry {
                                 set_placeholder_text: Some("Search apps"),
                                 connect_search_changed[sender] => move |entry| {
@@ -61,11 +62,11 @@ impl SimpleComponent for AppModal {
                             }
                         },
                         add = &adw::PreferencesGroup {
-                            set_title: "General",
+                            set_title: &gettext("General"),
                             adw::ActionRow {
                                 set_use_markup: false,
-                                set_title: "Default Apps",
-                                set_subtitle: "Set which apps open links, files, and media",
+                                set_title: &gettext("Default Apps"),
+                                set_subtitle: &gettext("Set which apps open links, files, and media"),
                                 set_activatable: true,
                                 connect_activated => AppsMsg::OpenDefaultApps,
                                 add_suffix = &gtk::Image {
@@ -75,7 +76,7 @@ impl SimpleComponent for AppModal {
                             }
                         },
                         add = &adw::PreferencesGroup {
-                            set_title: "Installed Apps",
+                            set_title: &gettext("Installed Apps"),
                             #[name = "apps_list"]
                             gtk::ListBox {
                                 add_css_class: "boxed-list",

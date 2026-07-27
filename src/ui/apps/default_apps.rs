@@ -6,6 +6,7 @@ use relm4::{
     prelude::*,
 };
 use std::collections::BTreeMap;
+use gettextrs::gettext;
 
 #[derive(Debug)]
 pub struct DefaultAppsPage {
@@ -86,43 +87,43 @@ impl SimpleComponent for DefaultAppsPage {
 
     view! {
         adw::NavigationPage {
-            set_title: "Default Apps",
+            set_title: &gettext("Default Apps"),
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
                 add_top_bar = &adw::HeaderBar {
                     #[wrap(Some)]
                     set_title_widget = &adw::WindowTitle {
-                        set_title: "Default Apps"
+                        set_title: &gettext("Default Apps")
                     }
                 },
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     adw::PreferencesGroup {
-                        set_title: "Default Apps",
+                        set_title: &gettext("Default Apps"),
                         #[name = "web_row"]
                         adw::ComboRow {
-                            set_title: "Web",
+                            set_title: &gettext("Web"),
                         },
                         #[name = "mail_row"]
                         adw::ComboRow {
-                            set_title: "Mail",
+                            set_title: &gettext("Mail"),
                         },
                         #[name = "calendar_row"]
                         adw::ComboRow {
-                            set_title: "Calendar",
+                            set_title: &gettext("Calendar"),
                         },
                         #[name = "music_row"]
                         adw::ComboRow {
-                            set_title: "Music",
+                            set_title: &gettext("Music"),
                         },
                         #[name = "video_row"]
                         adw::ComboRow {
-                            set_title: "Video",
+                            set_title: &gettext("Video"),
                         },
                         #[name = "photos_row"]
                         adw::ComboRow {
-                            set_title: "Photos",
+                            set_title: &gettext("Photos"),
                         }
                     }
                 }

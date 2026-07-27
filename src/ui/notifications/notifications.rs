@@ -5,6 +5,7 @@ use super::app_notification::{
 use gio_unix;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 use std::collections::HashSet;
+use gettextrs::gettext;
 
 const MASTER_SCHEMA: &str = "org.gnome.desktop.notifications";
 const APP_SCHEMA: &str = "org.gnome.desktop.notifications.application";
@@ -40,31 +41,26 @@ impl Component for NotificationsModel {
     view! {
         #[root]
         adw::NavigationPage {
-            set_title: "Notifications",
-
+            set_title: &gettext("Notifications"),
             #[name(nav_view)]
             adw::NavigationView {
                 adw::NavigationPage {
-                    set_title: "Notifications",
+                    set_title: &gettext("Notifications"),
                     set_tag: Some("list"),
-
                     adw::ToolbarView {
                         set_top_bar_style: adw::ToolbarStyle::Flat,
-
                         add_top_bar = &adw::HeaderBar {
                             #[wrap(Some)]
                             set_title_widget = &adw::WindowTitle {
-                                set_title: "Notifications",
+                                set_title: &gettext("Notifications"),
                             }
                         },
-
                         adw::PreferencesPage {
                             add = &adw::PreferencesGroup {
-                                set_title: "General",
-
+                                set_title: &gettext("General"),
                                 adw::SwitchRow {
-                                    set_title: "Do Not Disturb",
-                                    set_subtitle: "Temporarily suppress notification banners",
+                                    set_title: &gettext("Do Not Disturb"),
+                                    set_subtitle: &gettext("Temporarily suppress notification banners"),
                                     #[watch]
                                     set_active: model.do_not_disturb,
                                     connect_active_notify[sender] => move |row| {
@@ -73,10 +69,9 @@ impl Component for NotificationsModel {
                                         ));
                                     }
                                 },
-
                                 adw::SwitchRow {
-                                    set_title: "Lock Screen Notifications",
-                                    set_subtitle: "Show notifications on the lock screen",
+                                    set_title: &gettext("Lock Screen Notifications"),
+                                    set_subtitle: &gettext("Show notifications on the lock screen"),
                                     #[watch]
                                     set_active: model.lock_screen_notifications,
                                     connect_active_notify[sender] => move |row| {
@@ -86,13 +81,11 @@ impl Component for NotificationsModel {
                                     }
                                 },
                             },
-
                             add = &adw::PreferencesGroup {
-                                set_title: "App Notifications",
+                                set_title: &gettext("App Notifications"),
                                 set_description: Some(
-                                    "Choose which applications can show notifications",
+                                    &gettext("Choose which applications can show notifications"),
                                 ),
-
                                 #[name(app_listbox)]
                                 gtk::ListBox {
                                     add_css_class: "boxed-list",
@@ -112,10 +105,8 @@ impl Component for NotificationsModel {
                         "App"
                     },
                     set_tag: Some("detail"),
-
                     adw::ToolbarView {
                         set_top_bar_style: adw::ToolbarStyle::Flat,
-
                         add_top_bar = &adw::HeaderBar {
                             #[wrap(Some)]
                             set_title_widget = &adw::WindowTitle {
@@ -127,7 +118,6 @@ impl Component for NotificationsModel {
                                 },
                             }
                         },
-
                         #[name(detail_box)]
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
@@ -212,14 +202,12 @@ impl Component for NotificationsModel {
                 {
                     self.apps[i] = updated;
                 }
-
                 populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
             }
 
             NotificationsInput::RefreshApps => {
                 let settings = gio::Settings::new(MASTER_SCHEMA);
                 self.apps = load_notification_apps(&settings);
-
                 self.setup_watchers(sender.input_sender());
 
                 populate_app_list(&widgets.app_listbox, &self.apps, sender.input_sender());
@@ -338,19 +326,15 @@ fn load_notification_apps(master_settings: &gio::Settings) -> Vec<AppNotificatio
         let Some(app_id) = app_info.id() else {
             continue;
         };
-
         let Some(desktop) = gio_unix::DesktopAppInfo::new(&app_id) else {
             continue;
         };
-
         if !desktop.boolean("X-GNOME-UsesNotifications") {
             continue;
         }
-
         if app_is_system_service(&desktop) {
             continue;
         }
-
         let canonical_id = canonicalize_app_id(&app_id);
         if seen.contains(&canonical_id) {
             continue;
@@ -360,12 +344,9 @@ fn load_notification_apps(master_settings: &gio::Settings) -> Vec<AppNotificatio
         if title.is_empty() {
             continue;
         }
-
         let icon = app_info.icon();
-
         let path = format!("{APP_PREFIX}{canonical_id}/");
         let settings = gio::Settings::with_path(APP_SCHEMA, &path);
-
         seen.insert(canonical_id.clone());
         items.push(app_item_from_settings(
             &settings,
@@ -388,33 +369,25 @@ fn maybe_add_app_from_canonical(
     if canonical_id.is_empty() || seen.contains(canonical_id) {
         return;
     }
-
     let path = format!("{APP_PREFIX}{canonical_id}/");
     let settings = gio::Settings::with_path(APP_SCHEMA, &path);
     let full_app_id = settings.string("application-id");
-
     if full_app_id.is_empty() {
         return;
     }
-
     let Some(desktop) = gio_unix::DesktopAppInfo::new(full_app_id.as_str()) else {
         return;
     };
-
     if app_is_system_service(&desktop) {
         return;
     }
-
     let app_info: gio::AppInfo = desktop.upcast();
     let title = app_info.name().to_string();
     if title.is_empty() {
         return;
     }
-
     let icon = app_info.icon();
-
     seen.insert(canonical_id.to_string());
-
     items.push(app_item_from_settings(
         &settings,
         &strip_desktop_suffix(full_app_id.as_str()),
@@ -447,7 +420,6 @@ fn app_item_from_settings(
 
 fn canonicalize_app_id(app_id: &str) -> String {
     let raw = strip_desktop_suffix(app_id);
-
     raw.chars()
         .map(|ch| {
             if ch.is_ascii_alphanumeric() || ch == '-' {
@@ -468,11 +440,9 @@ fn strip_desktop_suffix(app_id: &str) -> String {
 
 fn app_is_system_service(app: &gio_unix::DesktopAppInfo) -> bool {
     let categories = app.categories().unwrap_or_default();
-
     if categories.is_empty() {
         return false;
     }
-
     categories
         .split(';')
         .any(|cat| matches!(cat, "X-GNOME-Settings-Panel" | "Settings" | "System"))

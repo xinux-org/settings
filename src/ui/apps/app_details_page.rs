@@ -14,6 +14,7 @@ use crate::ui::apps::{
     },
     background::BackgroundPermission
 };
+use gettextrs::gettext;
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {
@@ -73,7 +74,7 @@ impl SimpleComponent for AppDetailsPage {
                             }
                         },
                         add_top_bar = &adw::Banner {
-                            set_title: "App is not sandboxed",
+                            set_title: &gettext("App is not sandboxed"),
                             set_revealed: !model.sandboxed,
                         },
                         #[wrap(Some)]
@@ -92,7 +93,7 @@ impl SimpleComponent for AppDetailsPage {
                                         set_from_gicon?: model.app.icon.as_ref(),
                                     },
                                     gtk::Label {
-                                        set_label: &model.app.name,
+                                        set_label: &gettext(&model.app.name),
                                         add_css_class: "title-1",
                                         set_halign: gtk::Align::Center,
                                     },
@@ -101,12 +102,12 @@ impl SimpleComponent for AppDetailsPage {
                                         set_spacing: 12,
                                         set_halign: gtk::Align::Center,
                                         gtk::Button {
-                                            set_label: "Open",
+                                            set_label: &gettext("Open"),
                                             add_css_class: "suggested-action",
                                             connect_clicked => AppDetailsMsg::OpenApp,
                                         },
                                         gtk::Button {
-                                            set_label: "App Details",
+                                            set_label: &gettext("App Details"),
                                             connect_clicked[sender] => move |button| {
                                                 sender.input(AppDetailsMsg::ShowDetails(button.clone()));
                                             }
@@ -115,57 +116,57 @@ impl SimpleComponent for AppDetailsPage {
                                 }
                             },
                             adw::PreferencesGroup {
-                                set_title: "Permissions",
+                                set_title: &gettext("Permissions"),
                                 #[name = "notifications_row"]
                                 adw::SwitchRow {
-                                    set_title: "Notifications",
+                                    set_title: &gettext("Notifications"),
                                     set_visible: false,
                                 },
                                 #[name = "background_row"]
                                 adw::SwitchRow {
-                                    set_title: "Run in Background",
+                                    set_title: &gettext("Run in Background"),
                                     set_visible: model.sandboxed,
                                 }
                             },
                             adw::PreferencesGroup {
                                 set_visible: model.sandboxed,
                                     adw::ActionRow {
-                                        set_title: "Required Permissions",
-                                        set_subtitle: "System permissions that the app requires",
+                                        set_title: &gettext("Required Permissions"),
+                                        set_subtitle: &("System permissions that the app requires"),
                                         set_activatable: true,
                                         add_suffix = &gtk::Label {
                                             add_css_class: "dim-label",
                                             #[watch]
-                                            set_label: &model.permissions_label(),
+                                            set_label: &gettext(&model.permissions_label()),
                                         },
                                         add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
                                         connect_activated => AppDetailsMsg::ShowRequiredPermissions,
                                     },
                             },
                             adw::PreferencesGroup {
-                                set_title: "General",
+                                set_title: &gettext("General"),
                                 set_visible: model.sandboxed,
                                     adw::ActionRow {
-                                        set_title: "Files and Links",
-                                        set_subtitle: "File and link types that are opened by the app",
+                                        set_title: &gettext("Files and Links"),
+                                        set_subtitle: &gettext("File and link types that are opened by the app"),
                                         set_activatable: true,
                                         set_sensitive: model.mime_count > 0,
                                         add_suffix = &gtk::Label {
                                             add_css_class: "dim-label",
                                             #[watch]
-                                            set_label: &model.files_links_label(),
+                                            set_label: &gettext(&model.files_links_label()),
                                         },
                                         add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
                                         connect_activated => AppDetailsMsg::ShowFilesLinks,
                                     },
                                     adw::ActionRow {
-                                        set_title: "Storage",
+                                        set_title: &gettext("Storage"),
                                         set_subtitle: "Disk space being used",
                                         set_activatable: true,
                                         add_suffix = &gtk::Label {
                                             add_css_class: "dim-label",
                                             #[watch]
-                                            set_label: &model.storage_label(),
+                                            set_label: &gettext(&model.storage_label()),
                                         },
                                         add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
                                         connect_activated => AppDetailsMsg::ShowStorage,
