@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 09:50+0500\n"
+"POT-Creation-Date: 2026-07-28 14:12+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -275,6 +275,10 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
+#: src/ui/apps/apps_page.rs:56
+msgid "Search apps"
+msgstr ""
+
 #: src/ui/apps/apps_page.rs:68 src/ui/apps/default_apps.rs:90
 #: src/ui/apps/default_apps.rs:97 src/ui/apps/default_apps.rs:103
 msgid "Default Apps"
@@ -320,7 +324,11 @@ msgstr ""
 msgid "Required Permissions"
 msgstr ""
 
-#: src/ui/apps/app_details_page.rs:150 src/ui/apps/components/files_links.rs:60
+#: src/ui/apps/app_details_page.rs:135
+msgid "System permissions that the app requires"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:150 src/ui/apps/components/files_links.rs:57
 msgid "Files and Links"
 msgstr ""
 
@@ -330,6 +338,22 @@ msgstr ""
 
 #: src/ui/apps/app_details_page.rs:163 src/ui/apps/components/storage.rs:42
 msgid "Storage"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:164
+msgid "Disk space being used"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:286
+msgid "Show system notifications"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:310
+msgid "Notification settings are unavailable for this app"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:328
+msgid "Allow the app to run in the background"
 msgstr ""
 
 #: src/ui/apps/default_apps.rs:106
@@ -356,38 +380,61 @@ msgstr ""
 msgid "Photos"
 msgstr ""
 
-#: src/ui/apps/components/files_links.rs:87
+#: src/ui/apps/components/files_links.rs:64
+#, rust-format
+msgid "File and link types that are opened by <b>{}</b>"
+msgstr ""
+
+#: src/ui/apps/components/files_links.rs:82
 msgid "No File Types"
 msgstr ""
 
-#: src/ui/apps/components/files_links.rs:88
+#: src/ui/apps/components/files_links.rs:83
 msgid "This app has not registered any file or link types"
 msgstr ""
 
-#: src/ui/apps/components/storage.rs:55
+#: src/ui/apps/components/storage.rs:49
+#, rust-format
+msgid "How much disk space <b>{}</b> is occupying with app data and caches"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:53
 #: src/ui/notifications/notifications.rs:105
 #: src/ui/notifications/notifications.rs:117
 msgid "App"
 msgstr ""
 
-#: src/ui/apps/components/storage.rs:62
+#: src/ui/apps/components/storage.rs:60
 msgid "Data"
 msgstr ""
 
-#: src/ui/apps/components/storage.rs:69
+#: src/ui/apps/components/storage.rs:67
 msgid "Cache"
 msgstr ""
 
-#: src/ui/apps/components/storage.rs:76
+#: src/ui/apps/components/storage.rs:74
 msgid "Total"
 msgstr ""
 
-#: src/ui/apps/components/storage.rs:86 src/ui/apps/components/storage.rs:132
+#: src/ui/apps/components/storage.rs:84 src/ui/apps/components/storage.rs:128
 msgid "Clear Cache"
 msgstr ""
 
-#: src/ui/apps/components/storage.rs:132
+#: src/ui/apps/components/storage.rs:123
+msgid "Clear Cache?"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:124
+#, rust-format
+msgid "This will delete all cached data for {}."
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:128
 msgid "Cancel"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:236
+msgid "0 bytes"
 msgstr ""
 
 #: src/ui/apps/components/required_permissions.rs:24
@@ -449,11 +496,18 @@ msgstr ""
 msgid "Downloads Folder"
 msgstr ""
 
-#: src/ui/apps/components/required_permissions.rs:170
+#: src/ui/apps/components/required_permissions.rs:157
+#, rust-format
+msgid ""
+"<b>{}</b> requires access to the following system resources. To stop this "
+"access, the app must be removed"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:169
 msgid "Sandboxed"
 msgstr ""
 
-#: src/ui/apps/components/required_permissions.rs:171
+#: src/ui/apps/components/required_permissions.rs:170
 msgid "This app does not request any extra permissions"
 msgstr ""
 

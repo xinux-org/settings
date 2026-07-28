@@ -8,15 +8,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-19 22:14+0500\n"
-"PO-Revision-Date: 2026-04-19 22:16+0500\n"
-"Last-Translator: \n"
+"POT-Creation-Date: 2026-07-28 14:12+0500\n"
+"PO-Revision-Date: 2026-07-28 17:22+0500\n"
+"Last-Translator: BeMeritus <bemerituss@gmail.com>\n"
 "Language-Team: \n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.6\n"
+"X-Generator: Poedit 3.9\n"
 
 #: data/uz.xinux.Settings.desktop.in.in:2
 #: data/uz.xinux.Settings.metainfo.xml.in.in:7
@@ -87,10 +87,511 @@ msgctxt "shortcut window"
 msgid "Quit"
 msgstr ""
 
-#: src/ui/window.rs:134
+#: src/ui/window.rs:119
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/main.rs:35
+#: src/ui/power/general_page.rs:151
+msgid "Battery Charging"
+msgstr ""
+
+#: src/ui/power/general_page.rs:155
+msgid "Maximize Charge"
+msgstr ""
+
+#: src/ui/power/general_page.rs:156
+msgid "Uses all battery capacity. Degrades batteries more quickly."
+msgstr ""
+
+#: src/ui/power/general_page.rs:176
+msgid "Preserve Battery Health"
+msgstr ""
+
+#: src/ui/power/general_page.rs:177
+msgid "Increases battery longevity by maintaining lower charge levels."
+msgstr ""
+
+#: src/ui/power/general_page.rs:201
+msgid "Performance"
+msgstr ""
+
+#: src/ui/power/general_page.rs:202
+msgid "High performance and power usage"
+msgstr ""
+
+#: src/ui/power/general_page.rs:222
+msgid "Balanced"
+msgstr ""
+
+#: src/ui/power/general_page.rs:223
+msgid "Standard performance and power usage"
+msgstr ""
+
+#: src/ui/power/general_page.rs:243
+msgid "Power Saver"
+msgstr ""
+
+#: src/ui/power/general_page.rs:244
+msgid "Reduced performance and power usage"
+msgstr ""
+
+#: src/ui/power/general_page.rs:264 src/ui/power/power_page.rs:110
+#: src/ui/mouse/mouse.rs:46 src/ui/mouse/touchpad.rs:75
+#: src/ui/apps/apps_page.rs:65 src/ui/apps/app_details_page.rs:147
+#: src/ui/notifications/notifications.rs:60
+msgid "General"
+msgstr ""
+
+#: src/ui/power/general_page.rs:269
+msgid "Power Button Behavior"
+msgstr ""
+
+#: src/ui/power/general_page.rs:273
+msgid "Show Battery Percentage"
+msgstr ""
+
+#: src/ui/power/general_page.rs:274
+msgid "Show exact charge level in the top bar"
+msgstr ""
+
+#: src/ui/power/general_page.rs:287
+msgid "Power Saving"
+msgstr ""
+
+#: src/ui/power/general_page.rs:311 src/ui/power/power_saving.rs:88
+msgid ""
+"Disabling automatic suspend will result in higher power consumption. It is "
+"recomended to keep automatic suspend enabled."
+msgstr ""
+
+#: src/ui/power/power_saving.rs:60
+msgid "Automatic Power Saver"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:61
+msgid "Turn on power saver made when battery power is low"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:75
+msgid "Automatic Suspend"
+msgstr ""
+
+#: src/ui/mouse/mouse_page.rs:129
+msgid "Mouse & Touchpad"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:49
+msgid "Primary Button"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:50
+msgid "Order of physical buttons on mice and touchpads"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:61
+msgid "Left"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:66
+msgid "Right"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:79
+msgid "Mouse"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:84
+msgid "Mouse Acceleration"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:85 src/ui/mouse/pointing_stick.rs:36
+msgid "Recommended for most users and applications"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:94
+msgid ""
+"Turning mouse acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/pointing_stick.rs:59
+#: src/ui/mouse/touchpad.rs:213
+#, fuzzy
+#| msgid "Settings"
+msgid "Test Settings"
+msgstr "Настройки"
+
+#: src/ui/mouse/mouse.rs:144
+msgid "Scroll Direction"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:149
+msgid "Traditional"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:150 src/ui/mouse/mouse.rs:159
+msgid "Scrolling moves the view"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:158
+msgid "Natural"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:30
+msgid "Pointing Stick"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:35
+msgid "Pointing Stick Acceleration"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:45
+msgid ""
+"Turning pointing stick acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:64
+msgid "Touchpad"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:78
+msgid "Disable Touchpad While Typing"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:91
+msgid "Clicking"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:104
+msgid "Scrolling"
+msgstr ""
+
+#: src/ui/apps/apps_page.rs:39 src/ui/apps/apps_page.rs:46
+#: src/ui/apps/apps_page.rs:51
+msgid "Apps"
+msgstr "Приложения"
+
+#: src/ui/apps/apps_page.rs:54
+msgid "Search"
+msgstr "Поиск"
+
+#: src/ui/apps/apps_page.rs:56
+msgid "Search apps"
+msgstr "Поиск приложения"
+
+#: src/ui/apps/apps_page.rs:68 src/ui/apps/default_apps.rs:90
+#: src/ui/apps/default_apps.rs:97 src/ui/apps/default_apps.rs:103
+msgid "Default Apps"
+msgstr "Приложения по умолчанию"
+
+#: src/ui/apps/apps_page.rs:69
+msgid "Set which apps open links, files, and media"
+msgstr "Настройте, какие приложения открывают ссылки, файлы и медиафайлы"
+
+#: src/ui/apps/apps_page.rs:79
+msgid "Installed Apps"
+msgstr "Установленные приложения"
+
+#: src/ui/apps/app_details_page.rs:77
+msgid "App is not sandboxed"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:105
+msgid "Open"
+msgstr "Открыть"
+
+#: src/ui/apps/app_details_page.rs:110
+msgid "App Details"
+msgstr "Данные приложения"
+
+#: src/ui/apps/app_details_page.rs:119
+#: src/ui/apps/components/required_permissions.rs:149
+msgid "Permissions"
+msgstr "Разрешения"
+
+#: src/ui/apps/app_details_page.rs:122 src/ui/notifications/notifications.rs:44
+#: src/ui/notifications/notifications.rs:48
+#: src/ui/notifications/notifications.rs:55
+#: src/ui/notifications/app_notification.rs:66
+msgid "Notifications"
+msgstr "Уведомления"
+
+#: src/ui/apps/app_details_page.rs:127
+msgid "Run in Background"
+msgstr "Запуск в фоновом режиме"
+
+#: src/ui/apps/app_details_page.rs:134
+msgid "Required Permissions"
+msgstr "Требуемые разрешения"
+
+#: src/ui/apps/app_details_page.rs:135
+msgid "System permissions that the app requires"
+msgstr "Системные разрешения, требуемые приложением"
+
+#: src/ui/apps/app_details_page.rs:150 src/ui/apps/components/files_links.rs:57
+msgid "Files and Links"
+msgstr "Файлы и ссылки"
+
+#: src/ui/apps/app_details_page.rs:151
+msgid "File and link types that are opened by the app"
+msgstr "Типы файлов и ссылок, открываемых приложением"
+
+#: src/ui/apps/app_details_page.rs:163 src/ui/apps/components/storage.rs:42
+msgid "Storage"
+msgstr "Хранилище"
+
+#: src/ui/apps/app_details_page.rs:164
+msgid "Disk space being used"
+msgstr "Используется место на диске"
+
+#: src/ui/apps/app_details_page.rs:286
+msgid "Show system notifications"
+msgstr "Показывать системные уведомления"
+
+#: src/ui/apps/app_details_page.rs:310
+msgid "Notification settings are unavailable for this app"
+msgstr "Настройки уведомлений недоступны для этого приложения"
+
+#: src/ui/apps/app_details_page.rs:328
+msgid "Allow the app to run in the background"
+msgstr "Разрешить приложению работать в фоновом режиме"
+
+#: src/ui/apps/default_apps.rs:106
+msgid "Web"
+msgstr "Веб"
+
+#: src/ui/apps/default_apps.rs:110
+msgid "Mail"
+msgstr "Почта"
+
+#: src/ui/apps/default_apps.rs:114
+msgid "Calendar"
+msgstr "Календарь"
+
+#: src/ui/apps/default_apps.rs:118
+msgid "Music"
+msgstr "Музыка"
+
+#: src/ui/apps/default_apps.rs:122
+msgid "Video"
+msgstr "Видео"
+
+#: src/ui/apps/default_apps.rs:126
+msgid "Photos"
+msgstr "Фотографии"
+
+#: src/ui/apps/components/files_links.rs:64
+#, rust-format
+msgid "File and link types that are opened by <b>{}</b>"
+msgstr "Типы файлов и ссылок, открываемых <b>{}</b>"
+
+#: src/ui/apps/components/files_links.rs:82
+msgid "No File Types"
+msgstr "Нет типов файлов"
+
+#: src/ui/apps/components/files_links.rs:83
+msgid "This app has not registered any file or link types"
+msgstr "Это приложение не зарегистрировало ни одного типа файла или ссылки"
+
+#: src/ui/apps/components/storage.rs:49
+#, rust-format
+msgid "How much disk space <b>{}</b> is occupying with app data and caches"
+msgstr "Сколько места на диске занимает <b>{}</b> с данными приложений и кэшами"
+
+#: src/ui/apps/components/storage.rs:53
+#: src/ui/notifications/notifications.rs:105
+#: src/ui/notifications/notifications.rs:117
+msgid "App"
+msgstr "Приложение"
+
+#: src/ui/apps/components/storage.rs:60
+msgid "Data"
+msgstr "Данные"
+
+#: src/ui/apps/components/storage.rs:67
+msgid "Cache"
+msgstr "Кэш"
+
+#: src/ui/apps/components/storage.rs:74
+msgid "Total"
+msgstr "Итого"
+
+#: src/ui/apps/components/storage.rs:84 src/ui/apps/components/storage.rs:128
+msgid "Clear Cache"
+msgstr "Очистить кэш"
+
+#: src/ui/apps/components/storage.rs:123
+msgid "Clear Cache?"
+msgstr "Очистить кэш"
+
+#: src/ui/apps/components/storage.rs:124
+#, rust-format
+msgid "This will delete all cached data for {}."
+msgstr "Это приведет к удалению всех кэшированных данных для {}."
+
+#: src/ui/apps/components/storage.rs:128
+msgid "Cancel"
+msgstr "Отменить"
+
+#: src/ui/apps/components/storage.rs:236
+msgid "0 bytes"
+msgstr "0 байт"
+
+#: src/ui/apps/components/required_permissions.rs:24
+msgid "Network"
+msgstr "Сеть"
+
+#: src/ui/apps/components/required_permissions.rs:25
+msgid "Can communicate over the network"
+msgstr "Может общаться по сети"
+
+#: src/ui/apps/components/required_permissions.rs:28
+msgid "System Services"
+msgstr "Системные услуги"
+
+#: src/ui/apps/components/required_permissions.rs:29
+msgid "Full access to system D-Bus services"
+msgstr "Полный доступ к системным сервисам D-Bus"
+
+#: src/ui/apps/components/required_permissions.rs:32
+msgid "Session Services"
+msgstr "Услуги сеансов"
+
+#: src/ui/apps/components/required_permissions.rs:33
+msgid "Full access to session D-Bus services"
+msgstr "Полный доступ к сервисам сеанса D-Bus"
+
+#: src/ui/apps/components/required_permissions.rs:36
+msgid "Devices"
+msgstr "Устройства"
+
+#: src/ui/apps/components/required_permissions.rs:37
+msgid "Can access system device files"
+msgstr "Может получать доступ к системным файлам устройства"
+
+#: src/ui/apps/components/required_permissions.rs:40
+#: src/ui/apps/components/required_permissions.rs:44
+msgid "Home Folder"
+msgstr "Главная папка"
+
+#: src/ui/apps/components/required_permissions.rs:41
+#: src/ui/apps/components/required_permissions.rs:49
+#: src/ui/apps/components/required_permissions.rs:61
+msgid "Can view, edit and create files"
+msgstr "Может просматривать, редактировать и создавать файлы"
+
+#: src/ui/apps/components/required_permissions.rs:45
+#: src/ui/apps/components/required_permissions.rs:53
+#: src/ui/apps/components/required_permissions.rs:57
+msgid "Can view files"
+msgstr "Может просматривать файлы"
+
+#: src/ui/apps/components/required_permissions.rs:48
+#: src/ui/apps/components/required_permissions.rs:52
+msgid "File System"
+msgstr "Файловая система"
+
+#: src/ui/apps/components/required_permissions.rs:56
+#: src/ui/apps/components/required_permissions.rs:60
+msgid "Downloads Folder"
+msgstr "Папка Загрузки"
+
+#: src/ui/apps/components/required_permissions.rs:157
+#, rust-format
+msgid ""
+"<b>{}</b> requires access to the following system resources. To stop this "
+"access, the app must be removed"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:169
+msgid "Sandboxed"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:170
+msgid "This app does not request any extra permissions"
+msgstr "Это приложение не запрашивает никаких дополнительных разрешений"
+
+#: src/ui/notifications/notifications.rs:62
+msgid "Do Not Disturb"
+msgstr "Не беспокоить"
+
+#: src/ui/notifications/notifications.rs:63
+msgid "Temporarily suppress notification banners"
+msgstr "Временно подавлять баннеры уведомлений"
+
+#: src/ui/notifications/notifications.rs:73
+msgid "Lock Screen Notifications"
+msgstr "Уведомления на экране блокировки"
+
+#: src/ui/notifications/notifications.rs:74
+msgid "Show notifications on the lock screen"
+msgstr "Показывать уведомления на заблокированном экране"
+
+#: src/ui/notifications/notifications.rs:85
+msgid "App Notifications"
+msgstr "Уведомления приложений"
+
+#: src/ui/notifications/notifications.rs:87
+msgid "Choose which applications can show notifications"
+msgstr "Выберите, какие приложения могут показывать уведомления"
+
+#: src/ui/notifications/notifications.rs:301
+msgid "On"
+msgstr "Включен"
+
+#: src/ui/notifications/notifications.rs:303
+msgid "Off"
+msgstr "Выключено"
+
+#: src/ui/notifications/app_notification.rs:67
+msgid "Show in notifications list"
+msgstr "Показывать в списке уведомлений"
+
+#: src/ui/notifications/app_notification.rs:77
+msgid "Sound"
+msgstr "Звук"
+
+#: src/ui/notifications/app_notification.rs:78
+msgid "Allow notification sounds from app"
+msgstr "Разрешить звуки уведомлений от приложения"
+
+#: src/ui/notifications/app_notification.rs:89
+msgid "Banners"
+msgstr "Баннеры"
+
+#: src/ui/notifications/app_notification.rs:92
+#: src/ui/notifications/app_notification.rs:121
+msgid "Show Banners"
+msgstr "Показать баннеры"
+
+#: src/ui/notifications/app_notification.rs:93
+msgid "Show notifications above apps"
+msgstr "Показывать уведомления над приложениями"
+
+#: src/ui/notifications/app_notification.rs:104
+#: src/ui/notifications/app_notification.rs:134
+msgid "Show Content"
+msgstr "Показать контент"
+
+#: src/ui/notifications/app_notification.rs:105
+msgid "Include message details in notification banners"
+msgstr "Включить сведения о сообщении в баннеры уведомлений"
+
+#: src/ui/notifications/app_notification.rs:118
+msgid "Lock Screen"
+msgstr "Экран блокировки"
+
+#: src/ui/notifications/app_notification.rs:122
+msgid "Show notifications on lock screen"
+msgstr "Показывать уведомления на заблокированном экране"
+
+#: src/ui/notifications/app_notification.rs:135
+msgid "Include message details on lock screen"
+msgstr "Включить сведения о сообщении на экране блокировки"
+
+#: src/main.rs:52
 msgid "Xinux settings"
 msgstr ""

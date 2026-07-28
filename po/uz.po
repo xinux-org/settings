@@ -3,28 +3,26 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-20 20:15+0500\n"
-"PO-Revision-Date: 2026-04-20 20:18+0500\n"
-"Last-Translator: \n"
+"POT-Creation-Date: 2026-07-28 14:12+0500\n"
+"PO-Revision-Date: 2026-07-28 17:00+0500\n"
+"Last-Translator: BeMeritus <bemerituss@gmail.com>\n"
 "Language-Team: \n"
 "Language: uz\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.6\n"
+"X-Generator: Poedit 3.9\n"
 
-#: data/uz.xinux.Settings.desktop.in.in:2
-#: data/uz.xinux.Settings.metainfo.xml.in.in:7
+#: data/uz.xinux.Settings.desktop.in.in:2 data/uz.xinux.Settings.metainfo.xml.in.in:7
 msgid "Xinux Settings"
 msgstr ""
 
-#: data/uz.xinux.Settings.desktop.in.in:3
-#: data/uz.xinux.Settings.metainfo.xml.in.in:10
+#: data/uz.xinux.Settings.desktop.in.in:3 data/uz.xinux.Settings.metainfo.xml.in.in:10
 msgid "Xinux GTK/libadwaita settings app"
 msgstr ""
 
@@ -87,54 +85,543 @@ msgctxt "shortcut window"
 msgid "Quit"
 msgstr "Chiqish"
 
-#: src/ui/window.rs:134
+#: src/ui/window.rs:119
 msgid "Settings"
 msgstr "Sozlamalar"
 
-#: src/ui/power/power_saving.rs:120 src/ui/power/reusables.rs:262
-msgid "15 minute"
-msgstr "15 daqiqa"
+#: src/ui/power/general_page.rs:151
+msgid "Battery Charging"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:121 src/ui/power/reusables.rs:263
-msgid "20 minute"
-msgstr "20 daqiqa"
+#: src/ui/power/general_page.rs:155
+msgid "Maximize Charge"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:122 src/ui/power/reusables.rs:264
-msgid "25 minute"
-msgstr "25 daqiqa"
+#: src/ui/power/general_page.rs:156
+msgid "Uses all battery capacity. Degrades batteries more quickly."
+msgstr ""
 
-#: src/ui/power/power_saving.rs:123 src/ui/power/reusables.rs:265
-msgid "30 minute"
-msgstr "30 daqiqa"
+#: src/ui/power/general_page.rs:176
+msgid "Preserve Battery Health"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:124 src/ui/power/reusables.rs:266
-msgid "45 minute"
-msgstr "45 daqiqa"
+#: src/ui/power/general_page.rs:177
+msgid "Increases battery longevity by maintaining lower charge levels."
+msgstr ""
 
-#: src/ui/power/power_saving.rs:125 src/ui/power/reusables.rs:267
-msgid "1 hour"
-msgstr "1 soat"
+#: src/ui/power/general_page.rs:201
+msgid "Performance"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:126 src/ui/power/reusables.rs:268
-msgid "1 hour 20 minute"
-msgstr "1 soat 20 daqiqa"
+#: src/ui/power/general_page.rs:202
+msgid "High performance and power usage"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:127 src/ui/power/reusables.rs:269
-msgid "1 hour 30 minute"
-msgstr "1 soat 30 daqiqa"
+#: src/ui/power/general_page.rs:222
+msgid "Balanced"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:128 src/ui/power/reusables.rs:270
-msgid "1 hour 40 minute"
-msgstr "1 soat 40 daqiqa"
+#: src/ui/power/general_page.rs:223
+msgid "Standard performance and power usage"
+msgstr ""
 
-#: src/ui/power/power_saving.rs:129 src/ui/power/reusables.rs:271
-msgid "2 hours"
-msgstr "2 soat"
+#: src/ui/power/general_page.rs:243
+msgid "Power Saver"
+msgstr ""
 
-#: src/ui/power/reusables.rs:305
-msgid "1 minute"
-msgstr "1 daqiqa"
+#: src/ui/power/general_page.rs:244
+msgid "Reduced performance and power usage"
+msgstr ""
 
-#: src/main.rs:35
+#: src/ui/power/general_page.rs:264 src/ui/power/power_page.rs:110
+#: src/ui/mouse/mouse.rs:46 src/ui/mouse/touchpad.rs:75 src/ui/apps/apps_page.rs:65
+#: src/ui/apps/app_details_page.rs:147 src/ui/notifications/notifications.rs:60
+#, fuzzy
+#| msgctxt "shortcut window"
+#| msgid "General"
+msgid "General"
+msgstr "Asosiy"
+
+#: src/ui/power/general_page.rs:269
+msgid "Power Button Behavior"
+msgstr ""
+
+#: src/ui/power/general_page.rs:273
+msgid "Show Battery Percentage"
+msgstr ""
+
+#: src/ui/power/general_page.rs:274
+msgid "Show exact charge level in the top bar"
+msgstr ""
+
+#: src/ui/power/general_page.rs:287
+msgid "Power Saving"
+msgstr ""
+
+#: src/ui/power/general_page.rs:311 src/ui/power/power_saving.rs:88
+msgid ""
+"Disabling automatic suspend will result in higher power consumption. It is recomended "
+"to keep automatic suspend enabled."
+msgstr ""
+
+#: src/ui/power/power_saving.rs:60
+msgid "Automatic Power Saver"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:61
+msgid "Turn on power saver made when battery power is low"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:75
+msgid "Automatic Suspend"
+msgstr ""
+
+#: src/ui/mouse/mouse_page.rs:129
+msgid "Mouse & Touchpad"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:49
+msgid "Primary Button"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:50
+msgid "Order of physical buttons on mice and touchpads"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:61
+msgid "Left"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:66
+msgid "Right"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:79
+msgid "Mouse"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:84
+msgid "Mouse Acceleration"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:85 src/ui/mouse/pointing_stick.rs:36
+msgid "Recommended for most users and applications"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:94
+msgid ""
+"Turning mouse acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/pointing_stick.rs:59
+#: src/ui/mouse/touchpad.rs:213
+#, fuzzy
+#| msgid "Settings"
+msgid "Test Settings"
+msgstr "Sozlamalar"
+
+#: src/ui/mouse/mouse.rs:144
+msgid "Scroll Direction"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:149
+msgid "Traditional"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:150 src/ui/mouse/mouse.rs:159
+msgid "Scrolling moves the view"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:158
+msgid "Natural"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:30
+msgid "Pointing Stick"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:35
+msgid "Pointing Stick Acceleration"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:45
+msgid ""
+"Turning pointing stick acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:64
+msgid "Touchpad"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:78
+msgid "Disable Touchpad While Typing"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:91
+msgid "Clicking"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:104
+msgid "Scrolling"
+msgstr ""
+
+#: src/ui/apps/apps_page.rs:39 src/ui/apps/apps_page.rs:46 src/ui/apps/apps_page.rs:51
+msgid "Apps"
+msgstr "Ilovalar"
+
+#: src/ui/apps/apps_page.rs:54
+msgid "Search"
+msgstr "Qidirish"
+
+#: src/ui/apps/apps_page.rs:56
+msgid "Search apps"
+msgstr "Ilovalarni qidirish"
+
+#: src/ui/apps/apps_page.rs:68 src/ui/apps/default_apps.rs:90
+#: src/ui/apps/default_apps.rs:97 src/ui/apps/default_apps.rs:103
+msgid "Default Apps"
+msgstr "Birlamchi ilovalar"
+
+#: src/ui/apps/apps_page.rs:69
+msgid "Set which apps open links, files, and media"
+msgstr "Qaysi ilovalar havolalar, fayllar va media fayllarni ochishini sozlash"
+
+#: src/ui/apps/apps_page.rs:79
+msgid "Installed Apps"
+msgstr "O‘rnatilgan ilovalar"
+
+#: src/ui/apps/app_details_page.rs:77
+msgid "App is not sandboxed"
+msgstr "Ilova sanboks qilinmagan"
+
+#: src/ui/apps/app_details_page.rs:105
+msgid "Open"
+msgstr "Ochiq"
+
+#: src/ui/apps/app_details_page.rs:110
+msgid "App Details"
+msgstr "Ilova tafsilotlari"
+
+#: src/ui/apps/app_details_page.rs:119
+#: src/ui/apps/components/required_permissions.rs:149
+msgid "Permissions"
+msgstr "Ruxsatlar"
+
+#: src/ui/apps/app_details_page.rs:122 src/ui/notifications/notifications.rs:44
+#: src/ui/notifications/notifications.rs:48 src/ui/notifications/notifications.rs:55
+#: src/ui/notifications/app_notification.rs:66
+msgid "Notifications"
+msgstr "Bildirishnomalar"
+
+#: src/ui/apps/app_details_page.rs:127
+msgid "Run in Background"
+msgstr "Orqa fonda ishga tushirish"
+
+#: src/ui/apps/app_details_page.rs:134
+msgid "Required Permissions"
+msgstr "Kerakli ruxsatlar"
+
+#: src/ui/apps/app_details_page.rs:135
+msgid "System permissions that the app requires"
+msgstr "Ilova talab qiladigan tizim ruxsatlari"
+
+#: src/ui/apps/app_details_page.rs:150 src/ui/apps/components/files_links.rs:57
+msgid "Files and Links"
+msgstr "Fayllar va havolalar"
+
+#: src/ui/apps/app_details_page.rs:151
+msgid "File and link types that are opened by the app"
+msgstr "Ilova ochadigan fayl va havola turlari"
+
+#: src/ui/apps/app_details_page.rs:163 src/ui/apps/components/storage.rs:42
+msgid "Storage"
+msgstr "Ilova ochadigan fayl va havola turlari"
+
+#: src/ui/apps/app_details_page.rs:164
+msgid "Disk space being used"
+msgstr "Diskda bo‘sh joy ishlatilmoqda"
+
+#: src/ui/apps/app_details_page.rs:286
+msgid "Show system notifications"
+msgstr "Tizim bildirishnomalarini chiqarish"
+
+#: src/ui/apps/app_details_page.rs:310
+msgid "Notification settings are unavailable for this app"
+msgstr "Bu ilova uchun bildirishnoma sozlamalari mavjud emas"
+
+#: src/ui/apps/app_details_page.rs:328
+msgid "Allow the app to run in the background"
+msgstr "Ilovaning fonda ishlashiga ruxsat berish"
+
+#: src/ui/apps/default_apps.rs:106
+msgid "Web"
+msgstr "Veb"
+
+#: src/ui/apps/default_apps.rs:110
+msgid "Mail"
+msgstr "Pochta"
+
+#: src/ui/apps/default_apps.rs:114
+msgid "Calendar"
+msgstr "Taqvim"
+
+#: src/ui/apps/default_apps.rs:118
+msgid "Music"
+msgstr "Musiqa"
+
+#: src/ui/apps/default_apps.rs:122
+msgid "Video"
+msgstr "Video"
+
+#: src/ui/apps/default_apps.rs:126
+msgid "Photos"
+msgstr "Suratlar"
+
+#: src/ui/apps/components/files_links.rs:64
+#, rust-format
+msgid "File and link types that are opened by <b>{}</b>"
+msgstr "<b>{}</b> tomonidan ochiladigan fayl va havola turlari"
+
+#: src/ui/apps/components/files_links.rs:82
+msgid "No File Types"
+msgstr "Fayl turlari topilmadi"
+
+#: src/ui/apps/components/files_links.rs:83
+msgid "This app has not registered any file or link types"
+msgstr "Bu ilova hech qanday fayl yoki havola turini ro‘yxatdan o‘tkazmagan"
+
+#: src/ui/apps/components/storage.rs:49
+#, rust-format
+msgid "How much disk space <b>{}</b> is occupying with app data and caches"
+msgstr "Ilova ma’lumotlari va keshlari <b>{}</b> disk xotirasida qancha joy egallamoqda"
+
+#: src/ui/apps/components/storage.rs:53 src/ui/notifications/notifications.rs:105
+#: src/ui/notifications/notifications.rs:117
+msgid "App"
+msgstr "Ilova"
+
+#: src/ui/apps/components/storage.rs:60
+msgid "Data"
+msgstr "Ma’lumotlar"
+
+#: src/ui/apps/components/storage.rs:67
+msgid "Cache"
+msgstr "Kesh"
+
+#: src/ui/apps/components/storage.rs:74
+msgid "Total"
+msgstr "Jami"
+
+#: src/ui/apps/components/storage.rs:84 src/ui/apps/components/storage.rs:128
+msgid "Clear Cache"
+msgstr "Keshni tozalash"
+
+#: src/ui/apps/components/storage.rs:123
+msgid "Clear Cache?"
+msgstr "Keshni tozalash"
+
+#: src/ui/apps/components/storage.rs:124
+#, rust-format
+msgid "This will delete all cached data for {}."
+msgstr "Bunda {} uchun barcha keshlangan ma’lumotlar o‘chirib tashlanadi."
+
+#: src/ui/apps/components/storage.rs:128
+msgid "Cancel"
+msgstr "Bekor qilish"
+
+#: src/ui/apps/components/storage.rs:236
+msgid "0 bytes"
+msgstr "0 bayt"
+
+#: src/ui/apps/components/required_permissions.rs:24
+msgid "Network"
+msgstr "Tarmoq"
+
+#: src/ui/apps/components/required_permissions.rs:25
+msgid "Can communicate over the network"
+msgstr "Tarmoq orqali aloqa qila oladi"
+
+#: src/ui/apps/components/required_permissions.rs:28
+msgid "System Services"
+msgstr "Tizim xizmatlari"
+
+#: src/ui/apps/components/required_permissions.rs:29
+msgid "Full access to system D-Bus services"
+msgstr "Tizim D-Bus xizmatlariga to‘liq ruxsat"
+
+#: src/ui/apps/components/required_permissions.rs:32
+msgid "Session Services"
+msgstr "Seans xizmatlari"
+
+#: src/ui/apps/components/required_permissions.rs:33
+msgid "Full access to session D-Bus services"
+msgstr "Seans D-Bus xizmatlariga to‘liq ruxsat"
+
+#: src/ui/apps/components/required_permissions.rs:36
+msgid "Devices"
+msgstr "Qurilmalar"
+
+#: src/ui/apps/components/required_permissions.rs:37
+msgid "Can access system device files"
+msgstr "Tizim qurilmasi fayllariga kira oladi"
+
+#: src/ui/apps/components/required_permissions.rs:40
+#: src/ui/apps/components/required_permissions.rs:44
+msgid "Home Folder"
+msgstr "Uy jildi"
+
+#: src/ui/apps/components/required_permissions.rs:41
+#: src/ui/apps/components/required_permissions.rs:49
+#: src/ui/apps/components/required_permissions.rs:61
+msgid "Can view, edit and create files"
+msgstr "Fayllarni ko‘rish, tahrirlash va yaratish mumkin"
+
+#: src/ui/apps/components/required_permissions.rs:45
+#: src/ui/apps/components/required_permissions.rs:53
+#: src/ui/apps/components/required_permissions.rs:57
+msgid "Can view files"
+msgstr "Fayllarni ko‘rishi mumkin"
+
+#: src/ui/apps/components/required_permissions.rs:48
+#: src/ui/apps/components/required_permissions.rs:52
+msgid "File System"
+msgstr "Fayl tizimi"
+
+#: src/ui/apps/components/required_permissions.rs:56
+#: src/ui/apps/components/required_permissions.rs:60
+msgid "Downloads Folder"
+msgstr "Yuklanmalar jildi"
+
+#: src/ui/apps/components/required_permissions.rs:157
+#, rust-format
+msgid ""
+"<b>{}</b> requires access to the following system resources. To stop this access, the "
+"app must be removed"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:169
+msgid "Sandboxed"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:170
+msgid "This app does not request any extra permissions"
+msgstr "Bu ilova hech qanday qo‘shimcha ruxsat so‘ramaydi"
+
+#: src/ui/notifications/notifications.rs:62
+msgid "Do Not Disturb"
+msgstr "Bezovta qilinmasin"
+
+#: src/ui/notifications/notifications.rs:63
+msgid "Temporarily suppress notification banners"
+msgstr "Bildirishnoma bannerlarini vaqtincha yopish"
+
+#: src/ui/notifications/notifications.rs:73
+msgid "Lock Screen Notifications"
+msgstr "Ekran qulfi bildirishnomalari"
+
+#: src/ui/notifications/notifications.rs:74
+msgid "Show notifications on the lock screen"
+msgstr "Bildirishnomalarni ekran qulfida chiqarish"
+
+#: src/ui/notifications/notifications.rs:85
+msgid "App Notifications"
+msgstr "Ilova bildirishnomalari"
+
+#: src/ui/notifications/notifications.rs:87
+msgid "Choose which applications can show notifications"
+msgstr "Qaysi ilovalar bildirishnomalarni ko‘rsatishi mumkinligini tanlang"
+
+#: src/ui/notifications/notifications.rs:301
+msgid "On"
+msgstr "Yoniq"
+
+#: src/ui/notifications/notifications.rs:303
+msgid "Off"
+msgstr "O‘chiq"
+
+#: src/ui/notifications/app_notification.rs:67
+msgid "Show in notifications list"
+msgstr "Bildirishnomalar ro‘yxatida chiqarish"
+
+#: src/ui/notifications/app_notification.rs:77
+msgid "Sound"
+msgstr "Tovush"
+
+#: src/ui/notifications/app_notification.rs:78
+msgid "Allow notification sounds from app"
+msgstr "Ilovadan bildirishnoma tovushlariga ruxsat berish"
+
+#: src/ui/notifications/app_notification.rs:89
+msgid "Banners"
+msgstr "Bannerlar"
+
+#: src/ui/notifications/app_notification.rs:92
+#: src/ui/notifications/app_notification.rs:121
+msgid "Show Banners"
+msgstr "Bannerlarni ko‘rsatish"
+
+#: src/ui/notifications/app_notification.rs:93
+msgid "Show notifications above apps"
+msgstr "Bildirishnomalarni ilovalar ustida chiqarish"
+
+#: src/ui/notifications/app_notification.rs:104
+#: src/ui/notifications/app_notification.rs:134
+msgid "Show Content"
+msgstr "Kontentni ko‘rsatish"
+
+#: src/ui/notifications/app_notification.rs:105
+msgid "Include message details in notification banners"
+msgstr "Bildirishnoma bannerlariga xabar tafsilotlarini kiritish"
+
+#: src/ui/notifications/app_notification.rs:118
+msgid "Lock Screen"
+msgstr "Ekran qulfi"
+
+#: src/ui/notifications/app_notification.rs:122
+msgid "Show notifications on lock screen"
+msgstr "Bildirishnomalarni ekran qulfida chiqarish"
+
+#: src/ui/notifications/app_notification.rs:135
+msgid "Include message details on lock screen"
+msgstr "Xabar tafsilotlari ekran qulfida chiqsin"
+
+#: src/main.rs:52
 msgid "Xinux settings"
 msgstr "Xinux sozlamalari"
+
+#~ msgid "15 minute"
+#~ msgstr "15 daqiqa"
+
+#~ msgid "20 minute"
+#~ msgstr "20 daqiqa"
+
+#~ msgid "25 minute"
+#~ msgstr "25 daqiqa"
+
+#~ msgid "30 minute"
+#~ msgstr "30 daqiqa"
+
+#~ msgid "45 minute"
+#~ msgstr "45 daqiqa"
+
+#~ msgid "1 hour"
+#~ msgstr "1 soat"
+
+#~ msgid "1 hour 20 minute"
+#~ msgstr "1 soat 20 daqiqa"
+
+#~ msgid "1 hour 30 minute"
+#~ msgstr "1 soat 30 daqiqa"
+
+#~ msgid "1 hour 40 minute"
+#~ msgstr "1 soat 40 daqiqa"
+
+#~ msgid "2 hours"
+#~ msgstr "2 soat"
+
+#~ msgid "1 minute"
+#~ msgstr "1 daqiqa"
