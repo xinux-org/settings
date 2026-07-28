@@ -60,6 +60,7 @@ pkgs.mkShell {
     gst_all_1.gst-libav
     gst_all_1.gst-vaapi
     rustPlatform.bindgenHook
+    udev
   ];
 
   buildInputs = with pkgs; [

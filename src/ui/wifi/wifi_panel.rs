@@ -149,9 +149,9 @@ impl SimpleAsyncComponent for WifiModel {
                         #[watch]
                         set_visible_child_name: match model.wifi_stack_page {
                           // donʻt translate
-                          WifiStack::WifiOn => "wifi-connections",
-                          WifiStack::WifiOff => "wifi-off",
-                          WifiStack::Airplane => "airplane-mode",
+                            WifiStack::WifiOn => "wifi-connections",
+                            WifiStack::WifiOff => "wifi-off",
+                            WifiStack::Airplane => "airplane-mode",
                         },
                         // donʻt translate
                         add_named: (&wifi_off, Some("wifi-off")),
@@ -162,29 +162,29 @@ impl SimpleAsyncComponent for WifiModel {
             }
         },
         wifi_connections = adw::PreferencesGroup {
-          #[local_ref]
-          networks_group -> adw::PreferencesGroup {
-              #[watch]
-              set_title: if !model.loading { "Visible Networks" } else { "" },
-              gtk::Box {
-                  set_hexpand: true,
-                  set_halign: gtk::Align::Start,
-                  set_spacing: 6,
-                  set_margin_bottom: 12,
-                  #[watch]
-                  set_visible: model.loading,
+            #[local_ref]
+            networks_group -> adw::PreferencesGroup {
+                #[watch]
+                set_title: if !model.loading { "Visible Networks" } else { "" },
+                gtk::Box {
+                    set_hexpand: true,
+                    set_halign: gtk::Align::Start,
+                    set_spacing: 6,
+                    set_margin_bottom: 12,
+                    #[watch]
+                    set_visible: model.loading,
 
-                  #[name(list_label)]
-                  gtk::Label {
-                    set_label: "Visible Networks",
-                    set_xalign: 0.0,
-                    add_css_class: "heading",
-                  },
-                  #[name(spinner)]
-                  adw::Spinner {},
-              }
-          }
-      },
+                    #[name(list_label)]
+                    gtk::Label {
+                        set_label: "Visible Networks",
+                        set_xalign: 0.0,
+                        add_css_class: "heading",
+                    },
+                    #[name(spinner)]
+                    adw::Spinner {},
+                }
+            }
+        },
         wifi_off = &adw::StatusPage {
             set_icon_name: Some("network-wireless-disabled-symbolic"),
             set_title: "Wi-Fi Off",
