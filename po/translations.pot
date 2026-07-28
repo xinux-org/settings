@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 18:55+0500\n"
+"POT-Creation-Date: 2026-07-28 09:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,7 +86,7 @@ msgctxt "shortcut window"
 msgid "Quit"
 msgstr ""
 
-#: src/ui/window.rs:135
+#: src/ui/window.rs:119
 msgid "Settings"
 msgstr ""
 
@@ -136,6 +136,8 @@ msgstr ""
 
 #: src/ui/power/general_page.rs:264 src/ui/power/power_page.rs:110
 #: src/ui/mouse/mouse.rs:46 src/ui/mouse/touchpad.rs:75
+#: src/ui/apps/apps_page.rs:65 src/ui/apps/app_details_page.rs:147
+#: src/ui/notifications/notifications.rs:60
 msgid "General"
 msgstr ""
 
@@ -212,7 +214,8 @@ msgid ""
 "to use."
 msgstr ""
 
-#: src/ui/mouse/mouse.rs:109 src/ui/mouse/touchpad.rs:213
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/pointing_stick.rs:59
+#: src/ui/mouse/touchpad.rs:213
 msgid "Test Settings"
 msgstr ""
 
@@ -263,6 +266,275 @@ msgstr ""
 msgid "Scrolling"
 msgstr ""
 
-#: src/main.rs:35
+#: src/ui/apps/apps_page.rs:39 src/ui/apps/apps_page.rs:46
+#: src/ui/apps/apps_page.rs:51
+msgid "Apps"
+msgstr ""
+
+#: src/ui/apps/apps_page.rs:54
+msgid "Search"
+msgstr ""
+
+#: src/ui/apps/apps_page.rs:68 src/ui/apps/default_apps.rs:90
+#: src/ui/apps/default_apps.rs:97 src/ui/apps/default_apps.rs:103
+msgid "Default Apps"
+msgstr ""
+
+#: src/ui/apps/apps_page.rs:69
+msgid "Set which apps open links, files, and media"
+msgstr ""
+
+#: src/ui/apps/apps_page.rs:79
+msgid "Installed Apps"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:77
+msgid "App is not sandboxed"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:105
+msgid "Open"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:110
+msgid "App Details"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:119
+#: src/ui/apps/components/required_permissions.rs:149
+msgid "Permissions"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:122 src/ui/notifications/notifications.rs:44
+#: src/ui/notifications/notifications.rs:48
+#: src/ui/notifications/notifications.rs:55
+#: src/ui/notifications/app_notification.rs:66
+msgid "Notifications"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:127
+msgid "Run in Background"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:134
+msgid "Required Permissions"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:150 src/ui/apps/components/files_links.rs:60
+msgid "Files and Links"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:151
+msgid "File and link types that are opened by the app"
+msgstr ""
+
+#: src/ui/apps/app_details_page.rs:163 src/ui/apps/components/storage.rs:42
+msgid "Storage"
+msgstr ""
+
+#: src/ui/apps/default_apps.rs:106
+msgid "Web"
+msgstr ""
+
+#: src/ui/apps/default_apps.rs:110
+msgid "Mail"
+msgstr ""
+
+#: src/ui/apps/default_apps.rs:114
+msgid "Calendar"
+msgstr ""
+
+#: src/ui/apps/default_apps.rs:118
+msgid "Music"
+msgstr ""
+
+#: src/ui/apps/default_apps.rs:122
+msgid "Video"
+msgstr ""
+
+#: src/ui/apps/default_apps.rs:126
+msgid "Photos"
+msgstr ""
+
+#: src/ui/apps/components/files_links.rs:87
+msgid "No File Types"
+msgstr ""
+
+#: src/ui/apps/components/files_links.rs:88
+msgid "This app has not registered any file or link types"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:55
+#: src/ui/notifications/notifications.rs:105
+#: src/ui/notifications/notifications.rs:117
+msgid "App"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:62
+msgid "Data"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:69
+msgid "Cache"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:76
+msgid "Total"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:86 src/ui/apps/components/storage.rs:132
+msgid "Clear Cache"
+msgstr ""
+
+#: src/ui/apps/components/storage.rs:132
+msgid "Cancel"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:24
+msgid "Network"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:25
+msgid "Can communicate over the network"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:28
+msgid "System Services"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:29
+msgid "Full access to system D-Bus services"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:32
+msgid "Session Services"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:33
+msgid "Full access to session D-Bus services"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:36
+msgid "Devices"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:37
+msgid "Can access system device files"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:40
+#: src/ui/apps/components/required_permissions.rs:44
+msgid "Home Folder"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:41
+#: src/ui/apps/components/required_permissions.rs:49
+#: src/ui/apps/components/required_permissions.rs:61
+msgid "Can view, edit and create files"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:45
+#: src/ui/apps/components/required_permissions.rs:53
+#: src/ui/apps/components/required_permissions.rs:57
+msgid "Can view files"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:48
+#: src/ui/apps/components/required_permissions.rs:52
+msgid "File System"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:56
+#: src/ui/apps/components/required_permissions.rs:60
+msgid "Downloads Folder"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:170
+msgid "Sandboxed"
+msgstr ""
+
+#: src/ui/apps/components/required_permissions.rs:171
+msgid "This app does not request any extra permissions"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:62
+msgid "Do Not Disturb"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:63
+msgid "Temporarily suppress notification banners"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:73
+msgid "Lock Screen Notifications"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:74
+msgid "Show notifications on the lock screen"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:85
+msgid "App Notifications"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:87
+msgid "Choose which applications can show notifications"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:301
+msgid "On"
+msgstr ""
+
+#: src/ui/notifications/notifications.rs:303
+msgid "Off"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:67
+msgid "Show in notifications list"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:77
+msgid "Sound"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:78
+msgid "Allow notification sounds from app"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:89
+msgid "Banners"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:92
+#: src/ui/notifications/app_notification.rs:121
+msgid "Show Banners"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:93
+msgid "Show notifications above apps"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:104
+#: src/ui/notifications/app_notification.rs:134
+msgid "Show Content"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:105
+msgid "Include message details in notification banners"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:118
+msgid "Lock Screen"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:122
+msgid "Show notifications on lock screen"
+msgstr ""
+
+#: src/ui/notifications/app_notification.rs:135
+msgid "Include message details on lock screen"
+msgstr ""
+
+#: src/main.rs:52
 msgid "Xinux settings"
 msgstr ""

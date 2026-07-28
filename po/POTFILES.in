@@ -13,4 +13,14 @@ src/ui/mouse/mouse.rs
 src/ui/mouse/pointing_stick.rs 
 src/ui/mouse/touchpad.rs 
 
+src/ui/apps/apps_page.rs
+src/ui/apps/app_details_page.rs
+src/ui/apps/default_apps.rs
+src/ui/apps/components/files_links.rs
+src/ui/apps/components/storage.rs
+src/ui/apps/components/required_permissions.rs
+
+src/ui/notifications/notifications.rs
+src/ui/notifications/app_notification.rs
+
 src/main.rs
