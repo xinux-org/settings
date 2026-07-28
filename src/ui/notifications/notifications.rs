@@ -2,10 +2,10 @@ use super::app_notification::{
     AppNotificationItem, AppNotificationsInit, AppNotificationsPageModel,
     AppNotificationsPageOutput, app_settings_for_canonical,
 };
+use gettextrs::gettext;
 use gio_unix;
 use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 use std::collections::HashSet;
-use gettextrs::gettext;
 
 const MASTER_SCHEMA: &str = "org.gnome.desktop.notifications";
 const APP_SCHEMA: &str = "org.gnome.desktop.notifications.application";
@@ -99,10 +99,10 @@ impl Component for NotificationsModel {
                 #[name(detail_nav_page)]
                 adw::NavigationPage {
                     #[watch]
-                    set_title: if let Some(i) = model.selected_app {
-                        &model.apps[i].title
+                    set_title: &if let Some(i) = model.selected_app {
+                        model.apps[i].title.clone()
                     } else {
-                        "App"
+                        gettext("App")
                     },
                     set_tag: Some("detail"),
                     adw::ToolbarView {
@@ -111,10 +111,10 @@ impl Component for NotificationsModel {
                             #[wrap(Some)]
                             set_title_widget = &adw::WindowTitle {
                                 #[watch]
-                                set_title: if let Some(i) = model.selected_app {
-                                    &model.apps[i].title
+                                set_title: &if let Some(i) = model.selected_app {
+                                    model.apps[i].title.clone()
                                 } else {
-                                    "App"
+                                    gettext("App")
                                 },
                             }
                         },
@@ -297,7 +297,11 @@ fn build_app_row(
 
     let suffix_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
 
-    let status_label = gtk::Label::new(Some(if app.enable { "On" } else { "Off" }));
+    let status_label = gtk::Label::new(Some(&if app.enable {
+        gettext("On")
+    } else {
+        gettext("Off")
+    }));
     status_label.set_valign(gtk::Align::Center);
     status_label.add_css_class("dim-label");
     suffix_box.append(&status_label);
