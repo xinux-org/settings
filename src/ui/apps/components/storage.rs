@@ -46,37 +46,35 @@ impl SimpleComponent for StorageDialog {
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     #[watch]
-                    set_description: &gettext(&format!(
-                        "How much disk space <b>{}</b> is occupying with app data and caches",
-                        model.app_name
-                    )),
+                    set_description: &gettext("How much disk space <b>{}</b> is occupying with app data and caches")
+                        .replace("{}", &model.app_name),
                     adw::PreferencesGroup {
                         adw::ActionRow {
                             set_title: &gettext("App"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &gettext(&format_bytes(model.info.app)),
+                                set_label: &format_bytes(model.info.app),
                             },
                         },
                         adw::ActionRow {
                             set_title: &gettext("Data"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &gettext(&format_bytes(model.info.data)),
+                                set_label: &format_bytes(model.info.data),
                             },
                         },
                         adw::ActionRow {
                             set_title: &gettext("Cache"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &gettext(&format_bytes(model.info.cache)),
+                                set_label: &format_bytes(model.info.cache),
                             },
                         },
                         adw::ActionRow {
                             set_title: &gettext("Total"),
                             add_suffix = &gtk::Label {
                                 #[watch]
-                                set_label: &gettext(&format_bytes(model.info.total)),
+                                set_label: &format_bytes(model.info.total),
                             },
                         },
                     },
@@ -122,11 +120,9 @@ impl SimpleComponent for StorageDialog {
             StorageDialogMsg::ClearCacheClicked(button) => {
                 let dialog = gtk::AlertDialog::builder()
                     .modal(true)
-                    .message("Clear Cache?")
-                    .detail(&format!(
-                        "This will delete all cached data for {}.",
-                        self.app_name
-                    ))
+                    .message(&gettext("Clear Cache?"))
+                    .detail(&gettext("This will delete all cached data for {}.")
+                        .replace("{}", &self.app_name))
                     .build();
 
                 dialog.set_buttons(&[&gettext("Cancel"), &gettext("Clear Cache")]);
@@ -237,7 +233,7 @@ fn dir_size(path: &Path) -> Result<u64> {
 
 pub fn format_bytes(bytes: u64) -> String {
     if bytes == 0 {
-        return "0 bytes".to_string();
+        return gettext("0 bytes");
     }
     gtk::glib::format_size(bytes).to_string()
 }

@@ -22,17 +22,15 @@ impl FactoryComponent for MimeRow {
     type Output = ();
     type CommandOutput = ();
     type ParentWidget = adw::PreferencesGroup;
-
     view! {
         adw::ActionRow {
-            set_title: &gettext(markup_escape_text(&content_type_get_description(&self.mime)).as_str()),
-            set_subtitle: &gettext(markup_escape_text(&self.mime).as_str()),
+            set_title: &markup_escape_text(&content_type_get_description(&self.mime)),
+            set_subtitle: &markup_escape_text(&self.mime),
             add_prefix = &gtk::Image {
                 set_from_gicon: &content_type_get_icon(&self.mime),
             },
         }
     }
-
     fn init_model(mime: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
         Self { mime }
     }
@@ -54,7 +52,6 @@ impl SimpleComponent for FilesLinksDialog {
     type Init = ();
     type Input = FilesLinksDialogMsg;
     type Output = ();
-
     view! {
         adw::NavigationPage {
             set_title: &gettext("Files and Links"),
@@ -64,10 +61,8 @@ impl SimpleComponent for FilesLinksDialog {
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     #[watch]
-                    set_description: &gettext(&format!(
-                        "File and link types that are opened by <b>{}</b>",
-                        model.app_name
-                    )),
+                    set_description: &gettext("File and link types that are opened by <b>{}</b>")
+                        .replace("{}", &model.app_name),
                     #[local_ref]
                     mime_group -> adw::PreferencesGroup {
                         #[watch]
@@ -93,7 +88,6 @@ impl SimpleComponent for FilesLinksDialog {
             }
         }
     }
-
     fn init(
         _init: Self::Init,
         _root: Self::Root,
@@ -109,7 +103,6 @@ impl SimpleComponent for FilesLinksDialog {
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
-
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         match msg {
             FilesLinksDialogMsg::Show(name, mime_types) => {

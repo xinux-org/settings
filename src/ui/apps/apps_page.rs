@@ -53,7 +53,7 @@ impl SimpleComponent for AppModal {
                         add = &adw::PreferencesGroup {
                             set_title: &gettext("Search"),
                             gtk::SearchEntry {
-                                set_placeholder_text: Some("Search apps"),
+                                set_placeholder_text: Some(&gettext("Search apps")),
                                 connect_search_changed[sender] => move |entry| {
                                     sender.input(AppsMsg::SearchChanged(
                                         entry.text().to_string(),

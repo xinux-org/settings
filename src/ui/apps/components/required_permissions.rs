@@ -153,10 +153,9 @@ impl SimpleComponent for RequiredPermissionsDialog {
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     #[watch]
-                    set_description: &gettext(&format!(
-                        "<b>{}</b> requires access to the following system resources. To stop this access, the app must be removed",
-                        model.app_name
-                    )),
+                    set_description: &gettext(
+                        "<b>{}</b> requires access to the following system resources. To stop this access, the app must be removed"
+                    ).replace("{}", &model.app_name),
                     #[local_ref]
                     perm_group -> adw::PreferencesGroup {
                         #[watch]

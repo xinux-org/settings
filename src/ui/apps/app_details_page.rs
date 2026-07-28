@@ -14,7 +14,7 @@ use crate::ui::apps::{
     },
     background::BackgroundPermission
 };
-use gettextrs::gettext;
+use gettextrs::{gettext};
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {
@@ -93,7 +93,7 @@ impl SimpleComponent for AppDetailsPage {
                                         set_from_gicon?: model.app.icon.as_ref(),
                                     },
                                     gtk::Label {
-                                        set_label: &gettext(&model.app.name),
+                                        set_label: &model.app.name,
                                         add_css_class: "title-1",
                                         set_halign: gtk::Align::Center,
                                     },
@@ -132,12 +132,12 @@ impl SimpleComponent for AppDetailsPage {
                                 set_visible: model.sandboxed,
                                     adw::ActionRow {
                                         set_title: &gettext("Required Permissions"),
-                                        set_subtitle: &("System permissions that the app requires"),
+                                        set_subtitle: &gettext("System permissions that the app requires"),
                                         set_activatable: true,
                                         add_suffix = &gtk::Label {
                                             add_css_class: "dim-label",
                                             #[watch]
-                                            set_label: &gettext(&model.permissions_label()),
+                                            set_label: &model.permissions_label(),
                                         },
                                         add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
                                         connect_activated => AppDetailsMsg::ShowRequiredPermissions,
@@ -154,19 +154,19 @@ impl SimpleComponent for AppDetailsPage {
                                         add_suffix = &gtk::Label {
                                             add_css_class: "dim-label",
                                             #[watch]
-                                            set_label: &gettext(&model.files_links_label()),
+                                            set_label: &model.files_links_label(),
                                         },
                                         add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
                                         connect_activated => AppDetailsMsg::ShowFilesLinks,
                                     },
                                     adw::ActionRow {
                                         set_title: &gettext("Storage"),
-                                        set_subtitle: "Disk space being used",
+                                        set_subtitle: &gettext("Disk space being used"),
                                         set_activatable: true,
                                         add_suffix = &gtk::Label {
                                             add_css_class: "dim-label",
                                             #[watch]
-                                            set_label: &gettext(&model.storage_label()),
+                                            set_label: &model.storage_label(),
                                         },
                                         add_suffix = &gtk::Image::from_icon_name("go-next-symbolic") {},
                                         connect_activated => AppDetailsMsg::ShowStorage,
@@ -283,7 +283,7 @@ pub fn detect_app_source(app_id: Option<&str>, _executable: Option<&str>) -> Opt
 
 fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
     if let Some(settings) = app.notification_settings() {
-        row.set_subtitle("Show system notifications");
+        row.set_subtitle(&gettext("Show system notifications"));
         row.set_active(settings.boolean("enable"));
         row.set_visible(true);
 
@@ -307,7 +307,7 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
             }
         });
     } else {
-        row.set_subtitle("Notification settings are unavailable for this app");
+        row.set_subtitle(&gettext("Notification settings are unavailable for this app"));
         row.set_active(false);
         row.set_sensitive(false);
         row.set_visible(true);
@@ -325,7 +325,7 @@ fn setup_background_row(app: &AppEntry, row: &adw::SwitchRow) {
             return;
         }
     };
-    row.set_subtitle("Allow the app to run in the background");
+    row.set_subtitle(&gettext("Allow the app to run in the background"));
     row.set_active(perm.is_allowed());
     row.connect_active_notify(move |row| {
         if let Err(e) = perm.set_allowed(row.is_active()) {
