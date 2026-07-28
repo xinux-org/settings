@@ -1,13 +1,5 @@
 {
-  pkgs ?
-    let
-      lock = (builtins.fromJSON (builtins.readFile ../../flake.lock)).nodes.nixpkgs.locked;
-      nixpkgs = fetchTarball {
-        url = "https://github.com/nixos/nixpkgs/archive/${lock.rev}.tar.gz";
-        sha256 = lock.narHash;
-      };
-    in
-    import nixpkgs { overlays = [ ]; },
+  pkgs,
   ...
 }:
 let
@@ -18,7 +10,7 @@ pkgs.mkShell {
   name = "${manifest.name}";
 
   # Compile time dependencies
-  nativeBuildInputs = with pkgs; [
+  packages = with pkgs; [
     # Hail the Nix
     nixd
     statix
@@ -48,15 +40,38 @@ pkgs.mkShell {
     pkg-config
     gdk-pixbuf
     libadwaita
+    libinput
     pkg-config
     gnome-desktop
     appstream
     appstream-glib
     wrapGAppsHook4
+    mold
     desktop-file-utils
     gobject-introspection
+    libglycin
+    bubblewrap
+    glycin-loaders
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+    gst_all_1.gst-plugins-bad
+    gst_all_1.gst-plugins-ugly
+    gst_all_1.gst-libav
+    gst_all_1.gst-vaapi
     rustPlatform.bindgenHook
   ];
+
+  buildInputs = with pkgs; [
+    libinput
+    gtk4
+  ];
+
+  shellHook = ''
+    export XDG_DATA_DIRS="${pkgs.gtk4}/share:${pkgs.libadwaita}/share:${pkgs.gsettings-desktop-schemas}/share:${pkgs.glib}/share:$XDG_DATA_DIRS"
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+    export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+  '';
 
   # Set Environment Variables
   RUST_BACKTRACE = "full";

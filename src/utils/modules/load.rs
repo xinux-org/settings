@@ -2,12 +2,12 @@ use anyhow::{Context, Result};
 use std::{fs, path::PathBuf};
 
 pub struct LoadOutput {
-    pub config: nix_data::config::configfile::NixDataConfig,
+    pub config: nix_data_xinux::config::configfile::NixDataConfig,
     pub flakepath: PathBuf,
 }
 
 pub fn load() -> Result<LoadOutput> {
-    let config = nix_data::config::configfile::getconfig().expect("Failed to load config");
+    let config = nix_data_xinux::config::configfile::getconfig().expect("Failed to load config");
     let flakepath = config
         .flake
         .as_ref()

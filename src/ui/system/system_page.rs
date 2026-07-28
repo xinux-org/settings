@@ -34,7 +34,7 @@ pub enum SystemPageMsg {
     OpenSystemUsersPage,
     OpenSystemAboutPage,
     OpenSystemUserPage(String),
-    Rebuild(String, String, String), // single line nix path, argument and value
+    Rebuild(String, String), // single line nix argument and value
 }
 
 #[relm4::component(pub)]
@@ -48,98 +48,78 @@ impl SimpleComponent for SystemPageModel {
         adw::NavigationView {
             add = &adw::NavigationPage {
                 set_title: "System",
-
                 adw::ToolbarView {
                     set_top_bar_style: adw::ToolbarStyle::Flat,
                     add_top_bar = &adw::HeaderBar {},
-
                     adw::PreferencesPage {
                         adw::PreferencesGroup {
                             adw::ActionRow {
                                 set_title: "Region and Language",
                                 set_subtitle: "System language and localization",
                                 set_activatable: true,
-
                                 add_prefix = &gtk::Image {
                                     set_icon_name: Some("emoji-flags-symbolic"),
                                     set_pixel_size: 16
                                 },
-
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_pixel_size: 16,
                                 },
-
                                 connect_activated => SystemPageMsg::OpenSystemRegionLanguagePage,
                             },
-
                             adw::ActionRow {
                                 set_title: "Date and Time",
                                 set_subtitle: "Time zone and clock settings",
                                 set_activatable: true,
-
                                 add_prefix = &gtk::Image {
                                     set_icon_name: Some("preferences-system-time-symbolic"),
                                     set_pixel_size: 16
                                 },
-
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_pixel_size: 16,
                                 },
-
                                 connect_activated => SystemPageMsg::OpenSystemDateTimePage
                             },
-
                             adw::ActionRow {
                                 set_title: "Users",
                                 set_subtitle: "Add and remove accounts, change password",
                                 set_activatable: true,
-
                                 add_prefix = &gtk::Image {
                                     set_icon_name: Some("org.gnome.Settings-users-symbolic"),
                                     set_pixel_size: 16
                                 },
-
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_pixel_size: 16,
                                 },
-
                                 connect_activated => SystemPageMsg::OpenSystemUsersPage
                             },
-
                             // adw::ActionRow {
                             //     set_title: "Secure Shell",
                             //     set_subtitle: "SSH network access",
                             //     set_activatable: true,
-
                             //     add_prefix = &gtk::Image {
                             //         set_icon_name: Some("org.gnome.Settings-secure-shell-symbolic"),
                             //         set_pixel_size: 16
                             //     },
-
                             //     add_suffix = &gtk::Image {
                             //         set_icon_name: Some("go-next-symbolic"),
                             //         set_pixel_size: 16,
                             //     }
                             // },
-
                             adw::ActionRow {
                                 set_title: "About",
                                 set_subtitle: "Hardware details and software versions",
                                 set_activatable: true,
-
                                 add_prefix = &gtk::Image {
                                     set_icon_name: Some("dialog-warning-symbolicc"),
                                     set_pixel_size: 16
                                 },
-
                                 add_suffix = &gtk::Image {
                                     set_icon_name: Some("go-next-symbolic"),
                                     set_pixel_size: 16,
                                 },
-
                                 connect_activated => SystemPageMsg::OpenSystemAboutPage,
                             },
                         },
@@ -214,8 +194,8 @@ impl SimpleComponent for SystemPageModel {
                 let page = self.system_about.widget();
                 self.navigation.push(page);
             }
-            SystemPageMsg::Rebuild(relative_config_path, argument, value) => {
-                let _a = sender.output(AppMsg::Rebuild(relative_config_path, argument, value));
+            SystemPageMsg::Rebuild(argument, value) => {
+                let _a = sender.output(AppMsg::Rebuild(argument, value));
             }
         }
     }

@@ -11,8 +11,10 @@ pkgs.stdenv.mkDerivation {
   version = manifest.version;
 
   src = pkgs.lib.cleanSource ../..;
-  cargoDeps = pkgs.rustPlatform.importCargoLock {
-    lockFile = ../../Cargo.lock;
+
+  cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
+    src = ../..;
+    hash = "sha256-3HQqIJtQxg3HrvF247M2MKzZTkljyFYWb848CP8U818=";
   };
 
   nativeBuildInputs = with pkgs; [
@@ -26,8 +28,12 @@ pkgs.stdenv.mkDerivation {
     ninja
     pkg-config
     polkit
+    libglycin
+    glycin-loaders
+    bubblewrap
     wrapGAppsHook4
     rustPlatform.cargoSetupHook
+    libinput
   ];
 
   buildInputs = with pkgs; [
@@ -37,6 +43,17 @@ pkgs.stdenv.mkDerivation {
     openssl
     vte-gtk4
     libgweather
+    bubblewrap
+    libglycin
+    glycin-loaders
+
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+    gst_all_1.gst-plugins-bad
+    gst_all_1.gst-plugins-ugly
+    gst_all_1.gst-libav
+    gst_all_1.gst-vaapi
   ];
 
 }

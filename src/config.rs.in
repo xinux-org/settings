@@ -7,3 +7,5 @@ pub const PROFILE: &str = @PROFILE@;
 pub const RESOURCES_FILE: &str = concat!(@PKGDATADIR@, "/resources.gresource");
 pub const VERSION: &str = @VERSION@;
 pub const LIBEXECDIR: &str = @LIBEXECDIR@;
+pub const STATE_FILE: &str = "state.toml";
+pub const APP_NAME: &str = "xinux-settings";
