@@ -1,4 +1,7 @@
-use core::{clone::Clone, convert::{AsRef, TryInto}};
+use core::{
+    clone::Clone,
+    convert::{AsRef, TryInto},
+};
 
 use crate::ui::{
     wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
@@ -219,7 +222,9 @@ impl SimpleAsyncComponent for WifiModel {
             WifiStack::WifiOff
         };
 
-        let qr_dialog = WifiQrDialog::builder().launch(()).detach();
+        let qr_dialog = WifiQrDialog::builder()
+            .launch(root.clone().upcast::<gtk::Widget>())
+            .detach();
 
         // FIXME: get initial values instead of hardcode
         let mut model = Self {
@@ -329,7 +334,11 @@ impl SimpleAsyncComponent for WifiModel {
             WifiInput::ClearNetworksList => self.networks.guard().clear(),
             WifiInput::ShowQr(ssid) => {
                 let (password, security) = get_wifi_credentials(&ssid).await;
-                self.qr_dialog.emit(WifiQrInput::Show { ssid, password, security });
+                self.qr_dialog.emit(WifiQrInput::Show {
+                    ssid,
+                    password,
+                    security,
+                });
             }
             WifiInput::ToggleAirplaneMode(on) => {
                 // if let Some(ref proxy) = self.proxy {
@@ -389,7 +398,10 @@ async fn set_wifi_enabled(client: nmrs::NetworkManager, enabled: bool) -> nmrs::
     Ok(())
 }
 
-type NMSettingsMap = std::collections::HashMap<String, std::collections::HashMap<String, zbus::zvariant::OwnedValue>>;
+type NMSettingsMap = std::collections::HashMap<
+    String,
+    std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
+>;
 
 #[zbus::proxy(
     interface = "org.freedesktop.NetworkManager.Settings",

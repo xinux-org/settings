@@ -8,10 +8,11 @@ use relm4::{
 };
 
 pub struct WifiQrDialog {
-    visible: bool,
     ssid: String,
     qr_data: Rc<RefCell<Option<QrCode>>>,
     drawing_area: gtk::DrawingArea,
+    parent: gtk::Widget,
+    dialog: adw::Dialog,
 }
 
 #[derive(Debug)]
@@ -37,21 +38,18 @@ fn escape_wifi(s: &str) -> String {
 
 #[relm4::component(pub)]
 impl SimpleComponent for WifiQrDialog {
-    type Init = ();
+    type Init = gtk::Widget;
     type Input = WifiQrInput;
     type Output = ();
 
     view! {
         #[root]
-        adw::Window {
-            set_modal: true,
-            set_resizable: false,
-            set_default_width: 320,
-            set_title: Some("Share Wi-Fi"),
-            #[watch]
-            set_visible: model.visible,
+        adw::Dialog {
+            set_title: "Share Wi-Fi",
+            set_content_width: 320,
 
-            gtk::Box {
+            #[wrap(Some)]
+            set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
 
                 adw::HeaderBar {
@@ -89,17 +87,18 @@ impl SimpleComponent for WifiQrDialog {
     }
 
     fn init(
-        _init: Self::Init,
-        _root: Self::Root,
+        parent: Self::Init,
+        root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let qr_data: Rc<RefCell<Option<QrCode>>> = Rc::new(RefCell::new(None));
 
         let mut model = WifiQrDialog {
-            visible: false,
             ssid: String::new(),
             qr_data: qr_data.clone(),
             drawing_area: gtk::DrawingArea::new(),
+            parent,
+            dialog: root.clone(),
         };
 
         let widgets = view_output!();
@@ -150,11 +149,12 @@ impl SimpleComponent for WifiQrDialog {
                 *self.qr_data.borrow_mut() =
                     QrCode::encode_text(&wifi_str, QrCodeEcc::Medium).ok();
                 self.ssid = ssid;
-                self.visible = true;
                 self.drawing_area.queue_draw();
+
+                self.dialog.present(Some(&self.parent));
             }
             WifiQrInput::Close => {
-                self.visible = false;
+                self.dialog.close();
             }
         }
     }
