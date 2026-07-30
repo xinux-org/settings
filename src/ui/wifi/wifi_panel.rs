@@ -1,8 +1,6 @@
 use core::{
     clone::Clone,
-    convert::{AsRef, TryInto},
 };
-
 use crate::ui::{
     wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
     wifi::wifi_qr_dialog::{WifiQrDialog, WifiQrInput},
@@ -20,6 +18,7 @@ use relm4::{
     prelude::*,
 };
 use tracing::debug;
+use gettextrs::gettext;
 
 pub struct WifiModel {
     wifi_enabled: bool,
@@ -87,14 +86,14 @@ impl SimpleAsyncComponent for WifiModel {
             add_top_bar = &adw::HeaderBar {
                 #[wrap(Some)]
                 set_title_widget = &adw::WindowTitle {
-                    set_title: "Wi-Fi",
-                    set_subtitle: "this is subtit",
+                    set_title: &gettext("Wi-Fi"),
+                    set_subtitle: &gettext("this is subtit"),
                 }
             },
             adw::PreferencesPage {
                 adw::PreferencesGroup {
                     adw::SwitchRow {
-                        set_title: "Wi-Fi",
+                        set_title: &gettext("Wi-Fi"),
                         set_activatable: true,
                         #[watch]
                         set_active: model.wifi_enabled,
@@ -105,7 +104,7 @@ impl SimpleAsyncComponent for WifiModel {
                 },
                 adw::PreferencesGroup {
                     adw::ActionRow {
-                        set_title: "Saved Networks",
+                        set_title: &gettext("Saved Networks"),
                         set_activatable: true,
                         add_suffix = &gtk::Image {
                             set_icon_name: Some("go-next-symbolic"),
@@ -113,7 +112,7 @@ impl SimpleAsyncComponent for WifiModel {
                         }
                     },
                     adw::ActionRow {
-                        set_title: "Connect to Hidden Network...",
+                        set_title: &gettext("Connect to Hidden Network..."),
                         set_activatable: true,
                         add_suffix = &gtk::Image {
                             set_icon_name: Some("go-next-symbolic"),
@@ -121,7 +120,7 @@ impl SimpleAsyncComponent for WifiModel {
                         }
                     },
                     adw::ActionRow {
-                        set_title: "Turn On Wi-Fi Hotspot...",
+                        set_title: &gettext("Turn On Wi-Fi Hotspot..."),
                         set_activatable: true,
                         add_suffix = &gtk::Image {
                             set_icon_name: Some("go-next-symbolic"),
@@ -132,8 +131,8 @@ impl SimpleAsyncComponent for WifiModel {
                 adw::PreferencesGroup {
                     // FIXME: show only in laptop!
                     adw::SwitchRow {
-                        set_title: "Airplane Mode",
-                        set_subtitle: "Disables Wi-Fi, Bluetooth and mobile broadband",
+                        set_title: &gettext("Airplane Mode"),
+                        set_subtitle: &gettext("Disables Wi-Fi, Bluetooth and mobile broadband"),
                         set_use_underline: true,
                         // #[watch]
                         // set_active: model.airplane_mode,
@@ -179,7 +178,7 @@ impl SimpleAsyncComponent for WifiModel {
 
                     #[name(list_label)]
                     gtk::Label {
-                        set_label: "Visible Networks",
+                        set_label: &gettext("Visible Networks"),
                         set_xalign: 0.0,
                         add_css_class: "heading",
                     },
@@ -190,12 +189,12 @@ impl SimpleAsyncComponent for WifiModel {
         },
         wifi_off = &adw::StatusPage {
             set_icon_name: Some("network-wireless-disabled-symbolic"),
-            set_title: "Wi-Fi Off",
+            set_title: &gettext("Wi-Fi Off"),
             set_description: Some("Turn on to use Wi-Fi"),
         },
         airplane = &adw::StatusPage {
             set_icon_name: Some("airplane-mode-symbolic"),
-            set_title: "Airplane Mode On",
+            set_title: &gettext("Airplane Mode On"),
             set_description: Some("Turn off to use Wi-Fi"),
         },
     }

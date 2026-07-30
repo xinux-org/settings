@@ -4,6 +4,7 @@ use relm4::{
     gtk::{self},
     prelude::*,
 };
+use gettextrs::gettext;
 
 #[derive(Debug)]
 pub struct WifiNetwork {
@@ -61,7 +62,7 @@ impl FactoryComponent for WifiNetwork {
                     set_icon_name: "qrscanner-symbolic",
                     add_css_class: "flat",
                     set_valign: gtk::Align::Center,
-                    set_tooltip_text: Some("Share Network"),
+                    set_tooltip_text: Some(&gettext("Share Network")),
                     // connect_clicked => NetworkRowMsg::ClickQr
                     connect_clicked[sender, index, ssid = self.ssid.to_owned()] => move |_|
                         sender.input(NetworkRowMsg::ClickQr(
@@ -74,7 +75,7 @@ impl FactoryComponent for WifiNetwork {
                     set_icon_name: "settings-symbolic",
                     add_css_class: "flat",
                     set_valign: gtk::Align::Center,
-                    set_tooltip_text: Some("Network Options"),
+                    set_tooltip_text: Some(&gettext("Network Options")),
                     
                 }
             },

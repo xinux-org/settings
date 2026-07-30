@@ -6,9 +6,12 @@ use relm4::{
     adw::{self, prelude::*},
     gtk::{self},
 };
+use gettextrs::gettext;
 
 pub struct WifiQrDialog {
     ssid: String,
+    password: String,
+    has_password: bool,
     qr_data: Rc<RefCell<Option<QrCode>>>,
     drawing_area: gtk::DrawingArea,
     parent: gtk::Widget,
@@ -45,43 +48,56 @@ impl SimpleComponent for WifiQrDialog {
     view! {
         #[root]
         adw::Dialog {
-            set_title: "Share Wi-Fi",
-            set_content_width: 320,
-
+            set_content_width: 360,
             #[wrap(Some)]
-            set_child = &gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
-
-                adw::HeaderBar {
-                    set_show_end_title_buttons: true,
+            set_child = &adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
+                add_top_bar = &adw::HeaderBar {
+                    #[wrap(Some)]
+                    set_title_widget = &adw::WindowTitle {
+                        set_title: &gettext("Share Network"),
+                    },
                 },
-
-                gtk::Box {
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 12,
-                    set_margin_top: 16,
-                    set_margin_bottom: 24,
-                    set_margin_start: 24,
-                    set_margin_end: 24,
-                    set_halign: gtk::Align::Center,
-
-                    gtk::Label {
-                        add_css_class: "title-2",
-                        #[watch]
-                        set_text: &model.ssid,
+                #[wrap(Some)]
+                set_content = &adw::PreferencesPage {
+                    adw::PreferencesGroup {
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_spacing: 20,
+                            set_margin_top: 8,
+                            set_margin_bottom: 8,
+                            gtk::Box {
+                                set_halign: gtk::Align::Center,
+                                #[name(drawing_area)]
+                                gtk::DrawingArea {
+                                    set_content_width: 220,
+                                    set_content_height: 220,
+                                },
+                            },
+                            gtk::Label {
+                                add_css_class: "title-1",
+                                set_text: &gettext("Scan to Connect"),
+                            },
+                        },
                     },
+                    adw::PreferencesGroup {
+                        adw::ActionRow {
+                            set_title: &gettext("Network Name"),
+                            #[watch]
+                            set_subtitle: &model.ssid,
+                            set_subtitle_selectable: true,
+                        },
 
-                    #[name(drawing_area)]
-                    gtk::DrawingArea {
-                        set_content_width: 240,
-                        set_content_height: 240,
+                        adw::ActionRow {
+                            set_title: &gettext("Password"),
+                            #[watch]
+                            set_subtitle: &model.password,
+                            set_subtitle_selectable: true,
+                            #[watch]
+                            set_visible: model.has_password,
+                        },
                     },
-
-                    gtk::Label {
-                        set_text: "Scan to connect to this network",
-                        add_css_class: "dim-label",
-                    },
-                }
+                },
             }
         }
     }
@@ -95,6 +111,8 @@ impl SimpleComponent for WifiQrDialog {
 
         let mut model = WifiQrDialog {
             ssid: String::new(),
+            password: String::new(),
+            has_password: false,
             qr_data: qr_data.clone(),
             drawing_area: gtk::DrawingArea::new(),
             parent,
@@ -107,14 +125,13 @@ impl SimpleComponent for WifiQrDialog {
 
         let qr_ref = qr_data.clone();
         widgets.drawing_area.set_draw_func(move |_area, cr, width, height| {
-            // White background
             cr.set_source_rgb(1.0, 1.0, 1.0);
             let _ = cr.paint();
 
             let guard = qr_ref.borrow();
             if let Some(ref qr) = *guard {
                 let size = qr.size() as f64;
-                let quiet = 4.0_f64; // quiet zone in modules
+                let quiet = 2.0_f64;
                 let total = size + 2.0 * quiet;
                 let module_px = (width.min(height) as f64) / total;
                 let offset_x = (width as f64 - total * module_px) / 2.0;
@@ -148,6 +165,10 @@ impl SimpleComponent for WifiQrDialog {
                 );
                 *self.qr_data.borrow_mut() =
                     QrCode::encode_text(&wifi_str, QrCodeEcc::Medium).ok();
+
+                let pass = password.unwrap_or_default();
+                self.has_password = !pass.is_empty();
+                self.password = pass;
                 self.ssid = ssid;
                 self.drawing_area.queue_draw();
 
