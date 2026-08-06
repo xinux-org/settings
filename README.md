@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-    <img align="center" src="https://img.shields.io/github/languages/top/xinux-org/settings?style=flat&logo=rust&logoColor=5277C3&labelColor=ffffff&color=ffffff" alt="Top Used Language">
-    <a href="https://github.com/xinux-org/settings/actions/workflows/test.yml"><img align="center" src="https://img.shields.io/github/actions/workflow/status/xinux-org/settings/test.yml?style=flat&logo=github&logoColor=5277C3&labelColor=ffffff&color=ffffff" alt="Test CI"></a>
+     <a href="https://git.oss.uzinfocom.uz/xinux/settings/actions?workflow=test.yml"><img align="center" src="https://git.oss.uzinfocom.uz/xinux/settings/badges/workflows/test.yml/badge.svg?logo=forgejo" alt="Test CI"></a>
+     <img src="https://badges.aelloc.uz/?instance=git.oss.uzinfocom.uz&owner=xinux&repo=settings" align="center" alt="Most used Language">
 </p>
 
 ## About
