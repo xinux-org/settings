@@ -15,25 +15,25 @@ pub type RawDisplayMode = (
 #[derive(Debug)]
 pub struct DisplayMode {
     // mode ID
-    id: String,
+    pub id: String,
     // width in physical pixels
-    width: i32,
+    pub width: i32,
     // height in physical pixels
-    height: i32,
+    pub height: i32,
     // refresh rate
-    refresh_rate: f64,
+    pub refresh_rate: f64,
     // scale preferred as per calculations
-    preferred_scale: f64,
+    pub preferred_scale: f64,
     // scales supported by this mode
-    supported_scales: Vec<f64>,
+    pub supported_scales: Vec<f64>,
     // the mode is currently active mode
-    is_current: Option<bool>,
+    pub is_current: Option<bool>,
     // the mode is the preferred mode
-    is_preferred: Option<bool>,
+    pub is_preferred: Option<bool>,
     // the mode is an interlaced mode
-    is_interlaced: Option<bool>,
+    pub is_interlaced: Option<bool>,
     // the refresh rate mode, either "variable" or "fixed" (absence of this means "fixed")
-    refresh_rate_mode: Option<String>,
+    pub refresh_rate_mode: Option<String>,
 }
 
 impl From<RawDisplayMode> for DisplayMode {

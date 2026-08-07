@@ -16,22 +16,22 @@ type RawDisplayState = (
 #[derive(Debug)]
 pub struct DisplayState {
     // configuration serial
-    serial: u32,
+    pub serial: u32,
     // available monitors
-    monitors: Vec<Monitor>,
+    pub monitors: Vec<Monitor>,
     // current logical monitor configuration
-    logical_monitors: Vec<LogicalMonitor>,
+    pub logical_monitors: Vec<LogicalMonitor>,
     // Represents in what way logical monitors are laid out on the screen.
     // The layout mode can be either of the ones listed below.
     // Absence of this property means the layout mode cannot be changed,
     // and that "logical" mode is assumed to be used.
-    layout_mode: Option<LayoutMode>,
+    pub layout_mode: Option<LayoutMode>,
     // True if the layout mode can be changed.
-    //  Absence of this means the layout mode cannot be changed.
-    supports_changing_layout_mode: Option<bool>,
+    // Absence of this means the layout mode cannot be changed.
+    pub supports_changing_layout_mode: Option<bool>,
     // True if all the logical monitors must always use the same scale.
     // Absence of this means logical monitor scales can differ.
-    global_scale_required: Option<bool>,
+    pub global_scale_required: Option<bool>,
 }
 
 impl From<RawDisplayState> for DisplayState {

@@ -18,17 +18,17 @@ pub type RawLogicalMonitor = (
 #[derive(Debug)]
 pub struct LogicalMonitor {
     // x position
-    x: i32,
+    pub x: i32,
     // y position
-    y: i32,
+    pub y: i32,
     // scale
-    scale: f64,
+    pub scale: f64,
     // transform
-    transform: Transform,
+    pub transform: Transform,
     // true if this is the primary logical monitor
-    is_primary: bool,
+    pub is_primary: bool,
     // monitors displaying this logical monitor
-    monitors: Vec<MonitorSpec>,
+    pub monitors: Vec<MonitorSpec>,
 }
 
 impl From<RawLogicalMonitor> for LogicalMonitor {

@@ -15,36 +15,35 @@ pub type RawMonitor = (
 
 #[derive(Debug)]
 pub struct Monitor {
-    spec: MonitorSpec,
+    pub spec: MonitorSpec,
     // available modes
-    modes: Vec<DisplayMode>,
-
+    pub modes: Vec<DisplayMode>,
     // physical width of monitor in millimeters
-    width_mm: Option<i32>,
+    pub width_mm: Option<i32>,
     // physical height of monitor in millimeters
-    height_mm: Option<i32>,
+    pub height_mm: Option<i32>,
     // whether underscanning is enabled (absence of this means underscanning not being supported)
-    is_underscanning: Option<bool>,
+    pub is_underscanning: Option<bool>,
     // the maximum size a screen may have (absence of this means unlimited screen size)
-    max_screen_size: Option<(i32, i32)>,
+    pub max_screen_size: Option<(i32, i32)>,
     // whether the monitor is built in, e.g. a laptop panel (absence of this means it is not built in)
-    is_builtin: Option<bool>,
+    pub is_builtin: Option<bool>,
     // a human readable display name of the monitor
-    display_name: Option<String>,
+    pub display_name: Option<String>,
     // the state of the privacy screen (absence of this means it is not being supported)
     // first value indicates whether it's enabled and
     // second value whether it's hardware locked (and so can't be changed via gsettings)
-    privacy_screen_state: Option<(bool, bool)>,
+    pub privacy_screen_state: Option<(bool, bool)>,
     // minimum refresh rate of monitor when Variable Refresh Rate is active (absence of this means unknown)
-    min_refresh_rate: Option<i32>,
+    pub min_refresh_rate: Option<i32>,
     // whether the monitor is for lease or not
-    is_for_lease: Option<bool>,
+    pub is_for_lease: Option<bool>,
     // current color mode
-    color_mode: Option<ColorMode>,
+    pub color_mode: Option<ColorMode>,
     // list of supported color modes
-    supported_color_modes: Option<Vec<ColorMode>>,
+    pub supported_color_modes: Option<Vec<ColorMode>>,
     // current RGB quantization range
-    rgb_range: Option<RgbRange>,
+    pub rgb_range: Option<RgbRange>,
 }
 
 impl From<RawMonitor> for Monitor {

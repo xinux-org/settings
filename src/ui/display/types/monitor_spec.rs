@@ -3,13 +3,13 @@ pub type RawMonitorSpec = (String, String, String, String);
 #[derive(Debug)]
 pub struct MonitorSpec {
     // connector name (e.g. HDMI-1, DP-1, etc)
-    connector: String,
+    pub connector: String,
     // vendor name
-    vendor: String,
+    pub vendor: String,
     // product name
-    product: String,
+    pub product: String,
     // product serial
-    serial: String,
+    pub serial: String,
 }
 
 impl From<RawMonitorSpec> for MonitorSpec {
