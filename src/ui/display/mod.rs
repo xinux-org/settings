@@ -1,5 +1,5 @@
-pub use display::DisplayModel;
+pub use display_panel::DisplayModel;
 
-mod display;
 mod display_config;
-mod display_config_manager;
+mod display_panel;
+mod types;
