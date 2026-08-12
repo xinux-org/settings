@@ -12,7 +12,7 @@ pub type RawDisplayMode = (
     HashMap<String, zvariant::OwnedValue>,
 );
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DisplayMode {
     // mode ID
     pub id: String,

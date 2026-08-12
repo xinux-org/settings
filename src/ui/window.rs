@@ -35,7 +35,7 @@ pub struct App {
     #[allow(dead_code)]
     bluetooth: Controller<BluetoothModel>,
     #[allow(dead_code)]
-    display: Controller<DisplayModel>,
+    display: AsyncController<DisplayModel>,
     appearance: AsyncController<AppearanceModel>,
     #[allow(dead_code)]
     sound: Controller<SoundModel>,
@@ -95,6 +95,7 @@ impl SimpleComponent for App {
             }
         }
     }
+
     view! {
     #[root]
         main_window = adw::ApplicationWindow::new(&main_application()) {
@@ -173,7 +174,7 @@ impl SimpleComponent for App {
             .forward(sender.input_sender(), identity);
         let display = DisplayModel::builder()
             .launch(())
-            .forward(sender.input_sender(), identity);
+            .detach();
         let appearance = AppearanceModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);

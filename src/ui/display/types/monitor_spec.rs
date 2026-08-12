@@ -1,6 +1,6 @@
 pub type RawMonitorSpec = (String, String, String, String);
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MonitorSpec {
     // connector name (e.g. HDMI-1, DP-1, etc)
     pub connector: String,
