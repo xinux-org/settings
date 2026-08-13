@@ -164,7 +164,11 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettings {
         let monitor = &init.monitor;
         let current_mode = monitor.get_optimal_mode();
         let logical_monitor = init.logical_monitor.as_ref();
-        let enabled = logical_monitor.map(|_| true);
+        let enabled = if !init.can_disable || init.is_cloning {
+            None
+        } else {
+            Some(logical_monitor.is_some())
+        };
         let orientation = logical_monitor.map(|lm| lm.transform);
         let scale = Scale(logical_monitor.map(|lm| lm.scale).unwrap_or(1.0));
         let refresh_rate = RefreshRate(current_mode.refresh_rate);
@@ -251,6 +255,8 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettings {
 
 pub struct DisplaySettingsInit {
     pub monitor: Monitor,
+    pub is_cloning: bool,
+    pub can_disable: bool,
     pub logical_monitor: Option<LogicalMonitor>,
 }
 
@@ -292,6 +298,9 @@ impl Component for DisplaySettings {
 
             #[name(enabled_listbox)]
             gtk::ListBox {
+                #[watch]
+                set_visible: model.enabled.is_some(),
+
                 set_hexpand: true,
                 add_css_class: "boxed-list",
                 set_selection_mode: gtk::SelectionMode::None,
