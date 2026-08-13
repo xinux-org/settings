@@ -5,8 +5,8 @@ pub enum ColorMode {
     SDRNative,
 }
 
-impl From<i32> for ColorMode {
-    fn from(value: i32) -> Self {
+impl From<u32> for ColorMode {
+    fn from(value: u32) -> Self {
         match value {
             2 => Self::SDRNative,
             1 => Self::BT2100,
@@ -15,8 +15,8 @@ impl From<i32> for ColorMode {
     }
 }
 
-impl From<&i32> for ColorMode {
-    fn from(value: &i32) -> Self {
+impl From<&u32> for ColorMode {
+    fn from(value: &u32) -> Self {
         Self::from(*value)
     }
 }

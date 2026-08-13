@@ -9,26 +9,54 @@ use super::display_settings_group::{
 };
 use super::display_state::DisplayState;
 use super::monitor::Monitor;
+use super::monitor_spec::MonitorSpec;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Copy)]
 pub enum ConfigType {
-    #[default]
     Join,
     Mirror,
+}
+
+impl From<gtk::glib::GString> for ConfigType {
+    fn from(value: gtk::glib::GString) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
+impl From<&str> for ConfigType {
+    fn from(value: &str) -> Self {
+        match value {
+            "mirror" => ConfigType::Mirror,
+            _ => ConfigType::Join,
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<&str> for ConfigType {
+    fn into(self) -> &'static str {
+        match self {
+            ConfigType::Join => "join",
+            ConfigType::Mirror => "mirror",
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum DisplayMsg {
     Apply,
     Cancel,
-    PushDisplaySettings(Monitor),
+    PrimaryMonitorChanged(usize),
     ConfigTypeChanged(ConfigType),
+    PushDisplaySettings(Box<Monitor>),
 }
 
 #[derive(Debug)]
 pub struct DisplayModel {
+    config_type: ConfigType,
     state: Option<DisplayState>,
     showing_apply_titlebar: bool,
+    primary_monitor: Option<MonitorSpec>,
 
     display_settings: Option<Controller<DisplaySettings>>,
     display_settings_group: Option<Controller<DisplaySettingsGroup>>,
@@ -45,10 +73,6 @@ impl AsyncComponent for DisplayModel {
         #[root]
         #[name(navigation_view)]
         adw::NavigationView {
-            connect_popped[sender] => |_, page| {
-               if page.tag().is_some_and(|t| t == "display-settings") {}
-            },
-
             #[name(main_page)]
             adw::NavigationPage {
                 set_tag: Some("main"),
@@ -58,15 +82,16 @@ impl AsyncComponent for DisplayModel {
                 set_child = &adw::ToolbarView {
                     #[name(apply_titlebar)]
                     add_top_bar = &adw::HeaderBar {
-                        #[watch]
-                        set_visible: model.showing_apply_titlebar,
                         set_show_end_title_buttons: false,
                         set_show_start_title_buttons: false,
 
+                        #[watch]
+                        set_visible: model.showing_apply_titlebar,
+
                         pack_start = &gtk::Button {
+                            set_can_shrink: true,
                             set_use_underline: true,
                             set_label: &gettext("Cancel"),
-                            set_can_shrink: true,
                             connect_clicked => DisplayMsg::Cancel,
                         },
 
@@ -75,11 +100,11 @@ impl AsyncComponent for DisplayModel {
                         set_title_widget = &adw::WindowTitle {},
 
                         pack_end = &gtk::Button {
+                            set_can_shrink: true,
                             set_use_underline: true,
                             set_label: &gettext("Apply"),
-                            set_can_shrink: true,
-                            connect_clicked => DisplayMsg::Apply,
                             add_css_class: "suggested-action",
+                            connect_clicked => DisplayMsg::Apply,
                         },
                     },
 
@@ -116,20 +141,28 @@ impl AsyncComponent for DisplayModel {
                                 add_suffix = &adw::ToggleGroup {
                                     set_homogeneous: true,
                                     set_valign: gtk::Align::Center,
+                                    #[watch]
+                                    #[block_signal(display_config_type_handler)]
+                                    set_active_name: Some(model.config_type.into()),
 
                                     add = adw::Toggle {
-                                        set_name: Some("join"),
+                                        set_use_underline: true,
                                         // Translators: 'Join' as in 'Join displays'
                                         set_label: Some(&gettext("_Join")),
-                                        set_use_underline: true,
-                                    },
-                                    add = adw::Toggle {
-                                        set_name: Some("clone"),
-                                        set_label: Some(&gettext("_Mirror")),
-                                        set_use_underline: true,
+                                        set_name: Some(ConfigType::Join.into()),
                                     },
 
-                                    // TODO: impl from bpl: notify::active => $on_config_type_toggled_cb(template);
+                                    add = adw::Toggle {
+                                        set_use_underline: true,
+                                        set_label: Some(&gettext("_Mirror")),
+                                        set_name: Some(ConfigType::Mirror.into()),
+                                    },
+
+                                    connect_active_name_notify[sender] => move |toggle| {
+                                        if let Some(active_name) = toggle.active_name() {
+                                            sender.input(DisplayMsg::ConfigTypeChanged(active_name.into()));
+                                        }
+                                    } @display_config_type_handler
                                 },
                             }
                         },
@@ -151,13 +184,14 @@ impl AsyncComponent for DisplayModel {
                                 set_activatable: true,
                                 // Translators: This is the redshift functionality where we suppress blue light when the sun has gone down
                                 set_title: &gettext("_Night Light"),
-                                set_icon_name: Some("night-light-symbolic"),
+
+                                add_prefix = &gtk::Image::from_icon_name("night-light-symbolic"),
+
                                 // TODO: impl action
                             }
                         },
                     },
                 },
-
             },
 
             #[name(night_light_page)]
@@ -168,15 +202,16 @@ impl AsyncComponent for DisplayModel {
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
                     add_top_bar = &adw::HeaderBar {
-                        #[watch]
-                        set_visible: model.showing_apply_titlebar,
                         set_show_end_title_buttons: false,
                         set_show_start_title_buttons: false,
 
+                        #[watch]
+                        set_visible: model.showing_apply_titlebar,
+
                         pack_start = &gtk::Button {
+                            set_can_shrink: true,
                             set_use_underline: true,
                             set_label: &gettext("Cancel"),
-                            set_can_shrink: true,
                             connect_clicked => DisplayMsg::Cancel,
                         },
 
@@ -184,13 +219,14 @@ impl AsyncComponent for DisplayModel {
                         set_title_widget = &adw::WindowTitle {},
 
                         pack_end = &gtk::Button {
+                            set_can_shrink: true,
                             set_use_underline: true,
                             set_label: &gettext("Apply"),
-                            set_can_shrink: true,
-                            connect_clicked => DisplayMsg::Apply,
                             add_css_class: "suggested-action",
+                            connect_clicked => DisplayMsg::Apply,
                         },
                     },
+
                     add_top_bar = &adw::HeaderBar {
                         #[watch]
                         set_visible: !model.showing_apply_titlebar,
@@ -202,21 +238,22 @@ impl AsyncComponent for DisplayModel {
 
             #[name(display_settings_page)]
             adw::NavigationPage {
-                set_tag: Some("display-settings"),
                 set_title: &gettext("Displays"),
+                set_tag: Some("display-settings"),
 
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
                     add_top_bar = &adw::HeaderBar {
-                        #[watch]
-                        set_visible: model.showing_apply_titlebar,
                         set_show_end_title_buttons: false,
                         set_show_start_title_buttons: false,
 
+                        #[watch]
+                        set_visible: model.showing_apply_titlebar,
+
                         pack_start = &gtk::Button {
+                            set_can_shrink: true,
                             set_use_underline: true,
                             set_label: &gettext("Cancel"),
-                            set_can_shrink: true,
                             connect_clicked => DisplayMsg::Cancel,
                         },
 
@@ -224,13 +261,14 @@ impl AsyncComponent for DisplayModel {
                         set_title_widget = &adw::WindowTitle {},
 
                         pack_end = &gtk::Button {
+                            set_can_shrink: true,
                             set_use_underline: true,
                             set_label: &gettext("Apply"),
-                            set_can_shrink: true,
-                            connect_clicked => DisplayMsg::Apply,
                             add_css_class: "suggested-action",
+                            connect_clicked => DisplayMsg::Apply,
                         },
                     },
+
                     add_top_bar = &adw::HeaderBar {
                         #[watch]
                         set_visible: !model.showing_apply_titlebar,
@@ -257,9 +295,11 @@ impl AsyncComponent for DisplayModel {
     ) -> AsyncComponentParts<Self> {
         let mut model = DisplayModel {
             state: None,
+            primary_monitor: None,
             display_settings: None,
             display_settings_group: None,
             showing_apply_titlebar: false,
+            config_type: ConfigType::Join,
         };
 
         match Self::get_display_state().await {
@@ -290,7 +330,9 @@ impl AsyncComponent for DisplayModel {
                     DisplaySettingsGroupOutput::PushDisplaySettings(monitor) => {
                         DisplayMsg::PushDisplaySettings(monitor)
                     }
-                    DisplaySettingsGroupOutput::ChangedPrimaryMonitor(_) => todo!(),
+                    DisplaySettingsGroupOutput::ChangedPrimaryMonitor(index) => {
+                        DisplayMsg::PrimaryMonitorChanged(index)
+                    }
                 });
 
             model.display_settings_group = Some(controller);
@@ -310,12 +352,21 @@ impl AsyncComponent for DisplayModel {
         widgets: &mut Self::Widgets,
         message: Self::Input,
         sender: AsyncComponentSender<Self>,
-        root: &Self::Root,
+        _root: &Self::Root,
     ) {
         match message {
             DisplayMsg::Apply => todo!(),
             DisplayMsg::Cancel => todo!(),
-            DisplayMsg::ConfigTypeChanged(config_type) => todo!(),
+            DisplayMsg::ConfigTypeChanged(config_type) => {
+                self.config_type = config_type;
+            }
+            DisplayMsg::PrimaryMonitorChanged(index) => {
+                self.primary_monitor = self
+                    .state
+                    .as_ref()
+                    .and_then(|s| s.monitors.get(index))
+                    .map(|m| m.spec.clone());
+            }
             DisplayMsg::PushDisplaySettings(monitor) => {
                 if let Some(state) = &self.state {
                     let display_settings = Self::build_display_settings(&monitor, state);

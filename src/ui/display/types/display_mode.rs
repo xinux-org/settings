@@ -12,6 +12,12 @@ pub type RawDisplayMode = (
     HashMap<String, zvariant::OwnedValue>,
 );
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum RefreshRateMode {
+    Fixed,
+    Variable,
+}
+
 #[derive(Debug, Clone)]
 pub struct DisplayMode {
     // mode ID
@@ -33,7 +39,7 @@ pub struct DisplayMode {
     // the mode is an interlaced mode
     pub is_interlaced: Option<bool>,
     // the refresh rate mode, either "variable" or "fixed" (absence of this means "fixed")
-    pub refresh_rate_mode: Option<String>,
+    pub refresh_rate_mode: Option<RefreshRateMode>,
 }
 
 impl From<RawDisplayMode> for DisplayMode {
@@ -57,10 +63,15 @@ impl From<RawDisplayMode> for DisplayMode {
                 .6
                 .get("is-preferred")
                 .and_then(|val| val.downcast_ref().ok()),
-            refresh_rate_mode: value
-                .6
-                .get("refresh-rate-mode")
-                .and_then(|val| val.downcast_ref().ok()),
+            refresh_rate_mode: value.6.get("refresh-rate-mode").and_then(|val| {
+                match val.downcast_ref::<String>() {
+                    Ok(mode) => match mode.as_str() {
+                        "variable" => Some(RefreshRateMode::Variable),
+                        _ => Some(RefreshRateMode::Fixed),
+                    },
+                    Err(_) => None,
+                }
+            }),
         }
     }
 }

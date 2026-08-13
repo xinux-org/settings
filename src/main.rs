@@ -1,3 +1,4 @@
+use better_tracing::fmt::format::FmtSpan;
 use clap::{Command, arg, command, value_parser};
 use gettextrs::{LocaleCategory, gettext};
 use relm4::{
@@ -38,10 +39,9 @@ fn main() {
 
     gtk::init().unwrap();
 
-    // Enable logging
-    tracing_subscriber::fmt()
-        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
-        .with_max_level(tracing::Level::INFO)
+    better_tracing::fmt()
+        .with_span_events(FmtSpan::ACTIVE)
+        .with_env_filter(better_tracing::EnvFilter::from_default_env())
         .init();
 
     // setup gettext

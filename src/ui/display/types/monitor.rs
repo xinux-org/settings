@@ -64,7 +64,11 @@ impl Display for Monitor {
 }
 
 impl Monitor {
-    pub fn get_optimal_mode(&self) -> Option<&DisplayMode> {
+    pub fn get_optimal_mode(&self) -> &DisplayMode {
+        self.try_get_optimal_mode().unwrap()
+    }
+
+    pub fn try_get_optimal_mode(&self) -> Option<&DisplayMode> {
         self.get_current_mode()
             .or_else(|| self.get_preferred_mode())
             .or_else(|| self.modes.first())
@@ -108,7 +112,7 @@ impl Monitor {
             None => (-1, -1),
         };
 
-        let mode = self.get_optimal_mode();
+        let mode = self.try_get_optimal_mode();
 
         let (width, height) = match mode {
             Some(mode) => (mode.width, mode.height),
@@ -198,12 +202,12 @@ impl From<RawMonitor> for Monitor {
             color_mode: value
                 .2
                 .get("color-mode")
-                .and_then(|val| val.downcast_ref::<i32>().ok())
+                .and_then(|val| val.downcast_ref::<u32>().ok())
                 .map(ColorMode::from),
             supported_color_modes: value
                 .2
                 .get("supported-color-modes")
-                .and_then::<Vec<i32>, _>(|val| {
+                .and_then(|val| {
                     let zvariant::Value::Array(arr) = &**val else {
                         return None;
                     };
@@ -211,8 +215,8 @@ impl From<RawMonitor> for Monitor {
                     Some(
                         arr.inner()
                             .iter()
-                            .filter_map(|v| v.downcast_ref::<i32>().ok())
-                            .collect(),
+                            .filter_map(|v| v.downcast_ref::<u32>().ok())
+                            .collect::<Vec<u32>>(),
                     )
                 })
                 .map(|color_modes| color_modes.iter().map(ColorMode::from).collect()),
@@ -220,7 +224,7 @@ impl From<RawMonitor> for Monitor {
                 .2
                 .get("rgb-range")
                 .and_then(|val| val.downcast_ref::<i32>().ok())
-                .and_then(|val| RgbRange::try_from(val).ok()),
+                .map(RgbRange::from),
         }
     }
 }

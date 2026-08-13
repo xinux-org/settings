@@ -5,15 +5,12 @@ pub enum RgbRange {
     Limited,
 }
 
-impl TryFrom<i32> for RgbRange {
-    type Error = String;
-
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
+impl From<i32> for RgbRange {
+    fn from(value: i32) -> Self {
         match value {
-            1 => Ok(Self::Auto),
-            2 => Ok(Self::Full),
-            3 => Ok(Self::Limited),
-            _ => Err("Unknow rgb range".into()),
+            2 => Self::Full,
+            3 => Self::Limited,
+            _ => Self::Auto,
         }
     }
 }

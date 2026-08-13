@@ -12,13 +12,13 @@ pub struct DisplaySettingsGroupInit {
 
 #[derive(Debug)]
 pub enum DisplaySettingsGroupMsg {
-    ActivatedMonitor(Monitor),
+    ActivatedMonitor(Box<Monitor>),
     SelectedPrimaryMonitor(usize),
 }
 
 #[derive(Debug)]
 pub enum DisplaySettingsGroupOutput {
-    PushDisplaySettings(Monitor),
+    PushDisplaySettings(Box<Monitor>),
     ChangedPrimaryMonitor(usize),
 }
 
@@ -98,11 +98,9 @@ impl SimpleComponent for DisplaySettingsGroup {
                         add_css_class: "monitor-label",
                         set_label: &format!("{}", index + 1),
                     },
-                    add_suffix = &gtk::Image {
-                        set_icon_name: Some("go-next-symbolic"),
-                    },
+                    add_suffix = &gtk::Image::from_icon_name("go-next-symbolic"),
                     connect_activated[sender] => move |_| {
-                        sender.input(DisplaySettingsGroupMsg::ActivatedMonitor(cloned_monitor.clone()));
+                        sender.input(DisplaySettingsGroupMsg::ActivatedMonitor(Box::new(cloned_monitor.clone())));
                     }
                 }
             }
