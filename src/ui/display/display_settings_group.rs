@@ -2,13 +2,8 @@ use gettextrs::gettext;
 use relm4::{SimpleComponent, adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
 
-use super::logical_monitor::LogicalMonitor;
+use super::display_panel::LogicalDisplay;
 use super::monitor::Monitor;
-
-pub struct DisplaySettingsGroupInit {
-    pub monitors: Vec<Monitor>,
-    pub logical_monitors: Vec<LogicalMonitor>,
-}
 
 #[derive(Debug)]
 pub enum DisplaySettingsGroupMsg {
@@ -31,7 +26,7 @@ pub struct DisplaySettingsGroup {
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsGroup {
-    type Init = DisplaySettingsGroupInit;
+    type Init = Vec<LogicalDisplay>;
     type Input = DisplaySettingsGroupMsg;
     type Output = DisplaySettingsGroupOutput;
 
@@ -60,13 +55,10 @@ impl SimpleComponent for DisplaySettingsGroup {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let primary_display_row = {
-            let variants = init.monitors.clone();
-            let primary_logical_monitor = init.logical_monitors.iter().find(|lm| lm.is_primary);
-            let active_index = variants.iter().position(move |m| {
-                primary_logical_monitor
-                    .as_ref()
-                    .is_some_and(|lm| lm.monitors.first().is_some_and(|lmm| *lmm == m.spec))
-            });
+            let variants = init.iter().map(|ld| ld.0.clone()).collect();
+            let active_index = init
+                .iter()
+                .position(|ld| ld.1.as_ref().is_some_and(|lm| lm.is_primary));
 
             SimpleComboRow::builder()
                 .launch(SimpleComboRow {
@@ -86,13 +78,13 @@ impl SimpleComponent for DisplaySettingsGroup {
 
         let widgets = view_output!();
 
-        for (index, monitor) in init.monitors.iter().enumerate() {
-            let cloned_monitor = monitor.clone();
+        for (index, display) in init.iter().enumerate() {
+            let cloned_monitor = display.0.clone();
             relm4::view! {
                 display_row = adw::ActionRow {
                     set_activatable: true,
                     set_use_underline: true,
-                    set_title: &monitor.to_string(),
+                    set_title: &display.0.get_output_ui_name(),
                     add_prefix = &gtk::Label {
                         set_align: gtk::Align::Center,
                         add_css_class: "monitor-label",

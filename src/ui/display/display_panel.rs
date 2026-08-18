@@ -7,9 +7,7 @@ use super::apply_settings::{ApplySettings, ApplySettingsMsg, ApplySettingsOut};
 use super::display_settings::{
     DisplaySettings, DisplaySettingsInit, DisplaySettingsModel, DisplaySettingsOutput,
 };
-use super::display_settings_group::{
-    DisplaySettingsGroup, DisplaySettingsGroupInit, DisplaySettingsGroupOutput,
-};
+use super::display_settings_group::{DisplaySettingsGroup, DisplaySettingsGroupOutput};
 use super::display_state::DisplayState;
 use super::logical_monitor::LogicalMonitor;
 use super::monitor::Monitor;
@@ -209,12 +207,6 @@ impl AsyncComponent for DisplayModel {
 
                                 #[name(display_config_type)]
                                 add_suffix = &adw::ToggleGroup {
-                                    set_homogeneous: true,
-                                    set_valign: gtk::Align::Center,
-                                    #[watch(skip_init)]
-                                    #[block_signal(display_config_type_handler)]
-                                    set_active_name: Some(model.config_type.into()),
-
                                     add = adw::Toggle {
                                         set_use_underline: true,
                                         // Translators: 'Join' as in 'Join displays'
@@ -228,6 +220,13 @@ impl AsyncComponent for DisplayModel {
                                         set_name: Some(ConfigType::Mirror.into()),
                                     },
 
+                                    set_homogeneous: true,
+                                    set_valign: gtk::Align::Center,
+
+                                    #[watch]
+                                    #[block_signal(display_config_type_handler)]
+                                    set_active_name: Some(model.config_type.into()),
+
                                     connect_active_name_notify[sender] => move |toggle| {
                                         if let Some(active_name) = toggle.active_name() {
                                             sender.input(DisplayMsg::ConfigTypeChanged(active_name.into()));
@@ -240,7 +239,7 @@ impl AsyncComponent for DisplayModel {
                         #[name(single_display_settings_group)]
                         adw::PreferencesGroup {
                             #[watch]
-                            set_visible: model.display_settings.is_some() && model.display.as_ref().is_some_and(|d| !matches!(d, DisplayMonitor::Logical(_))),
+                            set_visible: model.display.as_ref().is_some_and(|d| !matches!(d, DisplayMonitor::Logical(_))),
 
                             adw::Bin {
                                 #[watch]
@@ -319,6 +318,7 @@ impl AsyncComponent for DisplayModel {
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
         let state = Self::get_display_state().await.ok();
+        let display = state.as_ref().map(DisplayMonitor::from);
 
         let transform = |output| match output {
             ApplySettingsOut::Apply => DisplayMsg::Apply,
@@ -335,38 +335,61 @@ impl AsyncComponent for DisplayModel {
             apply_settings2: ApplySettings::builder()
                 .launch(())
                 .forward(sender.input_sender(), transform),
-            display: state.as_ref().map(DisplayMonitor::from),
             display_settings: None,
             display_settings_group: None,
             showing_apply_titlebar: false,
-            config_type: ConfigType::Join,
             display_settings_in_page: None,
             current_navigation: NavigationPage::Main,
+            config_type: display
+                .as_ref()
+                .map(|d| {
+                    if matches!(d, DisplayMonitor::Mirrored(_)) {
+                        ConfigType::Mirror
+                    } else {
+                        ConfigType::Join
+                    }
+                })
+                .unwrap_or(ConfigType::Join),
+            display,
             state,
         };
 
         let mut display_settings_group = adw::PreferencesGroup::builder().visible(false).build();
 
-        // TODO: refactor
-        if let Some(state) = &model.state
-            && state.monitors.len() > 1
-        {
-            let controller = DisplaySettingsGroup::builder()
-                .launch(DisplaySettingsGroupInit {
-                    monitors: state.monitors.clone(),
-                    logical_monitors: state.logical_monitors.clone(),
-                })
-                .forward(sender.input_sender(), |output| match output {
-                    DisplaySettingsGroupOutput::PushDisplaySettings(monitor) => {
-                        DisplayMsg::PushDisplaySettings(monitor)
-                    }
-                    DisplaySettingsGroupOutput::ChangedPrimaryMonitor(index) => {
-                        DisplayMsg::PrimaryMonitorChanged(index)
-                    }
-                });
+        if let Some(display) = model.display.as_ref() {
+            match display {
+                DisplayMonitor::Logical(monitors) => {
+                    let controller = DisplaySettingsGroup::builder()
+                        .launch(monitors.clone())
+                        .forward(sender.input_sender(), |output| match output {
+                            DisplaySettingsGroupOutput::PushDisplaySettings(monitor) => {
+                                DisplayMsg::PushDisplaySettings(monitor)
+                            }
+                            DisplaySettingsGroupOutput::ChangedPrimaryMonitor(index) => {
+                                DisplayMsg::PrimaryMonitorChanged(index)
+                            }
+                        });
 
-            display_settings_group = controller.widget().to_owned();
-            model.display_settings_group = Some(controller);
+                    display_settings_group = controller.widget().to_owned();
+                    model.display_settings_group = Some(controller);
+                }
+                DisplayMonitor::Mirrored(mirrored_display) => {
+                    let display_settings = Self::build_display_settings(
+                        &mirrored_display.0.spec,
+                        display,
+                        sender.clone(),
+                    );
+                    model.display_settings = Some(display_settings);
+                }
+                DisplayMonitor::Single(single_display) => {
+                    let display_settings = Self::build_display_settings(
+                        &single_display.0.spec,
+                        display,
+                        sender.clone(),
+                    );
+                    model.display_settings = Some(display_settings);
+                }
+            }
         }
 
         let mut widgets = view_output!();
