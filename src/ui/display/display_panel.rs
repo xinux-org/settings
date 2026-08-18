@@ -3,6 +3,7 @@ use relm4::{adw::prelude::*, prelude::*};
 use zbus::Connection;
 
 use super::DisplayConfigProxy;
+use super::apply_settings::{ApplySettings, ApplySettingsMsg, ApplySettingsOut};
 use super::display_settings::{
     DisplaySettings, DisplaySettingsInit, DisplaySettingsModel, DisplaySettingsOutput,
 };
@@ -13,7 +14,6 @@ use super::display_state::DisplayState;
 use super::logical_monitor::LogicalMonitor;
 use super::monitor::Monitor;
 use super::monitor_spec::MonitorSpec;
-use super::templates::ApplyWidget;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ConfigType {
@@ -148,6 +148,10 @@ pub struct DisplayModel {
     display_settings: Option<Controller<DisplaySettingsModel>>,
     display_settings_group: Option<Controller<DisplaySettingsGroup>>,
     display_settings_in_page: Option<Controller<DisplaySettingsModel>>,
+
+    apply_settings0: Controller<ApplySettings>,
+    apply_settings1: Controller<ApplySettings>,
+    apply_settings2: Controller<ApplySettings>,
 }
 
 #[relm4::component(pub async)]
@@ -171,11 +175,7 @@ impl AsyncComponent for DisplayModel {
 
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
-                    #[template]
-                    add_top_bar = &ApplyWidget {
-                        #[watch]
-                        set_visible: model.showing_apply_titlebar,
-                    },
+                    add_top_bar = model.apply_settings0.widget(),
 
                     #[name(displays_titlebar)]
                     add_top_bar = &adw::HeaderBar {
@@ -273,11 +273,7 @@ impl AsyncComponent for DisplayModel {
 
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
-                    #[template]
-                    add_top_bar = &ApplyWidget {
-                        #[watch]
-                        set_visible: model.showing_apply_titlebar,
-                    },
+                    add_top_bar = model.apply_settings1.widget(),
 
                     add_top_bar = &adw::HeaderBar {
                         set_show_title: true,
@@ -295,11 +291,7 @@ impl AsyncComponent for DisplayModel {
 
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
-                    #[template]
-                    add_top_bar = &ApplyWidget {
-                        #[watch]
-                        set_visible: model.showing_apply_titlebar,
-                    },
+                    add_top_bar = model.apply_settings2.widget(),
 
                     add_top_bar = &adw::HeaderBar {
                         set_show_title: true,
@@ -322,13 +314,27 @@ impl AsyncComponent for DisplayModel {
     }
 
     async fn init(
-        _init: Self::Init,
+        _: Self::Init,
         root: Self::Root,
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
         let state = Self::get_display_state().await.ok();
 
+        let transform = |output| match output {
+            ApplySettingsOut::Apply => DisplayMsg::Apply,
+            ApplySettingsOut::Cancel => DisplayMsg::Cancel,
+        };
+
         let mut model = DisplayModel {
+            apply_settings0: ApplySettings::builder()
+                .launch(())
+                .forward(sender.input_sender(), transform),
+            apply_settings1: ApplySettings::builder()
+                .launch(())
+                .forward(sender.input_sender(), transform),
+            apply_settings2: ApplySettings::builder()
+                .launch(())
+                .forward(sender.input_sender(), transform),
             display: state.as_ref().map(DisplayMonitor::from),
             display_settings: None,
             display_settings_group: None,
@@ -339,7 +345,7 @@ impl AsyncComponent for DisplayModel {
             state,
         };
 
-        let mut display_settings_group = adw::PreferencesGroup::default();
+        let mut display_settings_group = adw::PreferencesGroup::builder().visible(false).build();
 
         // TODO: refactor
         if let Some(state) = &model.state
@@ -421,6 +427,7 @@ impl AsyncComponent for DisplayModel {
             }
             DisplayMsg::ConfigTypeChanged(config_type) => {
                 self.config_type = config_type;
+                self.showing_apply_titlebar = true;
 
                 if let Some(state) = self.state.as_ref() {
                     let display = match self.config_type {
@@ -505,6 +512,13 @@ impl DisplayModel {
         if let Some(display_settings_group) = &self.display_settings_group {
             widgets.display_settings_group = display_settings_group.widget().to_owned();
         }
+
+        self.apply_settings0
+            .emit(ApplySettingsMsg::SetActive(self.showing_apply_titlebar));
+        self.apply_settings1
+            .emit(ApplySettingsMsg::SetActive(self.showing_apply_titlebar));
+        self.apply_settings2
+            .emit(ApplySettingsMsg::SetActive(self.showing_apply_titlebar));
     }
 
     async fn get_display_state() -> anyhow::Result<DisplayState> {
