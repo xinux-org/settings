@@ -24,7 +24,7 @@ pub struct Geometry {
     pub height: i32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Monitor {
     pub spec: MonitorSpec,
     // available modes

@@ -18,7 +18,7 @@ pub enum RefreshRateMode {
     Variable,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DisplayMode {
     // mode ID
     pub id: String,

@@ -15,7 +15,7 @@ pub type RawLogicalMonitor = (
     HashMap<String, zvariant::OwnedValue>,
 );
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LogicalMonitor {
     // x position
     pub x: i32,

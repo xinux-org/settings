@@ -6,4 +6,5 @@ mod display_config;
 mod display_panel;
 mod display_settings;
 mod display_settings_group;
+mod templates;
 mod types;

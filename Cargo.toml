@@ -71,3 +71,4 @@ glycin = {version = "3.1.0", features = ["gdk4"]}
 allmytoes = "0.5.1"
 rand = "0.10.1"
 clap = { version = "4.1", features = [ "derive", "cargo" ] }
+struct-patch = "0.13.2"

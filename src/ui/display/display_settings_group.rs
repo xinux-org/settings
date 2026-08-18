@@ -12,14 +12,14 @@ pub struct DisplaySettingsGroupInit {
 
 #[derive(Debug)]
 pub enum DisplaySettingsGroupMsg {
-    ActivatedMonitor(Box<Monitor>),
     SelectedPrimaryMonitor(usize),
+    ActivatedMonitor(Box<Monitor>),
 }
 
 #[derive(Debug)]
 pub enum DisplaySettingsGroupOutput {
-    PushDisplaySettings(Box<Monitor>),
     ChangedPrimaryMonitor(usize),
+    PushDisplaySettings(Box<Monitor>),
 }
 
 #[derive(Debug)]

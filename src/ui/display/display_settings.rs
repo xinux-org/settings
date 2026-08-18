@@ -3,10 +3,12 @@ use std::{cmp::Ordering, fmt::Display};
 use gettextrs::{dgettext, gettext};
 use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::SimpleComboRow;
+use struct_patch::Patch;
 
 use super::color_mode::ColorMode;
 use super::display_mode::DisplayMode;
 use super::display_mode::RefreshRateMode;
+use super::{LogicalDisplay, MirroredDisplay};
 use super::{logical_monitor::LogicalMonitor, monitor::Geometry};
 use super::{monitor::Monitor, transform::Transform};
 
@@ -85,7 +87,7 @@ impl Resolution {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VariableRefreshRate(bool);
 
 #[derive(Debug, Clone, Copy)]
@@ -134,19 +136,31 @@ impl TryFrom<&str> for Scale {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Patch)]
+#[patch(attribute(derive(Debug, Default, Clone)))]
 pub struct DisplaySettings {
     pub scale: Scale,
-    pub monitor: Monitor,
+    pub refresh_rate: RefreshRate,
+    pub current_mode: DisplayMode,
+    #[patch(skip_wrap)]
     pub hdr: Option<bool>,
+    #[patch(skip_wrap)]
     pub enabled: Option<bool>,
+    #[patch(skip_wrap)]
     pub underscanning: Option<bool>,
+    #[patch(skip_wrap)]
     pub orientation: Option<Transform>,
+    #[patch(skip_wrap)]
     pub auto_orientation: Option<bool>,
-    pub refresh_rate: Option<RefreshRate>,
-    pub current_mode: Option<DisplayMode>,
-    pub logical_monitor: Option<LogicalMonitor>,
+    #[patch(skip_wrap)]
     pub variable_refresh_rate: Option<VariableRefreshRate>,
+}
+
+#[derive(Debug)]
+pub struct DisplaySettingsModel {
+    pub monitor: Monitor,
+    pub logical_monitor: Option<LogicalMonitor>,
+    pub settings: DisplaySettings,
 
     scale_list: Vec<Scale>,
     resolution_list: Vec<Resolution>,
@@ -159,54 +173,29 @@ pub struct DisplaySettings {
     refresh_rate_row: Controller<SimpleComboRow<RefreshRate>>,
 }
 
-impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettings {
+impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettingsModel {
     fn from((init, sender): (DisplaySettingsInit, ComponentSender<Self>)) -> Self {
-        let monitor = &init.monitor;
+        let (monitor, logical_monitor) = match &init {
+            DisplaySettingsInit::MirroredDisplay(display) => (&display.0, Some(&display.1)),
+            DisplaySettingsInit::LogicalDisplay(display) => (&display.0, display.1.as_ref()),
+        };
+
         let current_mode = monitor.get_optimal_mode();
-        let logical_monitor = init.logical_monitor.as_ref();
-        let enabled = if !init.can_disable || init.is_cloning {
+
+        let enabled = if matches!(init, DisplaySettingsInit::MirroredDisplay(_)) {
             None
         } else {
             Some(logical_monitor.is_some())
         };
+
         let orientation = logical_monitor.map(|lm| lm.transform);
         let scale = Scale(logical_monitor.map(|lm| lm.scale).unwrap_or(1.0));
         let refresh_rate = RefreshRate(current_mode.refresh_rate);
 
-        let orientation_list = init.get_orientations();
-        let orientation_row = {
-            let variants = orientation_list.clone();
-            let active_index = variants
-                .iter()
-                .position(|v| orientation.as_ref().is_some_and(|c| *c == v.rotation));
-
-            SimpleComboRow::builder()
-                .launch(SimpleComboRow {
-                    variants,
-                    active_index,
-                })
-                .forward(sender.input_sender(), DisplaySettingsMsg::SelectOrientation)
-        };
-
         let resolution_list = init.get_resolutions();
-        let resolution_row = {
-            let variants = resolution_list.clone();
-            let active_index = variants.iter().position(|v| v == current_mode);
-
-            SimpleComboRow::builder()
-                .launch(SimpleComboRow {
-                    variants,
-                    active_index,
-                })
-                .forward(sender.input_sender(), DisplaySettingsMsg::SelectResoulution)
-        };
-
-        let refresh_rate_list = Self::get_refresh_rates(monitor, current_mode, logical_monitor);
-        let refresh_rate_row =
-            Self::build_refresh_rate_row(&refresh_rate, &refresh_rate_list, sender.clone());
-
+        let orientation_list = init.get_orientations();
         let scale_list = Self::get_scales(current_mode);
-        let scale_combo_row = Self::build_scale_combo_row(&scale, &scale_list, sender.clone());
+        let refresh_rate_list = Self::get_refresh_rates(monitor, current_mode, logical_monitor);
 
         let has_hdr = monitor
             .supported_color_modes
@@ -228,22 +217,39 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettings {
         };
 
         Self {
-            hdr,
-            scale,
-            enabled,
-            orientation,
-            auto_orientation: None,
+            settings: DisplaySettings {
+                hdr,
+                scale,
+                enabled,
+                orientation,
+                refresh_rate,
+                // TODO
+                auto_orientation: None,
+                // TODO
+                variable_refresh_rate: None,
+                current_mode: current_mode.clone(),
+                underscanning: monitor.is_underscanning,
+            },
+
             monitor: monitor.clone(),
-            variable_refresh_rate: None,
-            refresh_rate: Some(refresh_rate),
-            underscanning: monitor.is_underscanning,
-            current_mode: Some(current_mode.clone()),
             logical_monitor: logical_monitor.cloned(),
 
-            scale_combo_row,
-            resolution_row,
-            orientation_row,
-            refresh_rate_row,
+            scale_combo_row: Self::build_scale_combo_row(&scale, &scale_list, sender.clone()),
+            orientation_row: Self::build_orientation_row(
+                orientation.as_ref(),
+                &orientation_list,
+                sender.clone(),
+            ),
+            resolution_row: Self::build_resolution_row(
+                current_mode,
+                &resolution_list,
+                sender.clone(),
+            ),
+            refresh_rate_row: Self::build_refresh_rate_row(
+                &refresh_rate,
+                &refresh_rate_list,
+                sender.clone(),
+            ),
 
             scale_list,
             resolution_list,
@@ -253,38 +259,28 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettings {
     }
 }
 
-pub struct DisplaySettingsInit {
-    pub monitor: Monitor,
-    pub is_cloning: bool,
-    pub can_disable: bool,
-    pub logical_monitor: Option<LogicalMonitor>,
+pub enum DisplaySettingsInit {
+    LogicalDisplay(LogicalDisplay),
+    MirroredDisplay(MirroredDisplay),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum DisplaySettingsMsg {
-    Init,
-
-    SetScale(Scale),
-
-    ToggleHdr(bool),
-    ToggleEnabled(bool),
-    ToggleUnderscanning(bool),
-    ToggleAutoOrientation(bool),
-    ToggleVariableRefreshRate(bool),
+    UpdateSettings(DisplaySettingsPatch),
 
     SelectScale(usize),
+    SelectResolution(usize),
     SelectRefreshRate(usize),
     SelectOrientation(usize),
-    SelectResoulution(usize),
 }
 
 #[derive(Debug)]
 pub enum DisplaySettingsOutput {
-    Changed(),
+    Changed(DisplaySettings),
 }
 
 #[relm4::component(pub)]
-impl Component for DisplaySettings {
+impl Component for DisplaySettingsModel {
     type Init = DisplaySettingsInit;
     type Input = DisplaySettingsMsg;
     type Output = DisplaySettingsOutput;
@@ -299,7 +295,7 @@ impl Component for DisplaySettings {
             #[name(enabled_listbox)]
             gtk::ListBox {
                 #[watch]
-                set_visible: model.enabled.is_some(),
+                set_visible: model.settings.enabled.is_some(),
 
                 set_hexpand: true,
                 add_css_class: "boxed-list",
@@ -309,13 +305,12 @@ impl Component for DisplaySettings {
                 adw::SwitchRow {
                     #[watch]
                     #[block_signal(enabled_handler)]
-                    set_active: model.enabled.as_ref().is_some_and(|x| *x),
+                    set_active: model.settings.enabled.as_ref().is_some_and(|x| *x),
 
-                    set_visible: model.enabled.is_some(),
                     set_title: &model.monitor.get_output_ui_name(),
 
-                    connect_active_notify[sender] => move |row| {
-                        sender.input(DisplaySettingsMsg::ToggleEnabled(row.is_active()));
+                    connect_active_notify[sender] => move |switch_row| {
+                        sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { enabled: Some(switch_row.is_active()), ..Default::default() }));
                     } @enabled_handler
                 }
             },
@@ -327,28 +322,28 @@ impl Component for DisplaySettings {
                 set_selection_mode: gtk::SelectionMode::None,
 
                 #[watch]
-                set_sensitive: model.enabled.as_ref().is_none_or(|x| *x),
+                set_sensitive: model.settings.enabled.as_ref().is_none_or(|x| *x),
 
                 #[name(auto_orientation_row)]
                 adw::SwitchRow {
                     #[watch]
-                    set_visible: model.auto_orientation.as_ref().is_some(),
+                    set_visible: model.settings.auto_orientation.as_ref().is_some(),
                     #[watch]
                     #[block_signal(auto_orientation_handler)]
-                    set_active: model.auto_orientation.as_ref().is_some_and(|x| *x),
+                    set_active: model.settings.auto_orientation.as_ref().is_some_and(|x| *x),
 
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &dgettext("display setting", "_Auto Rotate"),
 
-                    connect_active_notify[sender] => move |row| {
-                        sender.input(DisplaySettingsMsg::ToggleAutoOrientation(row.is_active()))
+                    connect_active_notify[sender] => move |switch_row| {
+                        sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch {  auto_orientation: Some(switch_row.is_active()), ..Default::default() }));
                     } @auto_orientation_handler
                 },
 
                 model.orientation_row.widget().to_owned() -> adw::ComboRow {
                    #[watch]
-                   set_sensitive: model.auto_orientation.is_none(),
+                   set_sensitive: model.settings.auto_orientation.is_none(),
 
                    set_width_request: 100,
                    set_use_underline: true,
@@ -370,7 +365,7 @@ impl Component for DisplaySettings {
                 #[name(refresh_rate_expander_row)]
                 adw::ExpanderRow {
                     #[watch]
-                    set_visible: model.variable_refresh_rate.is_some(),
+                    set_visible: model.settings.variable_refresh_rate.is_some(),
 
                     set_width_request: 100,
                     set_use_underline: true,
@@ -383,14 +378,14 @@ impl Component for DisplaySettings {
                     add_row = &adw::SwitchRow {
                         #[watch]
                         #[block_signal(variable_refresh_rate_handler)]
-                        set_active: model.variable_refresh_rate.as_ref().is_some_and(|x| x.0),
+                        set_active: model.settings.variable_refresh_rate.as_ref().is_some_and(|x| x.0),
 
                         set_width_request: 100,
                         set_use_underline: true,
                         set_title: &gettext("_Variable Refresh Rate"),
 
-                        connect_activated[sender] => move |switch| {
-                            sender.input(DisplaySettingsMsg::ToggleVariableRefreshRate(switch.is_active()));
+                        connect_activated[sender] => move |switch_row| {
+                            sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { variable_refresh_rate: Some(VariableRefreshRate(switch_row.is_active())), ..Default::default() }));
                         } @variable_refresh_rate_handler
                     },
 
@@ -407,34 +402,36 @@ impl Component for DisplaySettings {
                 #[name(hdr_row)]
                 adw::SwitchRow {
                     #[watch]
-                    set_visible: model.hdr.is_some(),
+                    set_visible: model.settings.hdr.is_some(),
+
                     #[watch]
                     #[block_signal(hdr_handler)]
-                    set_active: model.hdr.is_some_and(|x| x),
+                    set_active: model.settings.hdr.is_some_and(|x| x),
 
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("_HDR (High Dynamic Range)"),
 
                     connect_activated[sender] => move |hdr| {
-                        sender.input(DisplaySettingsMsg::ToggleHdr(hdr.is_active()));
+                        sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { hdr: Some(hdr.is_active()), ..Default::default() }));
                     } @hdr_handler
                 },
 
                 #[name(underscanning_row)]
                 adw::SwitchRow {
                     #[watch]
-                    set_visible: model.underscanning.is_some(),
+                    set_visible: model.settings.underscanning.is_some(),
+
                     #[watch]
                     #[block_signal(underscanning_handler)]
-                    set_active: model.underscanning.is_some_and(|x| x),
+                    set_active: model.settings.underscanning.as_ref().is_some_and(|x| *x),
 
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("Adjust for _TV"),
 
                     connect_activated[sender] => move |underscanning| {
-                        sender.input(DisplaySettingsMsg::ToggleUnderscanning(underscanning.is_active()));
+                        sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { underscanning: Some(underscanning.is_active()), ..Default::default() }));
                     } @underscanning_handler
                 },
 
@@ -453,12 +450,13 @@ impl Component for DisplaySettings {
                         set_valign: gtk::Align::Center,
 
                         #[watch]
-                        set_active_name: Some(&model.scale.to_string()),
+                        // TODO
+                        set_active_name: None,
 
                         connect_active_name_notify[sender] => move |scale_toggle| {
                             if let Some(active_name) = scale_toggle.active_name()
                                 && let Ok(scale) = Scale::try_from(active_name.as_str()) {
-                                    sender.input(DisplaySettingsMsg::SetScale(scale));
+                                    sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { scale: Some(scale), ..Default::default() }));
                                 }
                         }
                     },
@@ -481,55 +479,75 @@ impl Component for DisplaySettings {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let mut model = DisplaySettings::from((init, sender.clone()));
-
-        let mut widgets = view_output!();
-
-        model.update_with_view(&mut widgets, DisplaySettingsMsg::Init, sender, &root);
+        let model = DisplaySettingsModel::from((init, sender.clone()));
+        let widgets = view_output!();
 
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
-            DisplaySettingsMsg::Init => {}
-            DisplaySettingsMsg::SetScale(scale) => self.scale = scale,
-            DisplaySettingsMsg::ToggleHdr(hdr) => self.hdr = Some(hdr),
-            DisplaySettingsMsg::ToggleEnabled(enabled) => self.enabled = Some(enabled),
-            DisplaySettingsMsg::ToggleUnderscanning(underscanning) => {
-                self.underscanning = Some(underscanning)
-            }
-            DisplaySettingsMsg::ToggleAutoOrientation(auto_rotation) => {
-                self.auto_orientation = Some(auto_rotation)
-            }
-            DisplaySettingsMsg::ToggleVariableRefreshRate(vrr) => {
-                self.variable_refresh_rate = Some(VariableRefreshRate(vrr))
+            DisplaySettingsMsg::UpdateSettings(settings) => {
+                self.settings.apply(settings);
+
+                if let Err(command) =
+                    sender.output(DisplaySettingsOutput::Changed(self.settings.clone()))
+                {
+                    tracing::error!("Error sending output command: {:?}", command);
+                }
             }
             DisplaySettingsMsg::SelectScale(index) => {
-                self.scale = self.scale_list[index];
+                self.settings.apply(DisplaySettingsPatch {
+                    scale: Some(self.scale_list[index]),
+                    ..Default::default()
+                });
             }
-            DisplaySettingsMsg::SelectRefreshRate(index) => {
-                self.refresh_rate = Some(self.refresh_rate_list[index]);
-            }
-            DisplaySettingsMsg::SelectOrientation(index) => {
-                self.orientation = Some(self.orientation_list[index].rotation);
-            }
-            DisplaySettingsMsg::SelectResoulution(index) => {
-                self.current_mode = self
+            DisplaySettingsMsg::SelectResolution(index) => {
+                let current_mode = self
                     .monitor
                     .modes
                     .iter()
                     .find(|m| self.resolution_list[index] == **m)
-                    .cloned();
+                    .unwrap();
+
+                let scale = Scale(current_mode.preferred_scale);
+                let refresh_rate = RefreshRate(current_mode.refresh_rate);
+
+                self.scale_list = Self::get_scales(current_mode);
+                self.scale_combo_row =
+                    Self::build_scale_combo_row(&scale, &self.scale_list, sender.clone());
+
+                self.refresh_rate_list = Self::get_refresh_rates(
+                    &self.monitor,
+                    current_mode,
+                    self.logical_monitor.as_ref(),
+                );
+                self.refresh_rate_row = Self::build_refresh_rate_row(
+                    &refresh_rate,
+                    &self.refresh_rate_list,
+                    sender.clone(),
+                );
+
+                self.settings.apply(DisplaySettingsPatch {
+                    scale: Some(scale),
+                    refresh_rate: Some(refresh_rate),
+                    current_mode: Some(current_mode.clone()),
+                    ..Default::default()
+                });
+            }
+            DisplaySettingsMsg::SelectRefreshRate(index) => {
+                self.settings.apply(DisplaySettingsPatch {
+                    refresh_rate: Some(self.refresh_rate_list[index]),
+                    ..Default::default()
+                })
+            }
+            DisplaySettingsMsg::SelectOrientation(index) => {
+                self.settings.apply(DisplaySettingsPatch {
+                    orientation: Some(self.orientation_list[index].rotation),
+                    ..Default::default()
+                });
             }
         };
-
-        #[allow(clippy::collapsible_if)]
-        if !matches!(message, DisplaySettingsMsg::Init) {
-            if let Err(command) = sender.output(DisplaySettingsOutput::Changed()) {
-                tracing::error!("Error sending output command: {:?}", command);
-            }
-        }
     }
 
     fn update_with_view(
@@ -539,18 +557,24 @@ impl Component for DisplaySettings {
         sender: ComponentSender<Self>,
         root: &Self::Root,
     ) {
-        self.update(message.clone(), sender.clone(), root);
-
-        if matches!(message, DisplaySettingsMsg::SelectResoulution(_)) {
-            self.update_scales(&mut widgets.scale_buttons, sender.clone());
-            self.update_refresh_rate(sender.clone());
-        }
-
+        self.update(message, sender.clone(), root);
         self.update_view(widgets, sender);
+        self.render_ui(widgets);
     }
 }
 
-impl DisplaySettings {
+impl DisplaySettingsModel {
+    fn render_ui(&self, widgets: &mut <Self as Component>::Widgets) {
+        widgets.scale_buttons.remove_all();
+        for scale in &self.scale_list {
+            let toggle = adw::Toggle::builder()
+                .name(scale.to_string())
+                .label(format!("{}", scale))
+                .build();
+            widgets.scale_buttons.add(toggle);
+        }
+    }
+
     fn get_scales(current_mode: &DisplayMode) -> Vec<Scale> {
         current_mode
             .supported_scales
@@ -606,6 +630,40 @@ impl DisplaySettings {
         seen.iter().map(|s| RefreshRate(s.refresh_rate)).collect()
     }
 
+    fn build_orientation_row(
+        orientation: Option<&Transform>,
+        orientation_list: &[Orientation],
+        sender: ComponentSender<Self>,
+    ) -> Controller<SimpleComboRow<Orientation>> {
+        let variants = orientation_list.to_owned();
+        let active_index = variants
+            .iter()
+            .position(|v| orientation.is_some_and(|c| *c == v.rotation));
+
+        SimpleComboRow::builder()
+            .launch(SimpleComboRow {
+                variants,
+                active_index,
+            })
+            .forward(sender.input_sender(), DisplaySettingsMsg::SelectOrientation)
+    }
+
+    fn build_resolution_row(
+        current_mode: &DisplayMode,
+        resolution_list: &[Resolution],
+        sender: ComponentSender<Self>,
+    ) -> Controller<SimpleComboRow<Resolution>> {
+        let variants = resolution_list.to_owned();
+        let active_index = variants.iter().position(|v| v == current_mode);
+
+        SimpleComboRow::builder()
+            .launch(SimpleComboRow {
+                variants,
+                active_index,
+            })
+            .forward(sender.input_sender(), DisplaySettingsMsg::SelectResolution)
+    }
+
     fn build_scale_combo_row(
         scale: &Scale,
         scale_list: &[Scale],
@@ -637,47 +695,26 @@ impl DisplaySettings {
             })
             .forward(sender.input_sender(), DisplaySettingsMsg::SelectRefreshRate)
     }
-
-    fn update_refresh_rate(&mut self, sender: ComponentSender<Self>) {
-        if let Some(current_mode) = &self.current_mode {
-            self.refresh_rate_list =
-                Self::get_refresh_rates(&self.monitor, current_mode, self.logical_monitor.as_ref());
-
-            self.refresh_rate_row = Self::build_refresh_rate_row(
-                &RefreshRate(current_mode.refresh_rate),
-                &self.refresh_rate_list,
-                sender,
-            )
-        }
-    }
-
-    fn update_scales(
-        &mut self,
-        scale_buttons: &mut adw::ToggleGroup,
-        sender: ComponentSender<Self>,
-    ) {
-        if let Some(current_mode) = &self.current_mode {
-            self.scale_list = Self::get_scales(current_mode);
-
-            self.scale_combo_row =
-                Self::build_scale_combo_row(&self.scale, &self.scale_list, sender);
-
-            scale_buttons.remove_all();
-            for scale in &self.scale_list {
-                let toggle = adw::Toggle::builder()
-                    .name(scale.to_string())
-                    .label(format!("{}", scale))
-                    .build();
-                scale_buttons.add(toggle);
-            }
-        }
-    }
 }
 
 impl DisplaySettingsInit {
+    fn get_monitor(&self) -> &Monitor {
+        match self {
+            DisplaySettingsInit::LogicalDisplay(display) => &display.0,
+            DisplaySettingsInit::MirroredDisplay(display) => &display.0,
+        }
+    }
+
+    fn get_logical_monitor(&self) -> Option<&LogicalMonitor> {
+        match &self {
+            DisplaySettingsInit::MirroredDisplay(display) => Some(&display.1),
+            DisplaySettingsInit::LogicalDisplay(display) => display.1.as_ref(),
+        }
+    }
+
     fn get_orientations(&self) -> Vec<Orientation> {
         let Geometry { width, height, .. } =
-            self.monitor.get_geometry(self.logical_monitor.as_ref());
+            self.get_monitor().get_geometry(self.get_logical_monitor());
 
         let aspect = if width > height {
             Aspect::Landscape
@@ -742,7 +779,7 @@ impl DisplaySettingsInit {
     fn get_resolutions(&self) -> Vec<Resolution> {
         let mut seen = vec![];
 
-        for m in &self.monitor.modes {
+        for m in &self.get_monitor().modes {
             let res = Resolution(m.width, m.height);
 
             if !seen.contains(&res) {
