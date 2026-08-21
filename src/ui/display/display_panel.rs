@@ -108,7 +108,7 @@ impl From<&DisplayState> for DisplayMonitor {
             let builtin = value
                 .monitors
                 .iter()
-                .find(|m| m.is_builtin.is_some_and(|x| x))
+                .find(|m| m.properties.is_builtin.is_some_and(|x| x))
                 .unwrap()
                 .clone();
 
@@ -459,7 +459,7 @@ impl AsyncComponent for DisplayModel {
                             let builtin = state
                                 .monitors
                                 .iter()
-                                .find(|m| m.is_builtin.is_some_and(|x| x))
+                                .find(|m| m.properties.is_builtin.is_some_and(|x| x))
                                 .unwrap();
 
                             DisplayMonitor::Mirrored(MirroredDisplay(
@@ -549,7 +549,7 @@ impl DisplayModel {
         let proxy = DisplayConfigProxy::new(&conn).await?;
         let state = proxy.get_current_state().await?;
 
-        Ok(DisplayState::from(state))
+        Ok(state)
     }
 
     fn build_display_settings(

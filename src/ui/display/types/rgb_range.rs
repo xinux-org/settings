@@ -1,16 +1,9 @@
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RgbRange {
-    Auto,
-    Full,
-    Limited,
-}
+use serde::Deserialize;
+use zbus::zvariant::Type;
 
-impl From<i32> for RgbRange {
-    fn from(value: i32) -> Self {
-        match value {
-            2 => Self::Full,
-            3 => Self::Limited,
-            _ => Self::Auto,
-        }
-    }
+#[derive(Deserialize, Type, Debug, Copy, Clone, PartialEq)]
+pub enum RgbRange {
+    Auto = 1,
+    Full = 2,
+    Limited = 3,
 }

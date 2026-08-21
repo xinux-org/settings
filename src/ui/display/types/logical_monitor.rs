@@ -1,21 +1,12 @@
 use std::collections::HashMap;
 
-use zbus::zvariant;
+use serde::Deserialize;
+use zbus::zvariant::{OwnedValue, Type};
 
-use super::monitor_spec::{MonitorSpec, RawMonitorSpec};
+use super::monitor_spec::MonitorSpec;
 use super::transform::Transform;
 
-pub type RawLogicalMonitor = (
-    i32,
-    i32,
-    f64,
-    u32,
-    bool,
-    Vec<RawMonitorSpec>,
-    HashMap<String, zvariant::OwnedValue>,
-);
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Deserialize, Type, Debug, Clone, PartialEq)]
 pub struct LogicalMonitor {
     // x position
     pub x: i32,
@@ -29,23 +20,5 @@ pub struct LogicalMonitor {
     pub is_primary: bool,
     // monitors displaying this logical monitor
     pub monitors: Vec<MonitorSpec>,
-}
-
-impl From<RawLogicalMonitor> for LogicalMonitor {
-    fn from(value: RawLogicalMonitor) -> Self {
-        Self {
-            x: value.0,
-            y: value.1,
-            scale: value.2,
-            transform: Transform::from(value.3),
-            is_primary: value.4,
-            monitors: value.5.iter().map(MonitorSpec::from).collect(),
-        }
-    }
-}
-
-impl From<&RawLogicalMonitor> for LogicalMonitor {
-    fn from(value: &RawLogicalMonitor) -> Self {
-        Self::from(value.to_owned())
-    }
+    pub properties: HashMap<String, OwnedValue>,
 }

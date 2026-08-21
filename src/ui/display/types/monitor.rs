@@ -1,18 +1,13 @@
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
-use zbus::zvariant;
+use serde::Deserialize;
+use zbus::zvariant::{DeserializeDict, Type};
 
 use super::color_mode::ColorMode;
-use super::display_mode::{DisplayMode, RawDisplayMode};
+use super::display_mode::DisplayMode;
 use super::logical_monitor::LogicalMonitor;
-use super::monitor_spec::{MonitorSpec, RawMonitorSpec};
+use super::monitor_spec::MonitorSpec;
 use super::rgb_range::RgbRange;
-
-pub type RawMonitor = (
-    RawMonitorSpec,
-    Vec<RawDisplayMode>,
-    HashMap<String, zvariant::OwnedValue>,
-);
 
 pub const KNOWN_DIAGONALS: [f32; 3] = [12.1, 13.3, 15.6];
 
@@ -24,11 +19,17 @@ pub struct Geometry {
     pub height: i32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Deserialize, Type, Debug, Clone, PartialEq)]
 pub struct Monitor {
     pub spec: MonitorSpec,
     // available modes
     pub modes: Vec<DisplayMode>,
+    pub properties: MonitorProperties,
+}
+
+#[derive(DeserializeDict, Type, Debug, Clone, PartialEq)]
+#[zvariant(signature = "a{sv}", rename_all = "kebab-case")]
+pub struct MonitorProperties {
     // physical width of monitor in millimeters
     pub width_mm: Option<u32>,
     // physical height of monitor in millimeters
@@ -77,13 +78,13 @@ impl Monitor {
     pub fn get_current_mode(&self) -> Option<&DisplayMode> {
         self.modes
             .iter()
-            .find(|m| m.is_current.is_some_and(|val| val))
+            .find(|m| m.properties.is_current.is_some_and(|val| val))
     }
 
     pub fn get_preferred_mode(&self) -> Option<&DisplayMode> {
         self.modes
             .iter()
-            .find(|m| m.is_preferred.is_some_and(|val| val))
+            .find(|m| m.properties.is_preferred.is_some_and(|val| val))
     }
 
     pub fn get_output_ui_name(&self) -> String {
@@ -95,11 +96,11 @@ impl Monitor {
     }
 
     pub fn get_physical_size(&self) -> Option<u32> {
-        self.width_mm.or(self.height_mm)
+        self.properties.width_mm.or(self.properties.height_mm)
     }
 
     pub fn get_display_name(&self) -> &String {
-        if let Some(display_name) = &self.display_name {
+        if let Some(display_name) = &self.properties.display_name {
             return display_name;
         }
 
@@ -144,7 +145,7 @@ impl Monitor {
     }
 
     fn make_display_size_string(&self) -> Option<String> {
-        if let (Some(width), Some(height)) = (self.width_mm, self.height_mm) {
+        if let (Some(width), Some(height)) = (self.properties.width_mm, self.properties.height_mm) {
             if width > 0 && height > 0 {
                 let d = (width * height + height * height).isqrt() as f32;
 
@@ -155,82 +156,5 @@ impl Monitor {
         }
 
         None
-    }
-}
-
-impl From<RawMonitor> for Monitor {
-    fn from(value: RawMonitor) -> Self {
-        Monitor {
-            spec: MonitorSpec::from(value.0),
-            modes: value.1.iter().map(DisplayMode::from).collect(),
-            width_mm: value
-                .2
-                .get("width-mm")
-                .and_then(|val| val.downcast_ref().ok()),
-            height_mm: value
-                .2
-                .get("height-mm")
-                .and_then(|val| val.downcast_ref().ok()),
-            is_underscanning: value
-                .2
-                .get("is-underscanning")
-                .and_then(|val| val.downcast_ref().ok()),
-            max_screen_size: value
-                .2
-                .get("max-screen-size")
-                .and_then(|val| val.downcast_ref().ok()),
-            is_builtin: value
-                .2
-                .get("is-builtin")
-                .and_then(|val| val.downcast_ref().ok()),
-            display_name: value
-                .2
-                .get("display-name")
-                .and_then(|val| val.downcast_ref().ok()),
-            privacy_screen_state: value
-                .2
-                .get("privacy-screen-state")
-                .and_then(|val| val.downcast_ref().ok()),
-            min_refresh_rate: value
-                .2
-                .get("min-refresh-rate")
-                .and_then(|val| val.downcast_ref().ok()),
-            is_for_lease: value
-                .2
-                .get("is-for-lease")
-                .and_then(|val| val.downcast_ref().ok()),
-            color_mode: value
-                .2
-                .get("color-mode")
-                .and_then(|val| val.downcast_ref::<u32>().ok())
-                .map(ColorMode::from),
-            supported_color_modes: value
-                .2
-                .get("supported-color-modes")
-                .and_then(|val| {
-                    let zvariant::Value::Array(arr) = &**val else {
-                        return None;
-                    };
-
-                    Some(
-                        arr.inner()
-                            .iter()
-                            .filter_map(|v| v.downcast_ref::<u32>().ok())
-                            .collect::<Vec<u32>>(),
-                    )
-                })
-                .map(|color_modes| color_modes.iter().map(ColorMode::from).collect()),
-            rgb_range: value
-                .2
-                .get("rgb-range")
-                .and_then(|val| val.downcast_ref::<i32>().ok())
-                .map(RgbRange::from),
-        }
-    }
-}
-
-impl From<&RawMonitor> for Monitor {
-    fn from(value: &RawMonitor) -> Self {
-        Self::from(value.to_owned())
     }
 }

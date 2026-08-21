@@ -1,22 +1,9 @@
-#[derive(Debug, Copy, Clone, PartialEq)]
+use serde::Deserialize;
+use zbus::zvariant::Type;
+
+#[derive(Deserialize, Type, Debug, Copy, Clone, PartialEq)]
 pub enum ColorMode {
-    BT2100,
-    Default,
-    SDRNative,
-}
-
-impl From<u32> for ColorMode {
-    fn from(value: u32) -> Self {
-        match value {
-            2 => Self::SDRNative,
-            1 => Self::BT2100,
-            _ => Self::Default,
-        }
-    }
-}
-
-impl From<&u32> for ColorMode {
-    fn from(value: &u32) -> Self {
-        Self::from(*value)
-    }
+    Default = 0,
+    BT2100 = 1,
+    SDRNative = 2,
 }

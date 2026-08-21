@@ -1,24 +1,7 @@
-use std::collections::HashMap;
+use serde::Deserialize;
+use zbus::zvariant::{DeserializeDict, Type};
 
-use zbus::zvariant;
-
-pub type RawDisplayMode = (
-    String,
-    i32,
-    i32,
-    f64,
-    f64,
-    Vec<f64>,
-    HashMap<String, zvariant::OwnedValue>,
-);
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum RefreshRateMode {
-    Fixed,
-    Variable,
-}
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Deserialize, Type, Debug, Clone, PartialEq)]
 pub struct DisplayMode {
     // mode ID
     pub id: String,
@@ -32,6 +15,12 @@ pub struct DisplayMode {
     pub preferred_scale: f64,
     // scales supported by this mode
     pub supported_scales: Vec<f64>,
+    pub properties: DisplayModeProperties,
+}
+
+#[derive(DeserializeDict, Type, Debug, Clone, PartialEq)]
+#[zvariant(signature = "a{sv}", rename_all = "kebab-case")]
+pub struct DisplayModeProperties {
     // the mode is currently active mode
     pub is_current: Option<bool>,
     // the mode is the preferred mode
@@ -42,42 +31,9 @@ pub struct DisplayMode {
     pub refresh_rate_mode: Option<RefreshRateMode>,
 }
 
-impl From<RawDisplayMode> for DisplayMode {
-    fn from(value: RawDisplayMode) -> Self {
-        Self {
-            id: value.0,
-            width: value.1,
-            height: value.2,
-            refresh_rate: value.3,
-            preferred_scale: value.4,
-            supported_scales: value.5,
-            is_current: value
-                .6
-                .get("is-current")
-                .and_then(|val| val.downcast_ref().ok()),
-            is_preferred: value
-                .6
-                .get("is-preferred")
-                .and_then(|val| val.downcast_ref().ok()),
-            is_interlaced: value
-                .6
-                .get("is-preferred")
-                .and_then(|val| val.downcast_ref().ok()),
-            refresh_rate_mode: value.6.get("refresh-rate-mode").and_then(|val| {
-                match val.downcast_ref::<String>() {
-                    Ok(mode) => match mode.as_str() {
-                        "variable" => Some(RefreshRateMode::Variable),
-                        _ => Some(RefreshRateMode::Fixed),
-                    },
-                    Err(_) => None,
-                }
-            }),
-        }
-    }
-}
-
-impl From<&RawDisplayMode> for DisplayMode {
-    fn from(value: &RawDisplayMode) -> Self {
-        Self::from(value.to_owned())
-    }
+#[derive(Deserialize, Type, Debug, Clone, PartialEq)]
+#[zvariant(signature = "s")]
+pub enum RefreshRateMode {
+    Fixed,
+    Variable,
 }

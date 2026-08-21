@@ -1,6 +1,7 @@
-pub type RawMonitorSpec = (String, String, String, String);
+use serde::{Deserialize, Serialize};
+use zbus::zvariant::Type;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Type, Debug, Clone, Eq, PartialEq)]
 pub struct MonitorSpec {
     // connector name (e.g. HDMI-1, DP-1, etc)
     pub connector: String,
@@ -10,21 +11,4 @@ pub struct MonitorSpec {
     pub product: String,
     // product serial
     pub serial: String,
-}
-
-impl From<RawMonitorSpec> for MonitorSpec {
-    fn from(value: RawMonitorSpec) -> Self {
-        MonitorSpec {
-            connector: value.0,
-            vendor: value.1,
-            product: value.2,
-            serial: value.3,
-        }
-    }
-}
-
-impl From<&RawMonitorSpec> for MonitorSpec {
-    fn from(value: &RawMonitorSpec) -> Self {
-        Self::from(value.to_owned())
-    }
 }

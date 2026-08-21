@@ -198,6 +198,7 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettingsModel
         let refresh_rate_list = Self::get_refresh_rates(monitor, current_mode, logical_monitor);
 
         let has_hdr = monitor
+            .properties
             .supported_color_modes
             .as_ref()
             .is_some_and(|color_modes| {
@@ -209,6 +210,7 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettingsModel
         let hdr = if has_hdr {
             Some(
                 monitor
+                    .properties
                     .color_mode
                     .is_some_and(|mode| matches!(mode, ColorMode::BT2100)),
             )
@@ -228,7 +230,7 @@ impl From<(DisplaySettingsInit, ComponentSender<Self>)> for DisplaySettingsModel
                 // TODO
                 variable_refresh_rate: None,
                 current_mode: current_mode.clone(),
-                underscanning: monitor.is_underscanning,
+                underscanning: monitor.properties.is_underscanning,
             },
 
             monitor: monitor.clone(),
@@ -597,7 +599,7 @@ impl DisplaySettingsModel {
                 continue;
             }
 
-            if current_mode.refresh_rate_mode != mode.refresh_rate_mode {
+            if current_mode.properties.refresh_rate_mode != mode.properties.refresh_rate_mode {
                 continue;
             }
 
@@ -605,8 +607,9 @@ impl DisplaySettingsModel {
         }
 
         seen.sort_by(|a, b| {
-            if a.refresh_rate_mode != b.refresh_rate_mode {
-                if a.refresh_rate_mode
+            if a.properties.refresh_rate_mode != b.properties.refresh_rate_mode {
+                if a.properties
+                    .refresh_rate_mode
                     .as_ref()
                     .is_some_and(|a| matches!(a, RefreshRateMode::Variable))
                 {

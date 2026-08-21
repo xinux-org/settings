@@ -79,36 +79,7 @@ pub trait DisplayConfig {
     ) -> zbus::Result<(Vec<u16>, Vec<u16>, Vec<u16>)>;
 
     /// GetCurrentState method
-    #[allow(clippy::type_complexity)]
-    #[allow(clippy::type_complexity)]
-    fn get_current_state(
-        &self,
-    ) -> zbus::Result<(
-        u32,
-        Vec<(
-            (String, String, String, String),
-            Vec<(
-                String,
-                i32,
-                i32,
-                f64,
-                f64,
-                Vec<f64>,
-                std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
-            )>,
-            std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
-        )>,
-        Vec<(
-            i32,
-            i32,
-            f64,
-            u32,
-            bool,
-            Vec<(String, String, String, String)>,
-            std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
-        )>,
-        std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
-    )>;
+    fn get_current_state(&self) -> zbus::Result<super::types::display_state::DisplayState>;
 
     /// GetResources method
     #[allow(clippy::type_complexity)]
