@@ -1,4 +1,3 @@
-pub mod apply_monitors_config;
 pub mod color_mode;
 pub mod display_mode;
 pub mod display_state;

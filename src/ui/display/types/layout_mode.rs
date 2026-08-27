@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
 // current layout mode represents the way logical monitors are laid out on the screen
-#[derive(Deserialize, Type, Debug)]
+#[derive(Serialize, Deserialize, Type, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum LayoutMode {
     // With logical mode, the dimension of a logical monitor is the dimension
     // of the monitor mode, divided by the logical monitor scale.

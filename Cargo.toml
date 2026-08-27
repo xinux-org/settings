@@ -72,3 +72,4 @@ allmytoes = "0.5.1"
 rand = "0.10.1"
 clap = { version = "4.1", features = [ "derive", "cargo" ] }
 struct-patch = "0.13.2"
+strum = { version = "0.28.0", features = ["derive"] }

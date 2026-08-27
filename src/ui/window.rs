@@ -12,7 +12,7 @@ use relm4::{
 use crate::ui::{
     about::AboutDialog, accessibility::AccessibilityModel, accounts::AccountsModel,
     appearance::appearance::AppearanceModel, apps::AppModal, bluetooth::BluetoothModel,
-    display::DisplayModel, mouse::MouseModal, multitasking::MultitaskingModel,
+    display::DisplayPage, mouse::MouseModal, multitasking::MultitaskingModel,
     network::NetworkModel, notifications::NotificationsModel, power::PowerModel,
     privacyandsecurity::PrivacyAndSecurityModel, rebuild::rebuild_dialog::RebuildInput,
     search::SearchModal, sharing::SharingModel, sound::SoundModel, system::SystemPageModel,
@@ -35,7 +35,7 @@ pub struct App {
     #[allow(dead_code)]
     bluetooth: Controller<BluetoothModel>,
     #[allow(dead_code)]
-    display: AsyncController<DisplayModel>,
+    display: AsyncController<DisplayPage>,
     appearance: AsyncController<AppearanceModel>,
     #[allow(dead_code)]
     sound: Controller<SoundModel>,
@@ -172,9 +172,7 @@ impl SimpleComponent for App {
         let bluetooth = BluetoothModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
-        let display = DisplayModel::builder()
-            .launch(())
-            .detach();
+        let display = DisplayPage::builder().launch(()).detach();
         let appearance = AppearanceModel::builder()
             .launch(())
             .forward(sender.input_sender(), identity);

@@ -1,7 +1,7 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-#[derive(Deserialize, Type, Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Type, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ColorMode {
     Default = 0,
     BT2100 = 1,

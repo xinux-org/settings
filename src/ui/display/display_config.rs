@@ -26,48 +26,6 @@ use zbus::proxy;
     default_path = "/org/gnome/Mutter/DisplayConfig"
 )]
 pub trait DisplayConfig {
-    /// ApplyConfiguration method
-    #[allow(clippy::type_complexity)]
-    fn apply_configuration(
-        &self,
-        serial: u32,
-        persistent: bool,
-        crtcs: &[&(
-            u32,
-            i32,
-            i32,
-            i32,
-            u32,
-            &[u32],
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-        )],
-        outputs: &[&(
-            u32,
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-        )],
-    ) -> zbus::Result<()>;
-
-    /// ApplyMonitorsConfig method
-    #[allow(clippy::type_complexity)]
-    fn apply_monitors_config(
-        &self,
-        serial: u32,
-        method: u32,
-        logical_monitors: &[&(
-            i32,
-            i32,
-            f64,
-            u32,
-            bool,
-            &[&(
-                &str,
-                &str,
-                std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-            )],
-        )],
-        properties: std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-    ) -> zbus::Result<()>;
-
     /// ChangeBacklight method
     fn change_backlight(&self, serial: u32, output: u32, value: i32) -> zbus::Result<i32>;
 
@@ -140,10 +98,6 @@ pub trait DisplayConfig {
     /// MonitorsChanged signal
     #[zbus(signal)]
     fn monitors_changed(&self) -> zbus::Result<()>;
-
-    /// ApplyMonitorsConfigAllowed property
-    #[zbus(property)]
-    fn apply_monitors_config_allowed(&self) -> zbus::Result<bool>;
 
     /// Backlight property
     #[zbus(property)]

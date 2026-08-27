@@ -5,7 +5,7 @@ use super::layout_mode::LayoutMode;
 use super::logical_monitor::LogicalMonitor;
 use super::monitor::Monitor;
 
-#[derive(Deserialize, Type, Debug)]
+#[derive(Deserialize, Type, Debug, Clone)]
 pub struct DisplayState {
     // configuration serial
     pub serial: u32,
@@ -16,7 +16,7 @@ pub struct DisplayState {
     pub properties: DisplayStateProperties,
 }
 
-#[derive(DeserializeDict, Type, Debug)]
+#[derive(DeserializeDict, Type, Debug, Clone)]
 #[zvariant(signature = "a{sv}", rename_all = "kebab-case")]
 pub struct DisplayStateProperties {
     // Represents in what way logical monitors are laid out on the screen.

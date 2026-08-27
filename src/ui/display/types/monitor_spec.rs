@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-#[derive(Serialize, Deserialize, Type, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Type, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct MonitorSpec {
     // connector name (e.g. HDMI-1, DP-1, etc)
     pub connector: String,
