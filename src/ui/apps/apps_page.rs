@@ -6,8 +6,8 @@ use crate::ui::{
     window::AppMsg,
 };
 
-use relm4::{adw, adw::prelude::*, gtk, gtk::gio::AppInfo, prelude::*};
 use gettextrs::gettext;
+use relm4::{adw, adw::prelude::*, gtk, gtk::gio::AppInfo, prelude::*};
 
 #[derive(Debug)]
 pub struct AppModal {
@@ -164,10 +164,10 @@ fn collect_apps() -> Vec<AppEntry> {
         .into_iter()
         .filter(|app| app.should_show())
         .map(|app| {
-            let app_id = app.id().map(|s| s.to_string());
-            let canonical_id = app_id.as_deref().map(notification_canonical_id);
+            let app_id: String = app.id().unwrap_or_default().into();
+            let canonical_id = notification_canonical_id(&app_id);
             let executable = Some(app.executable().to_string_lossy().into_owned());
-            let source = detect_app_source(app_id.as_deref(), executable.as_deref());
+            let source = detect_app_source(&app_id, executable.as_deref());
 
             AppEntry {
                 name: app.display_name().to_string(),

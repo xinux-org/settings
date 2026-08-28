@@ -1,13 +1,13 @@
+use dirs::home_dir;
+use gettextrs::gettext;
 use relm4::{
     ComponentParts, ComponentSender, SimpleComponent, adw, adw::prelude::*, gtk, gtk::gio,
 };
-use dirs::home_dir;
 use std::{
     fs::{read_dir, remove_dir_all, remove_file},
-    path::{PathBuf, Path},
     io::Result,
+    path::{Path, PathBuf},
 };
-use gettextrs::gettext;
 
 #[derive(Debug, Clone, Default)]
 pub struct AppStorageInfo {
@@ -17,16 +17,16 @@ pub struct AppStorageInfo {
     pub total: u64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StorageDialog {
-    app_name: String,
-    app_id: Option<String>,
-    info: AppStorageInfo,
+    pub app_name: String,
+    pub app_id: String,
+    pub info: AppStorageInfo,
 }
 
 #[derive(Debug, Clone)]
 pub enum StorageDialogMsg {
-    Show(String, Option<String>, AppStorageInfo),
+    Show(StorageDialog),
     ClearCacheClicked(gtk::Button),
     ConfirmClearCache,
 }
@@ -102,8 +102,8 @@ impl SimpleComponent for StorageDialog {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
-            app_name: String::new(),
-            app_id: None,
+            app_name: String::default(),
+            app_id: String::default(),
             info: AppStorageInfo::default(),
         };
         let widgets = view_output!();
@@ -112,17 +112,24 @@ impl SimpleComponent for StorageDialog {
 
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         match msg {
-            StorageDialogMsg::Show(name, app_id, info) => {
-                self.app_name = name;
+            // TODO. Optimize this DTO
+            StorageDialogMsg::Show(StorageDialog {
+                app_name,
+                app_id,
+                info,
+            }) => {
+                self.app_name = app_name;
                 self.app_id = app_id;
                 self.info = info;
             }
             StorageDialogMsg::ClearCacheClicked(button) => {
                 let dialog = gtk::AlertDialog::builder()
                     .modal(true)
-                    .message(&gettext("Clear Cache?"))
-                    .detail(&gettext("This will delete all cached data for {}.")
-                        .replace("{}", &self.app_name))
+                    .message(gettext("Clear Cache?"))
+                    .detail(
+                        gettext("This will delete all cached data for {}.")
+                            .replace("{}", &self.app_name),
+                    )
                     .build();
 
                 dialog.set_buttons(&[&gettext("Cancel"), &gettext("Clear Cache")]);
@@ -139,21 +146,20 @@ impl SimpleComponent for StorageDialog {
                 });
             }
             StorageDialogMsg::ConfirmClearCache => {
-                if let Some(id) = self.app_id.as_deref() {
-                    if let Err(e) = clear_cache(id) {
-                        eprintln!("Cache tozalashda xato: {e}");
-                    }
+                if let Err(e) = clear_cache(&self.app_id) {
+                    eprintln!("Cache tozalashda xato: {e}");
                 }
-                self.info = calculate_storage(self.app_id.as_ref());
+
+                self.info = calculate_storage(&self.app_id);
             }
         }
     }
 }
 
-pub fn calculate_storage(app_id: Option<&String>) -> AppStorageInfo {
-    let Some(app_id) = app_id else {
+pub fn calculate_storage(app_id: &str) -> AppStorageInfo {
+    if !app_id.is_empty() {
         return AppStorageInfo::default();
-    };
+    }
 
     let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
     let home = home_dir().unwrap_or_default();
@@ -221,11 +227,12 @@ fn dir_size(path: &Path) -> Result<u64> {
         Ok(mut entries) => entries.try_fold(0u64, |total, entry| {
             let entry = entry?;
             let meta = entry.metadata()?;
-            Ok(total + if meta.is_dir() {
-                dir_size(&entry.path())?
-            } else {
-                meta.len()
-            })
+            Ok(total
+                + if meta.is_dir() {
+                    dir_size(&entry.path())?
+                } else {
+                    meta.len()
+                })
         }),
         Err(e) => Err(e),
     }

@@ -1,20 +1,18 @@
-use crate::ui::notifications::app_notification::app_settings_for_canonical;
-use gio_unix::DesktopAppInfo;
-use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 use crate::ui::apps::{
+    background::BackgroundPermission,
     components::{
         files_links::{FilesLinksDialog, FilesLinksDialogMsg},
         required_permissions::{
             AppPermission, RequiredPermissionsDialog, RequiredPermissionsDialogMsg,
             load_required_permissions,
         },
-        storage::{
-            StorageDialog, StorageDialogMsg, calculate_storage, format_bytes
-        }
+        storage::{StorageDialog, StorageDialogMsg, calculate_storage, format_bytes},
     },
-    background::BackgroundPermission
 };
-use gettextrs::{gettext};
+use crate::ui::notifications::app_notification::app_settings_for_canonical;
+use gettextrs::gettext;
+use gio_unix::DesktopAppInfo;
+use relm4::{adw, adw::prelude::*, gtk, gtk::gio, prelude::*};
 
 #[derive(Debug, Clone)]
 pub struct AppEntry {
@@ -23,8 +21,8 @@ pub struct AppEntry {
     pub executable: Option<String>,
     pub icon: Option<gio::Icon>,
     pub app_info: gio::AppInfo,
-    pub app_id: Option<String>,
-    pub canonical_id: Option<String>,
+    pub app_id: String,
+    pub canonical_id: String,
     pub source: Option<String>,
 }
 
@@ -179,11 +177,15 @@ impl SimpleComponent for AppDetailsPage {
         }
     }
 
-    fn init(app: Self::Init, _root: Self::Root, sender: ComponentSender<Self>) -> ComponentParts<Self> {
+    fn init(
+        app: Self::Init,
+        _root: Self::Root,
+        sender: ComponentSender<Self>,
+    ) -> ComponentParts<Self> {
         let sandboxed = is_app_sandboxed(&app);
         let mime_count = app.app_info.supported_types().len();
         let storage_total = calculate_storage(app.app_id.as_ref()).total;
-        let required_permissions = load_required_permissions(app.app_id.as_deref());
+        let required_permissions = load_required_permissions(&app.app_id);
 
         let mut model = Self {
             app,
@@ -229,8 +231,11 @@ impl SimpleComponent for AppDetailsPage {
             AppDetailsMsg::ShowStorage => {
                 let info = calculate_storage(self.app.app_id.as_ref());
                 self.storage_total = info.total;
-                let msg =
-                    StorageDialogMsg::Show(self.app.name.clone(), self.app.app_id.clone(), info);
+                let msg = StorageDialogMsg::Show(StorageDialog {
+                    app_name: self.app.name.clone(),
+                    app_id: self.app.app_id.clone(),
+                    info,
+                });
                 if self.storage_dialog.sender().send(msg).is_ok() {
                     self.detail_nav.push(self.storage_dialog.widget());
                 }
@@ -270,14 +275,11 @@ impl AppDetailsPage {
 }
 
 fn is_app_sandboxed(app: &AppEntry) -> bool {
-    app.app_id
-        .as_deref()
-        .and_then(DesktopAppInfo::new)
-        .is_some_and(|desktop| desktop.string("X-Flatpak").is_some())
+    DesktopAppInfo::new(&app.app_id).is_some_and(|desktop| desktop.string("X-Flatpak").is_some())
 }
 
-pub fn detect_app_source(app_id: Option<&str>, _executable: Option<&str>) -> Option<String> {
-    let desktop = app_id.and_then(DesktopAppInfo::new)?;
+pub fn detect_app_source(app_id: &str, _executable: Option<&str>) -> Option<String> {
+    let desktop = DesktopAppInfo::new(&app_id)?;
     desktop.string("X-Flatpak").map(|_| "Flatpak".to_string())
 }
 
@@ -307,7 +309,9 @@ fn setup_notifications_row(app: &AppEntry, row: &adw::SwitchRow) {
             }
         });
     } else {
-        row.set_subtitle(&gettext("Notification settings are unavailable for this app"));
+        row.set_subtitle(&gettext(
+            "Notification settings are unavailable for this app",
+        ));
         row.set_active(false);
         row.set_sensitive(false);
         row.set_visible(true);
@@ -335,20 +339,31 @@ fn setup_background_row(app: &AppEntry, row: &adw::SwitchRow) {
 }
 
 impl AppEntry {
+    fn app_id_or_canonical(&self) -> String {
+        if self.app_id.is_empty() {
+            self.canonical_id.to_string()
+        } else {
+            self.app_id.to_string()
+        }
+    }
+
     fn notification_settings(&self) -> Option<gio::Settings> {
-        Some(app_settings_for_canonical(self.canonical_id.as_deref()?))
+        Some(app_settings_for_canonical(&self.canonical_id))
     }
+
     fn flatpak_id(&self) -> Option<String> {
-        let raw = self.app_id.as_deref().or(self.canonical_id.as_deref())?;
-        Some(raw.strip_suffix(".desktop").unwrap_or(raw).to_string())
+        let raw = self.app_id_or_canonical();
+        Some(raw.strip_suffix(".desktop").unwrap_or(&raw).to_string())
     }
+
     fn open_in_software_center(&self, button: &gtk::Button) {
-        let raw_id = self.app_id.as_deref().or(self.canonical_id.as_deref());
-        let Some(raw_id) = raw_id else {
+        let raw_id = self.app_id_or_canonical();
+        if raw_id.is_empty() {
             eprintln!("No app_id available: {}", self.name);
             return;
-        };
-        let component_id = raw_id.strip_suffix(".desktop").unwrap_or(raw_id);
+        }
+
+        let component_id = raw_id.strip_suffix(".desktop").unwrap_or(&raw_id);
         let uri = format!("appstream://{component_id}");
 
         let launcher = gtk::UriLauncher::new(&uri);

@@ -1,4 +1,5 @@
 use dirs::home_dir;
+use gettextrs::gettext;
 use relm4::{
     ComponentParts, ComponentSender, SimpleComponent, adw,
     adw::prelude::*,
@@ -8,7 +9,6 @@ use serde::{Deserialize, Deserializer};
 use serini::from_str;
 use std::fs::read_to_string;
 use std::path::PathBuf;
-use gettextrs::gettext;
 
 #[derive(Debug, Clone)]
 pub struct AppPermission {
@@ -206,12 +206,9 @@ impl SimpleComponent for RequiredPermissionsDialog {
     }
 }
 
-pub fn load_required_permissions(app_id: Option<&str>) -> Vec<AppPermission> {
-    app_id
-        .and_then(|app_id| {
-            let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
-            find_metadata_path(flatpak_id)
-        })
+pub fn load_required_permissions(app_id: &str) -> Vec<AppPermission> {
+    let flatpak_id = app_id.strip_suffix(".desktop").unwrap_or(app_id);
+    find_metadata_path(flatpak_id)
         .and_then(|metadata_path| read_to_string(&metadata_path).ok())
         .and_then(|raw| from_str::<Metadata>(&raw).ok())
         .and_then(|meta| meta.context)
