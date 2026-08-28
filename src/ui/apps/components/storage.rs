@@ -17,7 +17,7 @@ pub struct AppStorageInfo {
     pub total: u64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct StorageDialog {
     pub app_name: String,
     pub app_id: String,
@@ -101,27 +101,14 @@ impl SimpleComponent for StorageDialog {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self {
-            app_name: String::default(),
-            app_id: String::default(),
-            info: AppStorageInfo::default(),
-        };
+        let model = Self::default();
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         match msg {
-            // TODO. Optimize this DTO
-            StorageDialogMsg::Show(StorageDialog {
-                app_name,
-                app_id,
-                info,
-            }) => {
-                self.app_name = app_name;
-                self.app_id = app_id;
-                self.info = info;
-            }
+            StorageDialogMsg::Show(storage_dialog) => *self = storage_dialog,
             StorageDialogMsg::ClearCacheClicked(button) => {
                 let dialog = gtk::AlertDialog::builder()
                     .modal(true)
