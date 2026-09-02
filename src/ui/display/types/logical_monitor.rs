@@ -22,24 +22,3 @@ pub struct LogicalMonitor {
     pub monitors: Vec<MonitorSpec>,
     pub properties: HashMap<String, OwnedValue>,
 }
-
-impl LogicalMonitor {
-    pub fn new(
-        x: i32,
-        y: i32,
-        scale: f64,
-        transform: Transform,
-        is_primary: bool,
-        monitors: Vec<MonitorSpec>,
-    ) -> Self {
-        Self {
-            x,
-            y,
-            scale,
-            transform,
-            is_primary,
-            monitors,
-            properties: HashMap::new(),
-        }
-    }
-}

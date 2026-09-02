@@ -11,5 +11,4 @@ mod display_config_manager;
 mod display_page;
 mod display_panel;
 mod display_settings;
-mod display_settings_group;
 mod types;

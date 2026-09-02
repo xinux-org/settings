@@ -1,157 +1,84 @@
-use std::fmt;
+use gettextrs::dgettext;
+use std::{cmp::Ordering, fmt::Display, sync::Arc};
 
-use crate::ui::display::color_mode::ColorMode;
-use crate::ui::display::display_mode::{DisplayMode, RefreshRateMode, approx_equal};
-use crate::ui::display::monitor::{Geometry, Monitor, compare_mode_preference};
-use crate::ui::display::transform::Transform;
+use crate::ui::display::{
+    RefreshRate, Resolution,
+    color_mode::ColorMode,
+    display_mode::RefreshRateMode,
+    monitor::{Monitor, MonitorProperties},
+    monitor_spec::MonitorSpec,
+    transform::Transform,
+};
 
-use super::LogicalMonitorHandle;
+use super::{CcDisplayMode, CcLogicalMonitor};
+
+pub const KNOWN_DIAGONALS: [f64; 3] = [12.1, 13.3, 15.6];
+
+const ROTATIONS: [Transform; 4] = [
+    Transform::Normal,
+    Transform::Rotate90,
+    Transform::Rotate180,
+    Transform::Rotate270,
+];
 
 #[derive(Debug, Clone)]
 pub struct CcDisplayMonitor {
-    pub inner: Monitor,
-
-    is_usable: bool,
-    logical_monitor: Option<LogicalMonitorHandle>,
-}
-
-impl PartialEq for CcDisplayMonitor {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner && self.is_usable == other.is_usable
-    }
-}
-
-impl fmt::Display for CcDisplayMonitor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.get_output_ui_name())
-    }
+    spec: MonitorSpec,
+    properties: MonitorProperties,
+    modes: Vec<Arc<CcDisplayMode>>,
+    current_mode: Arc<CcDisplayMode>,
+    logical_monitor: Option<Arc<CcLogicalMonitor>>,
 }
 
 impl CcDisplayMonitor {
-    pub(crate) fn new(monitor: Monitor, logical_monitor: Option<LogicalMonitorHandle>) -> Self {
+    pub fn new(monitor: Monitor, logical_monitor: Option<Arc<CcLogicalMonitor>>) -> Self {
+        let modes = monitor
+            .modes
+            .into_iter()
+            .map(CcDisplayMode::from)
+            .map(Arc::new)
+            .collect::<Vec<_>>();
+
+        let current_mode = modes
+            .iter()
+            .find(|&mode| mode.is_current())
+            .unwrap_or(&modes[0]);
+
         Self {
-            inner: monitor,
-            is_usable: true,
             logical_monitor,
+            spec: monitor.spec,
+            properties: monitor.properties,
+            current_mode: Arc::clone(current_mode),
+            modes,
         }
     }
 
-    pub fn logical_monitor(&self) -> Option<LogicalMonitorHandle> {
-        self.logical_monitor.clone()
+    pub fn logical_monitor_for<'a>(
+        monitor: &'a Monitor,
+        logical_monitors: &'a [Arc<CcLogicalMonitor>],
+    ) -> Option<Arc<CcLogicalMonitor>> {
+        logical_monitors
+            .iter()
+            .find(|&lm| lm.has_output(&monitor.spec))
+            .map(Arc::clone)
     }
 
-    pub fn get_display_name(&self) -> &str {
-        self.inner.get_display_name()
-    }
-
-    pub fn is_active(&self) -> bool {
-        self.logical_monitor.is_some()
-    }
-
-    pub fn get_vendor_name(&self) -> &str {
-        self.inner.get_vendor_name()
-    }
-
-    pub fn get_product_name(&self) -> &str {
-        self.inner.get_product_name()
-    }
-
-    pub fn get_product_serial(&self) -> &str {
-        self.inner.get_product_serial()
-    }
-
-    pub fn get_connector_name(&self) -> &str {
-        self.inner.get_connector_name()
-    }
-
-    pub fn get_rotation(&self) -> Transform {
-        self.logical_monitor
-            .as_ref()
-            .and_then(|lm| lm.lock().ok().map(|lm| lm.rotation()))
-            .unwrap_or(Transform::Normal)
-    }
-
-    pub fn set_rotation(&mut self, r: Transform) {
-        if let Some(lm) = &self.logical_monitor
-            && let Ok(mut lm) = lm.lock()
-        {
-            lm.set_rotation(r);
-        }
-    }
-
-    pub fn get_physical_size(&self) -> (i32, i32) {
-        self.inner.get_physical_size()
+    pub fn get_logical_monitor(&self) -> Option<&Arc<CcLogicalMonitor>> {
+        self.logical_monitor.as_ref()
     }
 
     pub fn is_builtin(&self) -> bool {
-        self.inner.is_builtin()
-    }
-
-    pub fn is_primary(&self) -> bool {
-        self.logical_monitor
-            .as_ref()
-            .and_then(|lm| lm.lock().ok().map(|lm| lm.is_primary()))
-            .unwrap_or(false)
-    }
-
-    pub fn set_primary(&mut self, primary: bool) {
-        if let Some(lm) = &self.logical_monitor
-            && let Ok(mut lm) = lm.lock()
-        {
-            lm.set_primary(primary);
-        }
-    }
-
-    pub fn supports_variable_refresh_rate(&self) -> bool {
-        self.inner.supports_variable_refresh_rate()
-    }
-
-    pub fn get_supported_color_modes(&self) -> &[ColorMode] {
-        self.inner.get_supported_color_modes()
-    }
-
-    pub fn supports_color_mode(&self, color_mode: ColorMode) -> bool {
-        self.inner.supports_color_mode(color_mode)
-    }
-
-    pub fn get_color_mode(&self) -> ColorMode {
-        self.inner.get_color_mode()
-    }
-
-    pub fn set_color_mode(&mut self, color_mode: ColorMode) {
-        if self.inner.supports_color_mode(color_mode) {
-            self.inner.properties.color_mode = Some(color_mode);
-        }
-    }
-
-    pub fn supports_underscanning(&self) -> bool {
-        self.inner.supports_underscanning()
-    }
-
-    pub fn get_underscanning(&self) -> bool {
-        self.inner.get_underscanning()
-    }
-
-    pub fn set_underscanning(&mut self, underscanning: bool) {
-        if self.inner.supports_underscanning() {
-            self.inner.properties.is_underscanning = Some(underscanning);
-        }
+        self.properties.is_builtin.unwrap_or(false)
     }
 
     pub fn get_geometry(&self) -> Geometry {
         let (x, y) = self
             .logical_monitor
             .as_ref()
-            .and_then(|lm| lm.lock().ok().map(|lm| (lm.x(), lm.y())))
+            .map(|lm| lm.get_position())
             .unwrap_or((-1, -1));
 
-        let (width, height) = self
-            .try_get_optimal_mode()
-            .map(|mode| (mode.width, mode.height))
-            .unwrap_or_else(|| {
-                tracing::warn!("Monitor at {} has no modes?", self.inner.spec.connector);
-                (-1, -1)
-            });
+        let Resolution(width, height) = self.current_mode.get_resolution();
 
         Geometry {
             x,
@@ -161,160 +88,216 @@ impl CcDisplayMonitor {
         }
     }
 
-    pub fn get_min_freq(&self) -> i32 {
-        self.inner.get_min_freq()
-    }
-
-    pub fn get_modes(&self) -> &[DisplayMode] {
-        &self.inner.modes
-    }
-
-    pub fn get_current_mode(&self) -> Option<&DisplayMode> {
-        self.inner.modes.iter().find(|m| m.is_current())
-    }
-
-    pub fn get_preferred_mode(&self) -> Option<&DisplayMode> {
-        self.inner.modes.iter().find(|m| m.is_preferred())
-    }
-
-    pub fn try_get_optimal_mode(&self) -> Option<&DisplayMode> {
-        self.get_current_mode()
-            .or_else(|| self.get_preferred_mode())
-            .or_else(|| self.get_modes().first())
-    }
-
-    pub fn get_optimal_mode(&self) -> &DisplayMode {
-        self.try_get_optimal_mode().expect("display mode not found")
-    }
-
-    pub fn get_closest_mode(
-        &self,
-        width: i32,
-        height: i32,
-        refresh_rate: f64,
-        refresh_rate_mode: RefreshRateMode,
-        is_interlaced: bool,
-    ) -> Option<&DisplayMode> {
-        let similar = self.inner.modes.iter().filter(|mode| {
-            mode.width == width
-                && mode.height == height
-                && mode.get_refresh_rate_mode() == refresh_rate_mode
-        });
-        similar
-            .clone()
-            .find(|mode| {
-                approx_equal(mode.refresh_rate, refresh_rate)
-                    && mode.is_interlaced() == is_interlaced
-            })
-            .or_else(|| similar.max_by(compare_mode_preference))
-    }
-
-    pub fn get_compatible_clone_mode(
-        &self,
-        clone_width: i32,
-        clone_height: i32,
-    ) -> Option<&DisplayMode> {
-        self.inner
-            .modes
-            .iter()
-            .filter(|mode| mode.width == clone_width && mode.height == clone_height)
-            .max_by(compare_mode_preference)
-    }
-
-    pub fn get_scale(&self) -> f64 {
+    pub fn get_orientation(&self) -> Option<Orientation> {
         self.logical_monitor
             .as_ref()
-            .and_then(|lm| lm.lock().ok().map(|lm| lm.scale()))
-            .unwrap_or(1.0)
+            .map(|lm| lm.get_transform())
+            .map(|transform| Orientation {
+                transform,
+                ratio: DisplayRatio::from(self.get_geometry()),
+            })
     }
 
-    pub fn set_scale(&mut self, scale: f64) {
-        if let Some(mode) = self.try_get_optimal_mode()
-            && mode.is_supported_scale(scale)
-            && let Some(lm) = &self.logical_monitor
-            && let Ok(mut lm) = lm.lock()
-        {
-            lm.set_scale(scale);
+    pub fn get_display_name(&self) -> &str {
+        match &self.properties.display_name {
+            Some(display_name) if !display_name.is_empty() => display_name,
+            _ => &self.spec.connector,
         }
-    }
-
-    pub fn set_compatible_clone_mode(&mut self, clone_mode: &DisplayMode) -> Option<&DisplayMode> {
-        let best = self
-            .get_compatible_clone_mode(clone_mode.width, clone_mode.height)?
-            .clone();
-
-        self.set_mode(&best)
-    }
-
-    pub fn set_mode(&mut self, target_mode: &DisplayMode) -> Option<&DisplayMode> {
-        let closest_id = self
-            .get_closest_mode(
-                target_mode.width,
-                target_mode.height,
-                target_mode.refresh_rate,
-                target_mode.get_refresh_rate_mode(),
-                target_mode.is_interlaced(),
-            )
-            .map(|m| m.id.clone())?;
-
-        for mode in &mut self.inner.modes {
-            mode.properties.is_current = Some(mode.id == closest_id);
-        }
-
-        if let Some(lm) = &self.logical_monitor
-            && let Some(current_mode) = self.inner.modes.iter().find(|m| m.id == closest_id)
-            && !current_mode.is_supported_scale(self.get_scale())
-            && let Ok(mut lm) = lm.lock()
-        {
-            lm.set_scale(current_mode.preferred_scale);
-        }
-
-        self.inner.modes.iter().find(|m| m.id == closest_id)
-    }
-
-    pub fn set_refresh_rate_mode(
-        &mut self,
-        refresh_rate_mode: RefreshRateMode,
-    ) -> Option<&DisplayMode> {
-        let optimal = self.try_get_optimal_mode()?.clone();
-        let target = self
-            .get_closest_mode(
-                optimal.width,
-                optimal.height,
-                optimal.refresh_rate,
-                refresh_rate_mode,
-                optimal.is_interlaced(),
-            )?
-            .clone();
-
-        self.set_mode(&target)
-    }
-
-    pub fn set_position(&mut self, x: i32, y: i32) {
-        if let Some(lm) = &self.logical_monitor
-            && let Ok(mut lm) = lm.lock()
-        {
-            lm.set_position(x, y);
-        }
-    }
-
-    pub fn is_useful(&self) -> bool {
-        self.is_usable && self.is_active()
-    }
-
-    pub fn is_usable(&self) -> bool {
-        self.is_usable
-    }
-
-    pub fn set_usable(&mut self, is_usable: bool) {
-        self.is_usable = is_usable;
     }
 
     pub fn get_output_ui_name(&self) -> String {
-        self.inner.get_output_ui_name()
+        let display_name = self.get_display_name();
+
+        self.make_display_size_string()
+            .map(|size| format!("{display_name} ({size})"))
+            .unwrap_or(display_name.to_string())
     }
 
-    pub(crate) fn set_logical_monitor(&mut self, logical_monitor: Option<LogicalMonitorHandle>) {
-        self.logical_monitor = logical_monitor;
+    pub fn get_current_mode(&self) -> &Arc<CcDisplayMode> {
+        &self.current_mode
+    }
+
+    pub fn get_modes(&self) -> &[Arc<CcDisplayMode>] {
+        &self.modes
+    }
+
+    fn make_display_size_string(&self) -> Option<String> {
+        match (self.properties.width_mm, self.properties.height_mm) {
+            (Some(w), Some(h)) if w > 0 && h > 0 => {
+                let d: f64 = (w.pow(2) + h.pow(2)).into();
+
+                Some(Self::diagonal_to_str(d / 25.4))
+            }
+            _ => None,
+        }
+    }
+
+    fn diagonal_to_str(d: f64) -> String {
+        KNOWN_DIAGONALS
+            .iter()
+            .find(|&known_d| (*known_d - d).abs() < 0.1)
+            .map(|&known_d| format!("{:.1}\"", known_d))
+            .unwrap_or_else(|| format!("{:.0}\"", d + 0.5))
+    }
+
+    pub fn is_hdr(&self) -> Option<bool> {
+        self.properties
+            .supported_color_modes
+            .as_ref()
+            .map(|color_modes| color_modes.contains(&ColorMode::BT2100))
+            .and_then(|has_hdr| {
+                if has_hdr {
+                    self.properties
+                        .color_mode
+                        .map(|color_mode| color_mode == ColorMode::BT2100)
+                } else {
+                    None
+                }
+            })
+    }
+
+    pub fn is_underscanning(&self) -> Option<bool> {
+        self.properties.is_underscanning
+    }
+
+    pub fn get_supported_refresh_rates(
+        &self,
+        current_mode: &Arc<CcDisplayMode>,
+    ) -> Vec<RefreshRate> {
+        let mut compatible_modes = self
+            .modes
+            .iter()
+            .filter(|mode| mode.get_resolution() == current_mode.get_resolution())
+            .filter(|mode| mode.get_refresh_rate_mode() == current_mode.get_refresh_rate_mode())
+            .collect::<Vec<_>>();
+
+        compatible_modes.sort_by(|a, b| {
+            if a.get_refresh_rate_mode() != b.get_refresh_rate_mode() {
+                if a.get_refresh_rate_mode() == RefreshRateMode::Variable {
+                    return Ordering::Less;
+                } else {
+                    return Ordering::Greater;
+                }
+            }
+
+            let delta = (b.get_refresh_rate() - a.get_refresh_rate()) * 1000.0;
+
+            if delta > 0.0 {
+                Ordering::Greater
+            } else if delta < 0.0 {
+                Ordering::Less
+            } else {
+                Ordering::Equal
+            }
+        });
+        compatible_modes.dedup_by(|a, b| a.get_refresh_rate() == b.get_refresh_rate());
+
+        compatible_modes
+            .into_iter()
+            .map(|mode| mode.get_refresh_rate())
+            .collect::<Vec<_>>()
+    }
+
+    pub fn get_supported_resolutions(&self) -> Vec<Resolution> {
+        let mut resolutions = self
+            .modes
+            .iter()
+            .map(|mode| mode.get_resolution())
+            .collect::<Vec<_>>();
+
+        resolutions.dedup();
+        resolutions.sort_by_key(|resolution| std::cmp::Reverse(resolution.get_area()));
+
+        resolutions
+    }
+
+    pub fn get_orientations(&self) -> Vec<Orientation> {
+        ROTATIONS
+            .map(|transform| Orientation {
+                transform,
+                ratio: DisplayRatio::from(self.get_geometry()),
+            })
+            .to_vec()
+    }
+}
+
+pub struct Geometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DisplayRatio {
+    Square,
+    Portrait,
+    Landscape,
+}
+
+impl From<Geometry> for DisplayRatio {
+    fn from(value: Geometry) -> Self {
+        if value.width > value.height {
+            Self::Landscape
+        } else if value.width < value.height {
+            Self::Portrait
+        } else {
+            Self::Square
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Orientation {
+    ratio: DisplayRatio,
+    transform: Transform,
+}
+
+impl Display for Orientation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let label = match self.ratio {
+            DisplayRatio::Landscape => match self.transform {
+                Transform::Normal | Transform::Flipped180 => {
+                    dgettext("Display rotation", "Landscape")
+                }
+                Transform::Rotate90 | Transform::Flipped270 => {
+                    dgettext("Display rotation", "Portrait Right")
+                }
+                Transform::Rotate270 | Transform::Flipped90 => {
+                    dgettext("Display rotation", "Portrait Left")
+                }
+                Transform::Rotate180 | Transform::Flipped => {
+                    dgettext("Display rotation", "Landscape (flipped)")
+                }
+            },
+            DisplayRatio::Portrait => match self.transform {
+                Transform::Normal | Transform::Flipped180 => {
+                    dgettext("Display rotation", "Portrait")
+                }
+                Transform::Rotate90 | Transform::Flipped270 => {
+                    dgettext("Display rotation", "Landscape Right")
+                }
+                Transform::Rotate270 | Transform::Flipped90 => {
+                    dgettext("Display rotation", "Landscape Left")
+                }
+                Transform::Rotate180 | Transform::Flipped => {
+                    dgettext("Display rotation", "Portrait (flipped)")
+                }
+            },
+            DisplayRatio::Square => match self.transform {
+                Transform::Normal | Transform::Flipped180 => {
+                    dgettext("Display rotation", "Upright")
+                }
+                Transform::Rotate90 | Transform::Flipped270 => {
+                    dgettext("Display rotation", "Right")
+                }
+                Transform::Rotate270 | Transform::Flipped90 => dgettext("Display rotation", "Left"),
+                Transform::Rotate180 | Transform::Flipped => {
+                    dgettext("Display rotation", "Flipped")
+                }
+            },
+        };
+
+        f.write_str(&label)
     }
 }

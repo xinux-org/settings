@@ -4824,6 +4824,7 @@ dependencies = [
  "better-tracing",
  "clap 4.6.1",
  "enquote",
+ "enumflags2",
  "futures-util",
  "gettext-rs",
  "gio-unix",

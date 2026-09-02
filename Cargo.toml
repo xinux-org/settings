@@ -73,3 +73,4 @@ rand = "0.10.1"
 clap = { version = "4.1", features = [ "derive", "cargo" ] }
 struct-patch = "0.13.2"
 strum = { version = "0.28.0", features = ["derive"] }
+enumflags2 = "0.7.12"

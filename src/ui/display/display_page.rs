@@ -32,18 +32,18 @@ impl AsyncComponent for DisplayPage {
         root: Self::Root,
         _sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
-        let mut model = Self::default();
+        let panel = DisplayConfigManager::new()
+            .await
+            .inspect_err(|err| tracing::warn!("display config service unavailable: {err}"))
+            .ok()
+            .map(|manager| DisplayModel::builder().launch(manager).detach());
+
+        let model = DisplayPage { panel };
+
         let widgets = view_output!();
 
-        match DisplayConfigManager::new().await {
-            Ok(manager) => {
-                let panel = DisplayModel::builder().launch(manager).detach();
-                root.set_child(Some(panel.widget()));
-                model.panel = Some(panel);
-            }
-            Err(error) => {
-                tracing::warn!("display config service unavailable: {error}");
-            }
+        if let Some(panel) = model.panel.as_ref() {
+            root.set_child(Some(panel.widget()));
         }
 
         AsyncComponentParts { model, widgets }
