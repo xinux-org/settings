@@ -1,15 +1,25 @@
+use std::sync::Arc;
+
 use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 
-use super::{DisplayConfigManager, DisplayConfigType, display_settings::DisplaySettingsModel};
+use super::{
+    DisplayConfigManager, DisplayConfigType,
+    apply::{Apply, ApplyMsg},
+    display_settings::{DisplaySettingsModel, DisplaySettingsOutput},
+};
 
 #[derive(Debug)]
-pub enum DisplayMsg {}
+pub enum DisplayMsg {
+    DisplaySettingsChanged(),
+}
 
 #[derive(Debug)]
 pub struct DisplayModel {
     #[allow(dead_code)]
-    manager: DisplayConfigManager,
+    manager: Arc<DisplayConfigManager>,
+
+    apply: AsyncController<Apply>,
     display_settings: Controller<DisplaySettingsModel>,
 }
 
@@ -29,8 +39,7 @@ impl SimpleAsyncComponent for DisplayModel {
 
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
-                    #[name(displays_titlebar)]
-                    add_top_bar = &adw::HeaderBar { set_show_title: true },
+                    add_top_bar = model.apply.widget(),
 
                     #[wrap(Some)]
                     set_content = &adw::PreferencesPage {
@@ -47,13 +56,23 @@ impl SimpleAsyncComponent for DisplayModel {
     async fn init(
         init: Self::Init,
         root: Self::Root,
-        _sender: AsyncComponentSender<Self>,
+        sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
-        let DisplayConfigType::Single(monitor) = init.get_current_config().get_monitor();
+        let manager = Arc::new(init);
+
+        let DisplayConfigType::Single(monitor) = manager.get_current_config().get_monitor();
 
         let model = DisplayModel {
-            manager: init,
-            display_settings: DisplaySettingsModel::builder().launch(monitor).detach(),
+            manager: Arc::clone(&manager),
+            apply: Apply::builder().launch(manager).detach(),
+            display_settings: DisplaySettingsModel::builder().launch(monitor).forward(
+                sender.input_sender(),
+                |output| match output {
+                    DisplaySettingsOutput::SettingsChanged() => {
+                        DisplayMsg::DisplaySettingsChanged()
+                    }
+                },
+            ),
         };
 
         let widgets = view_output!();
@@ -62,7 +81,11 @@ impl SimpleAsyncComponent for DisplayModel {
     }
 
     async fn update(&mut self, message: Self::Input, _sender: AsyncComponentSender<Self>) {
-        match message {}
+        match message {
+            DisplayMsg::DisplaySettingsChanged() => {
+                self.apply.sender().emit(ApplyMsg::SettingsChanged());
+            }
+        }
     }
 }
 

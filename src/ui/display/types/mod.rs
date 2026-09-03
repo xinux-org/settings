@@ -1,3 +1,4 @@
+pub mod apply_monitors;
 pub mod color_mode;
 pub mod display_mode;
 pub mod display_state;

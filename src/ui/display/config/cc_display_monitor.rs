@@ -63,12 +63,20 @@ impl CcDisplayMonitor {
             .map(Arc::clone)
     }
 
+    pub fn is_for_lease(&self) -> bool {
+        self.properties.is_for_lease.unwrap_or_default()
+    }
+
     pub fn get_logical_monitor(&self) -> Option<&Arc<CcLogicalMonitor>> {
         self.logical_monitor.as_ref()
     }
 
     pub fn is_builtin(&self) -> bool {
         self.properties.is_builtin.unwrap_or(false)
+    }
+
+    pub fn get_spec(&self) -> &MonitorSpec {
+        &self.spec
     }
 
     pub fn get_geometry(&self) -> Geometry {
@@ -111,6 +119,10 @@ impl CcDisplayMonitor {
         self.make_display_size_string()
             .map(|size| format!("{display_name} ({size})"))
             .unwrap_or(display_name.to_string())
+    }
+
+    pub fn get_color_mode(&self) -> ColorMode {
+        self.properties.color_mode.unwrap_or_default()
     }
 
     pub fn get_current_mode(&self) -> &Arc<CcDisplayMode> {

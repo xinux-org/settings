@@ -79,11 +79,16 @@ pub enum DisplaySettingsMsg {
     SelectOrientation(usize),
 }
 
+#[derive(Debug)]
+pub enum DisplaySettingsOutput {
+    SettingsChanged(),
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsModel {
     type Init = Arc<CcDisplayMonitor>;
     type Input = DisplaySettingsMsg;
-    type Output = ();
+    type Output = DisplaySettingsOutput;
 
     view! {
         #[root]
@@ -180,7 +185,7 @@ impl SimpleComponent for DisplaySettingsModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             DisplaySettingsMsg::UpdateSettings(settings) => {
                 self.settings.apply(settings);
@@ -243,6 +248,10 @@ impl SimpleComponent for DisplaySettingsModel {
                 });
             }
         };
+
+        sender
+            .output_sender()
+            .emit(DisplaySettingsOutput::SettingsChanged());
     }
 }
 

@@ -5,6 +5,7 @@ pub use display_page::*;
 pub use display_panel::*;
 pub use types::*;
 
+mod apply;
 mod config;
 mod display_config;
 mod display_config_manager;
