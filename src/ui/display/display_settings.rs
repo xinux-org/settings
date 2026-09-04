@@ -13,14 +13,12 @@ use super::{RefreshRate, Resolution, Scale};
 pub struct DisplaySettings {
     pub scale: Scale,
     pub resolution: Resolution,
+    pub orientation: Orientation,
+    pub refresh_rate: RefreshRate,
     #[patch(skip_wrap)]
     pub hdr: Option<bool>,
     #[patch(skip_wrap)]
     pub underscanning: Option<bool>,
-    #[patch(skip_wrap)]
-    pub orientation: Option<Orientation>,
-    #[patch(skip_wrap)]
-    pub refresh_rate: Option<RefreshRate>,
 }
 
 impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
@@ -37,8 +35,7 @@ impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
             orientation: value.get_orientation(),
             underscanning: value.is_underscanning(),
             resolution: current_mode.get_resolution(),
-            // TODO: in cloning mode this will None
-            refresh_rate: Some(current_mode.get_refresh_rate()),
+            refresh_rate: current_mode.get_refresh_rate(),
         }
     }
 }
@@ -140,7 +137,7 @@ impl SimpleComponent for DisplaySettingsModel {
 
                     #[watch]
                     #[block_signal(underscanning_handler)]
-                    set_active: model.settings.underscanning.as_ref().is_some_and(|x| *x),
+                    set_active: model.settings.underscanning.is_some_and(|x| x),
 
                     set_width_request: 100,
                     set_use_underline: true,
@@ -270,11 +267,10 @@ impl DisplaySettingsModel {
         DisplaySettingsControllers {
             orientation: SimpleComboRow::builder()
                 .launch(SimpleComboRow {
-                    active_index: lists.orientation_list.iter().position(|orientation| {
-                        monitor_orientation
-                            .as_ref()
-                            .is_some_and(|monitor_orientation| monitor_orientation == orientation)
-                    }),
+                    active_index: lists
+                        .orientation_list
+                        .iter()
+                        .position(|&orientation| orientation == monitor_orientation),
                     variants: lists.orientation_list.clone(),
                 })
                 .forward(sender.input_sender(), DisplaySettingsMsg::SelectOrientation),
@@ -306,7 +302,7 @@ impl DisplaySettingsModel {
         SimpleComboRow {
             active_index: variants
                 .iter()
-                .position(|refresh_rate_var| *refresh_rate_var == refresh_rate),
+                .position(|&refresh_rate_var| refresh_rate_var == refresh_rate),
             variants,
         }
     }
@@ -318,7 +314,7 @@ impl DisplaySettingsModel {
         SimpleComboRow {
             active_index: variants
                 .iter()
-                .position(|resolution_var| *resolution_var == resolution),
+                .position(|&resolution_var| resolution_var == resolution),
             variants,
         }
     }
@@ -327,7 +323,7 @@ impl DisplaySettingsModel {
         SimpleComboRow {
             active_index: variants
                 .iter()
-                .position(|scale_var| scale.is_some_and(|scale| scale == *scale_var)),
+                .position(|&scale_var| scale.is_some_and(|scale| scale == scale_var)),
             variants,
         }
     }

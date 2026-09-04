@@ -14,10 +14,6 @@ impl From<LogicalMonitor> for CcLogicalMonitor {
 }
 
 impl CcLogicalMonitor {
-    pub fn get_position(&self) -> (i32, i32) {
-        (self.inner.x, self.inner.y)
-    }
-
     pub fn get_scale(&self) -> Scale {
         Scale::from(self.inner.scale)
     }
