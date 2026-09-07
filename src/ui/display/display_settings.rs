@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, RwLockReadGuard};
 
 use gettextrs::{dgettext, gettext};
 use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::config::{CcDisplayMonitor, Orientation};
+use super::config::{CcDisplayMonitor, GetList, Orientation};
 use super::{RefreshRate, Resolution, Scale};
 
 #[derive(Debug, Clone, PartialEq, Patch)]
@@ -21,8 +21,8 @@ pub struct DisplaySettings {
     pub underscanning: Option<bool>,
 }
 
-impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
-    fn from(value: &Arc<CcDisplayMonitor>) -> Self {
+impl From<&RwLockReadGuard<'_, CcDisplayMonitor>> for DisplaySettings {
+    fn from(value: &RwLockReadGuard<'_, CcDisplayMonitor>) -> Self {
         let current_mode = value.get_current_mode();
         let scale = value
             .get_logical_monitor()
@@ -42,7 +42,7 @@ impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
 
 #[derive(Debug)]
 pub struct DisplaySettingsModel {
-    monitor: Arc<CcDisplayMonitor>,
+    monitor: Arc<RwLock<CcDisplayMonitor>>,
 
     settings: DisplaySettings,
 
@@ -78,7 +78,7 @@ pub enum DisplaySettingsMsg {
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsModel {
-    type Init = Arc<CcDisplayMonitor>;
+    type Init = Arc<RwLock<CcDisplayMonitor>>;
     type Input = DisplaySettingsMsg;
     type Output = ();
 
@@ -162,13 +162,18 @@ impl SimpleComponent for DisplaySettingsModel {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let lists = Self::build_lists(&init);
-        let controllers = Self::build_controllers(&init, &lists, sender.clone());
+        let monitor = init.read().unwrap();
+
+        let lists = Self::build_lists(&monitor);
+        let settings = DisplaySettings::from(&monitor);
+        let controllers = Self::build_controllers(&monitor, &lists, sender.clone());
+
+        drop(monitor);
 
         let model = DisplaySettingsModel {
             lists,
+            settings,
             controllers,
-            settings: DisplaySettings::from(&init),
             monitor: init,
         };
 
@@ -193,39 +198,20 @@ impl SimpleComponent for DisplaySettingsModel {
 
                 let resolution = self.lists.resolution_list[index];
 
-                if let Some(current_mode) = self
-                    .monitor
-                    .get_modes()
-                    .iter()
-                    .find(|&mode| mode.get_resolution() == resolution)
-                {
-                    let refresh_rate = current_mode.get_refresh_rate();
+                if let Ok(mut monitor) = self.monitor.write() {
+                    monitor.set_current_mode(resolution);
 
-                    patch.refresh_rate = Some(refresh_rate);
+                    let current_mode = monitor.get_current_mode();
 
-                    self.lists.refresh_rate_list =
-                        self.monitor.get_supported_refresh_rates(current_mode);
-                    self.controllers
-                        .refresh_rate
-                        .emit(SimpleComboRowMsg::UpdateData(Self::build_refresh_rate_row(
-                            refresh_rate,
-                            self.lists.refresh_rate_list.clone(),
-                        )));
-
-                    let scale = current_mode.get_preferred_scale();
-
-                    patch.scale = Some(scale);
-
-                    self.lists.scale_list = current_mode.get_supported_scales();
-                    self.controllers
-                        .scale_combo
-                        .emit(SimpleComboRowMsg::UpdateData(Self::build_scale_combo_row(
-                            Some(scale),
-                            self.lists.scale_list.clone(),
-                        )));
+                    patch.resolution = Some(resolution);
+                    patch.scale = Some(current_mode.get_preferred_scale());
+                    patch.refresh_rate = Some(current_mode.get_refresh_rate());
                 }
 
                 self.settings.apply(patch);
+
+                self.update_lists();
+                self.update_controllers();
             }
             DisplaySettingsMsg::SelectRefreshRate(index) => {
                 self.settings.apply(DisplaySettingsPatch {
@@ -244,19 +230,19 @@ impl SimpleComponent for DisplaySettingsModel {
 }
 
 impl DisplaySettingsModel {
-    fn build_lists(monitor: &Arc<CcDisplayMonitor>) -> DisplaySettingsLists {
+    fn build_lists(monitor: &CcDisplayMonitor) -> DisplaySettingsLists {
         let current_mode = monitor.get_current_mode();
 
         DisplaySettingsLists {
-            orientation_list: monitor.get_orientations(),
-            scale_list: current_mode.get_supported_scales(),
-            resolution_list: monitor.get_supported_resolutions(),
-            refresh_rate_list: monitor.get_supported_refresh_rates(monitor.get_current_mode()),
+            scale_list: current_mode.get_list(),
+            resolution_list: monitor.get_list(),
+            orientation_list: monitor.get_list(),
+            refresh_rate_list: monitor.get_list(),
         }
     }
 
     fn build_controllers(
-        monitor: &Arc<CcDisplayMonitor>,
+        monitor: &CcDisplayMonitor,
         lists: &DisplaySettingsLists,
         sender: ComponentSender<Self>,
     ) -> DisplaySettingsControllers {
@@ -288,7 +274,7 @@ impl DisplaySettingsModel {
                 .forward(sender.input_sender(), DisplaySettingsMsg::SelectRefreshRate),
             scale_combo: SimpleComboRow::builder()
                 .launch(Self::build_scale_combo_row(
-                    lm.map(|lm| lm.get_scale()),
+                    lm.map(|lm| lm.get_scale()).unwrap_or_default(),
                     lists.scale_list.clone(),
                 ))
                 .forward(sender.input_sender(), DisplaySettingsMsg::SelectScale),
@@ -319,12 +305,36 @@ impl DisplaySettingsModel {
         }
     }
 
-    fn build_scale_combo_row(scale: Option<Scale>, variants: Vec<Scale>) -> SimpleComboRow<Scale> {
+    fn build_scale_combo_row(scale: Scale, variants: Vec<Scale>) -> SimpleComboRow<Scale> {
         SimpleComboRow {
-            active_index: variants
-                .iter()
-                .position(|&scale_var| scale.is_some_and(|scale| scale == scale_var)),
+            active_index: variants.iter().position(|&scale_var| scale_var == scale),
             variants,
         }
+    }
+
+    fn update_lists(&mut self) {
+        let Ok(monitor) = self.monitor.read() else {
+            return;
+        };
+
+        self.lists.scale_list = monitor.get_list();
+        self.lists.refresh_rate_list = monitor.get_list();
+    }
+
+    fn update_controllers(&mut self) {
+        let scale_row =
+            Self::build_scale_combo_row(self.settings.scale, self.lists.scale_list.clone());
+        let refresh_rate_row = Self::build_refresh_rate_row(
+            self.settings.refresh_rate,
+            self.lists.refresh_rate_list.clone(),
+        );
+
+        self.controllers
+            .scale_combo
+            .emit(SimpleComboRowMsg::UpdateData(scale_row));
+
+        self.controllers
+            .refresh_rate
+            .emit(SimpleComboRowMsg::UpdateData(refresh_rate_row));
     }
 }

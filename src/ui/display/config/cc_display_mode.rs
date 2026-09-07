@@ -2,6 +2,8 @@ use std::{cmp, fmt::Display};
 
 use crate::ui::display::display_mode::{DisplayMode, RefreshRateMode};
 
+use super::GetList;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CcDisplayMode {
     inner: DisplayMode,
@@ -20,6 +22,10 @@ impl CcDisplayMode {
 
     pub fn is_current(&self) -> bool {
         self.inner.properties.is_current.unwrap_or_default()
+    }
+
+    pub fn set_current(&mut self, is: bool) {
+        self.inner.properties.is_current = Some(is);
     }
 
     pub fn is_preferred(&self) -> bool {
@@ -43,10 +49,14 @@ impl CcDisplayMode {
     }
 
     pub fn get_preferred_scale(&self) -> Scale {
+        println!("{:?}", self.inner.preferred_scale);
+
         Scale::from(self.inner.preferred_scale)
     }
+}
 
-    pub fn get_supported_scales(&self) -> Vec<Scale> {
+impl GetList<Scale> for CcDisplayMode {
+    fn get_list(&self) -> Vec<Scale> {
         self.inner
             .supported_scales
             .iter()
@@ -89,24 +99,14 @@ impl Resolution {
             _ => None,
         }
     }
-
-    pub fn get_area(&self) -> i32 {
-        self.0 * self.1
-    }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RefreshRate(pub f64);
 
 impl Display for RefreshRate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{:.2} Hz", self.0))
-    }
-}
-
-impl PartialEq for RefreshRate {
-    fn eq(&self, other: &Self) -> bool {
-        (self.0 - other.0).abs() <= f64::max(self.0, other.0) * 0.01
     }
 }
 
@@ -130,7 +130,7 @@ impl Ord for RefreshRate {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Scale(pub f64);
 
 impl From<f64> for Scale {
@@ -141,12 +141,12 @@ impl From<f64> for Scale {
 
 impl Display for Scale {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:.0} %", self.0 * 100.0))
+        f.write_fmt(format_args!("{:.0} %", (self.0 * 100.0).trunc()))
     }
 }
 
-impl PartialEq for Scale {
-    fn eq(&self, other: &Self) -> bool {
-        (self.0 - other.0).abs() <= f64::max(self.0, other.0) * 0.01
+impl Default for Scale {
+    fn default() -> Self {
+        Self(1.0)
     }
 }
