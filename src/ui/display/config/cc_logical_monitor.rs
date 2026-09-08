@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::RwLockReadGuard;
 
 use crate::ui::display::{
     CcDisplayMonitor, Scale, apply_monitors, logical_monitor::LogicalMonitor,
@@ -29,7 +29,14 @@ impl CcLogicalMonitor {
         self.inner.monitors.contains(spec)
     }
 
-    pub fn into_apply(&self, monitors: &[Arc<CcDisplayMonitor>]) -> apply_monitors::LogicalMonitor {
+    pub fn set_scale(&mut self, scale: Scale) {
+        self.inner.scale = scale.0;
+    }
+
+    pub fn into_apply(
+        &self,
+        monitors: &[RwLockReadGuard<'_, CcDisplayMonitor>],
+    ) -> apply_monitors::LogicalMonitor {
         apply_monitors::LogicalMonitor {
             x: self.inner.x,
             y: self.inner.y,

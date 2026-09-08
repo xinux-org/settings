@@ -10,14 +10,20 @@ use super::{
 };
 
 #[derive(Debug)]
+pub enum DisplayMsg {
+    DisplaySettingsChanged(),
+}
+
+#[derive(Debug)]
 pub struct DisplayModel {
+    apply: AsyncController<Apply>,
     display_settings: Controller<DisplaySettingsModel>,
 }
 
 #[relm4::component(pub async)]
 impl SimpleAsyncComponent for DisplayModel {
     type Init = DisplayConfigManager;
-    type Input = ();
+    type Input = DisplayMsg;
     type Output = ();
 
     view! {
@@ -54,7 +60,15 @@ impl SimpleAsyncComponent for DisplayModel {
         let DisplayConfigType::Single(monitor) = manager.get_current_config().get_monitor();
 
         let model = DisplayModel {
-            display_settings: DisplaySettingsModel::builder().launch(monitor).detach(),
+            apply: Apply::builder().launch(manager).detach(),
+            display_settings: DisplaySettingsModel::builder().launch(monitor).forward(
+                sender.input_sender(),
+                |output| match output {
+                    DisplaySettingsOutput::SettingsChanged() => {
+                        DisplayMsg::DisplaySettingsChanged()
+                    }
+                },
+            ),
         };
 
         let widgets = view_output!();

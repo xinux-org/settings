@@ -16,16 +16,17 @@ impl From<DisplayMode> for CcDisplayMode {
 }
 
 impl CcDisplayMode {
+    pub fn is_compatible(&self, other: &Self) -> bool {
+        self.get_resolution() == other.get_resolution()
+            && self.get_refresh_rate_mode() == other.get_refresh_rate_mode()
+    }
+
     pub fn get_id(&self) -> &str {
         &self.inner.id
     }
 
     pub fn is_current(&self) -> bool {
         self.inner.properties.is_current.unwrap_or_default()
-    }
-
-    pub fn set_current(&mut self, is: bool) {
-        self.inner.properties.is_current = Some(is);
     }
 
     pub fn is_preferred(&self) -> bool {
@@ -52,6 +53,10 @@ impl CcDisplayMode {
         println!("{:?}", self.inner.preferred_scale);
 
         Scale::from(self.inner.preferred_scale)
+    }
+
+    pub fn set_current(&mut self, is: bool) {
+        self.inner.properties.is_current = Some(is);
     }
 }
 

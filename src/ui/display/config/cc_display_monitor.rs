@@ -1,11 +1,12 @@
 use gettextrs::dgettext;
-use std::{cmp, fmt::Display, sync::Arc};
+use std::{cmp, fmt::Display};
 
 use crate::ui::display::{
-    RefreshRate, Resolution, Scale,
-    color_mode::ColorMode,
+    RefreshRate, Resolution, Scale, color_mode::ColorMode, transform::Transform,
+};
+use crate::ui::display::{
     monitor::{Monitor, MonitorProperties},
-    transform::Transform,
+    monitor_spec::MonitorSpec,
 };
 
 use super::{CcDisplayMode, CcLogicalMonitor, GetList};
@@ -17,17 +18,19 @@ const ROTATIONS: [Transform; 4] = [
     Transform::Rotate270,
 ];
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CcDisplayMonitor {
+    spec: MonitorSpec,
     modes: Vec<CcDisplayMode>,
     properties: MonitorProperties,
-    logical_monitor: Option<Arc<CcLogicalMonitor>>,
+    logical_monitor: Option<CcLogicalMonitor>,
 }
 
 impl CcDisplayMonitor {
-    pub fn new(monitor: Monitor, logical_monitor: Option<Arc<CcLogicalMonitor>>) -> Self {
+    pub fn new(monitor: Monitor, logical_monitor: Option<CcLogicalMonitor>) -> Self {
         Self {
             logical_monitor,
+            spec: monitor.spec,
             properties: monitor.properties,
             modes: monitor
                 .modes
@@ -37,7 +40,7 @@ impl CcDisplayMonitor {
         }
     }
 
-    pub fn get_logical_monitor(&self) -> Option<&Arc<CcLogicalMonitor>> {
+    pub fn get_logical_monitor(&self) -> Option<&CcLogicalMonitor> {
         self.logical_monitor.as_ref()
     }
 
@@ -58,14 +61,16 @@ impl CcDisplayMonitor {
             .unwrap_or(&self.modes[0])
     }
 
-    pub fn set_current_mode(&mut self, resolution: Resolution) {
-        self.modes.iter_mut().for_each(|mode| {
-            mode.set_current(mode.get_resolution() == resolution);
-        });
-    }
-
     pub fn get_modes(&self) -> &[CcDisplayMode] {
         &self.modes
+    }
+
+    pub fn get_color_mode(&self) -> ColorMode {
+        self.properties.color_mode.unwrap_or_default()
+    }
+
+    pub fn get_spec(&self) -> &MonitorSpec {
+        &self.spec
     }
 
     pub fn is_hdr(&self) -> Option<bool> {
@@ -84,8 +89,59 @@ impl CcDisplayMonitor {
             })
     }
 
+    pub fn is_builtin(&self) -> bool {
+        self.properties.is_builtin.unwrap_or_default()
+    }
+
+    pub fn is_for_lease(&self) -> bool {
+        self.properties.is_for_lease.unwrap_or_default()
+    }
+
     pub fn is_underscanning(&self) -> Option<bool> {
         self.properties.is_underscanning
+    }
+
+    pub fn set_current_mode(&mut self, resolution: Resolution) {
+        self.modes.iter_mut().for_each(|mode| {
+            mode.set_current(mode.get_resolution() == resolution);
+        });
+    }
+
+    pub fn set_color_mode(&mut self, is_hdr: bool) {
+        if self
+            .properties
+            .supported_color_modes
+            .as_ref()
+            .is_some_and(|color_modes| color_modes.contains(&ColorMode::BT2100))
+        {
+            self.properties.color_mode = Some(if is_hdr {
+                ColorMode::BT2100
+            } else {
+                ColorMode::Default
+            });
+        }
+    }
+
+    pub fn set_refresh_rate(&mut self, refresh_rate: RefreshRate) {
+        let current_mode = self.get_current_mode().clone();
+
+        self.modes.iter_mut().for_each(|mode| {
+            if mode.is_compatible(&current_mode) {
+                mode.set_current(mode.get_refresh_rate() == refresh_rate);
+            }
+        });
+    }
+
+    pub fn set_scale(&mut self, scale: Scale) {
+        if let Some(lm) = self.logical_monitor.as_mut() {
+            lm.set_scale(scale)
+        }
+    }
+
+    pub fn set_underscanning(&mut self, is_underscanning: bool) {
+        if self.properties.is_underscanning.is_some() {
+            self.properties.is_underscanning = Some(is_underscanning);
+        }
     }
 }
 
@@ -122,8 +178,7 @@ impl GetList<RefreshRate> for CcDisplayMonitor {
         let mut refresh_rates = self
             .modes
             .iter()
-            .filter(|mode| mode.get_resolution() == current_mode.get_resolution())
-            .filter(|mode| mode.get_refresh_rate_mode() == current_mode.get_refresh_rate_mode())
+            .filter(|mode| mode.is_compatible(current_mode))
             .map(|mode| mode.get_refresh_rate())
             .collect::<Vec<_>>();
 

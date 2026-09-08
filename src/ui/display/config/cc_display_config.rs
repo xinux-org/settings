@@ -16,7 +16,6 @@ pub enum DisplayConfigType {
 pub struct CcDisplayConfig {
     serial: u32,
     properties: DisplayStateProperties,
-    monitors: Vec<Arc<CcDisplayMonitor>>,
     monitors: Vec<Arc<RwLock<CcDisplayMonitor>>>,
 }
 
@@ -26,7 +25,6 @@ impl From<DisplayState> for CcDisplayConfig {
             .logical_monitors
             .into_iter()
             .map(CcLogicalMonitor::from)
-            .map(Arc::new)
             .collect::<Vec<_>>();
 
         let monitors = inner
@@ -60,38 +58,32 @@ impl CcDisplayConfig {
             return DisplayConfigType::Single(Arc::clone(monitor));
         }
 
-        if let Some(builtin) = self.monitors.iter().find(|monitor| monitor.is_builtin())
-            && builtin.get_logical_monitor().is_some()
+        if let Some(index) = self
+            .monitors
+            .iter()
+            .enumerate()
+            .filter_map(|(i, m)| m.read().ok().map(|m| (i, m)))
+            .find(|(_, m)| m.is_builtin())
+            .map(|(i, _)| i)
         {
-            return DisplayConfigType::Single(Arc::clone(builtin));
+            return DisplayConfigType::Single(Arc::clone(&self.monitors[index]));
         };
 
         unimplemented!()
     }
 
     pub fn build_apply_parameters<'a>(&'a self, method: ApplyMethod) -> ApplyMonitorsConfig<'a> {
-        let monitors_for_lease = self
+        let read_monitors = self
             .monitors
             .iter()
-            .filter(|monitor| monitor.is_for_lease())
+            .filter_map(|monitor| monitor.read().ok())
             .collect::<Vec<_>>();
 
-        let logical_monitors = self
-            .logical_monitors
+        let logical_monitors = read_monitors
             .iter()
-            .filter(|&lm| {
-                !monitors_for_lease.iter().any(|for_lease| {
-                    for_lease
-                        .get_logical_monitor()
-                        .is_some_and(|for_lease| Arc::ptr_eq(lm, for_lease))
-                })
-            })
-            .map(|lm| lm.into_apply(&self.monitors))
-            .collect::<Vec<_>>();
-
-        let monitors_for_lease = monitors_for_lease
-            .iter()
-            .map(|&monitor| monitor.get_spec())
+            // .filter(|monitor| !monitors_for_lease.contains(&monitor))
+            .filter_map(|monitor| monitor.get_logical_monitor())
+            .map(|lm| lm.into_apply(read_monitors.as_slice()))
             .collect::<Vec<_>>();
 
         ApplyMonitorsConfig {
@@ -99,7 +91,7 @@ impl CcDisplayConfig {
             logical_monitors,
             serial: self.serial,
             properties: ApplyMonitorsConfigProperties {
-                monitors_for_lease,
+                monitors_for_lease: vec![],
                 layout_mode: self.properties.layout_mode,
             },
         }
