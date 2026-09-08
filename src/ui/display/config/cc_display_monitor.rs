@@ -1,18 +1,14 @@
 use gettextrs::dgettext;
-use std::{cmp::Ordering, fmt::Display, sync::Arc};
+use std::{cmp, fmt::Display, sync::Arc};
 
 use crate::ui::display::{
-    RefreshRate, Resolution,
+    RefreshRate, Resolution, Scale,
     color_mode::ColorMode,
-    display_mode::RefreshRateMode,
     monitor::{Monitor, MonitorProperties},
-    monitor_spec::MonitorSpec,
     transform::Transform,
 };
 
-use super::{CcDisplayMode, CcLogicalMonitor};
-
-pub const KNOWN_DIAGONALS: [f64; 3] = [12.1, 13.3, 15.6];
+use super::{CcDisplayMode, CcLogicalMonitor, GetList};
 
 const ROTATIONS: [Transform; 4] = [
     Transform::Normal,
@@ -23,133 +19,53 @@ const ROTATIONS: [Transform; 4] = [
 
 #[derive(Debug, Clone)]
 pub struct CcDisplayMonitor {
-    spec: MonitorSpec,
+    modes: Vec<CcDisplayMode>,
     properties: MonitorProperties,
-    modes: Vec<Arc<CcDisplayMode>>,
-    current_mode: Arc<CcDisplayMode>,
     logical_monitor: Option<Arc<CcLogicalMonitor>>,
 }
 
 impl CcDisplayMonitor {
     pub fn new(monitor: Monitor, logical_monitor: Option<Arc<CcLogicalMonitor>>) -> Self {
-        let modes = monitor
-            .modes
-            .into_iter()
-            .map(CcDisplayMode::from)
-            .map(Arc::new)
-            .collect::<Vec<_>>();
-
-        let current_mode = modes
-            .iter()
-            .find(|&mode| mode.is_current())
-            .unwrap_or(&modes[0]);
-
         Self {
             logical_monitor,
-            spec: monitor.spec,
             properties: monitor.properties,
-            current_mode: Arc::clone(current_mode),
-            modes,
+            modes: monitor
+                .modes
+                .into_iter()
+                .map(CcDisplayMode::from)
+                .collect::<Vec<_>>(),
         }
-    }
-
-    pub fn logical_monitor_for<'a>(
-        monitor: &'a Monitor,
-        logical_monitors: &'a [Arc<CcLogicalMonitor>],
-    ) -> Option<Arc<CcLogicalMonitor>> {
-        logical_monitors
-            .iter()
-            .find(|&lm| lm.has_output(&monitor.spec))
-            .map(Arc::clone)
-    }
-
-    pub fn is_for_lease(&self) -> bool {
-        self.properties.is_for_lease.unwrap_or_default()
     }
 
     pub fn get_logical_monitor(&self) -> Option<&Arc<CcLogicalMonitor>> {
         self.logical_monitor.as_ref()
     }
 
-    pub fn is_builtin(&self) -> bool {
-        self.properties.is_builtin.unwrap_or(false)
-    }
-
-    pub fn get_spec(&self) -> &MonitorSpec {
-        &self.spec
-    }
-
-    pub fn get_geometry(&self) -> Geometry {
-        let (x, y) = self
-            .logical_monitor
-            .as_ref()
-            .map(|lm| lm.get_position())
-            .unwrap_or((-1, -1));
-
-        let Resolution(width, height) = self.current_mode.get_resolution();
-
-        Geometry {
-            x,
-            y,
-            width,
-            height,
+    pub fn get_orientation(&self) -> Orientation {
+        Orientation {
+            ratio: DisplayRatio::from(self.get_current_mode().get_resolution()),
+            transform: self
+                .get_logical_monitor()
+                .map(|lm| lm.get_transform())
+                .unwrap_or_default(),
         }
     }
 
-    pub fn get_orientation(&self) -> Option<Orientation> {
-        self.logical_monitor
-            .as_ref()
-            .map(|lm| lm.get_transform())
-            .map(|transform| Orientation {
-                transform,
-                ratio: DisplayRatio::from(self.get_geometry()),
-            })
-    }
-
-    pub fn get_display_name(&self) -> &str {
-        match &self.properties.display_name {
-            Some(display_name) if !display_name.is_empty() => display_name,
-            _ => &self.spec.connector,
-        }
-    }
-
-    pub fn get_output_ui_name(&self) -> String {
-        let display_name = self.get_display_name();
-
-        self.make_display_size_string()
-            .map(|size| format!("{display_name} ({size})"))
-            .unwrap_or(display_name.to_string())
-    }
-
-    pub fn get_color_mode(&self) -> ColorMode {
-        self.properties.color_mode.unwrap_or_default()
-    }
-
-    pub fn get_current_mode(&self) -> &Arc<CcDisplayMode> {
-        &self.current_mode
-    }
-
-    pub fn get_modes(&self) -> &[Arc<CcDisplayMode>] {
-        &self.modes
-    }
-
-    fn make_display_size_string(&self) -> Option<String> {
-        match (self.properties.width_mm, self.properties.height_mm) {
-            (Some(w), Some(h)) if w > 0 && h > 0 => {
-                let d: f64 = (w.pow(2) + h.pow(2)).into();
-
-                Some(Self::diagonal_to_str(d / 25.4))
-            }
-            _ => None,
-        }
-    }
-
-    fn diagonal_to_str(d: f64) -> String {
-        KNOWN_DIAGONALS
+    pub fn get_current_mode(&self) -> &CcDisplayMode {
+        self.modes
             .iter()
-            .find(|&known_d| (*known_d - d).abs() < 0.1)
-            .map(|&known_d| format!("{:.1}\"", known_d))
-            .unwrap_or_else(|| format!("{:.0}\"", d + 0.5))
+            .find(|&mode| mode.is_current())
+            .unwrap_or(&self.modes[0])
+    }
+
+    pub fn set_current_mode(&mut self, resolution: Resolution) {
+        self.modes.iter_mut().for_each(|mode| {
+            mode.set_current(mode.get_resolution() == resolution);
+        });
+    }
+
+    pub fn get_modes(&self) -> &[CcDisplayMode] {
+        &self.modes
     }
 
     pub fn is_hdr(&self) -> Option<bool> {
@@ -171,46 +87,21 @@ impl CcDisplayMonitor {
     pub fn is_underscanning(&self) -> Option<bool> {
         self.properties.is_underscanning
     }
+}
 
-    pub fn get_supported_refresh_rates(
-        &self,
-        current_mode: &Arc<CcDisplayMode>,
-    ) -> Vec<RefreshRate> {
-        let mut compatible_modes = self
-            .modes
-            .iter()
-            .filter(|mode| mode.get_resolution() == current_mode.get_resolution())
-            .filter(|mode| mode.get_refresh_rate_mode() == current_mode.get_refresh_rate_mode())
-            .collect::<Vec<_>>();
-
-        compatible_modes.sort_by(|a, b| {
-            if a.get_refresh_rate_mode() != b.get_refresh_rate_mode() {
-                if a.get_refresh_rate_mode() == RefreshRateMode::Variable {
-                    return Ordering::Less;
-                } else {
-                    return Ordering::Greater;
-                }
-            }
-
-            let delta = (b.get_refresh_rate() - a.get_refresh_rate()) * 1000.0;
-
-            if delta > 0.0 {
-                Ordering::Greater
-            } else if delta < 0.0 {
-                Ordering::Less
-            } else {
-                Ordering::Equal
-            }
-        });
-        compatible_modes.dedup_by(|a, b| a.get_refresh_rate() == b.get_refresh_rate());
-
-        compatible_modes
-            .into_iter()
-            .map(|mode| mode.get_refresh_rate())
-            .collect::<Vec<_>>()
+impl GetList<Orientation> for CcDisplayMonitor {
+    fn get_list(&self) -> Vec<Orientation> {
+        ROTATIONS
+            .map(|transform| Orientation {
+                transform,
+                ratio: DisplayRatio::from(self.get_current_mode().get_resolution()),
+            })
+            .to_vec()
     }
+}
 
-    pub fn get_supported_resolutions(&self) -> Vec<Resolution> {
+impl GetList<Resolution> for CcDisplayMonitor {
+    fn get_list(&self) -> Vec<Resolution> {
         let mut resolutions = self
             .modes
             .iter()
@@ -218,26 +109,35 @@ impl CcDisplayMonitor {
             .collect::<Vec<_>>();
 
         resolutions.dedup();
-        resolutions.sort_by_key(|resolution| std::cmp::Reverse(resolution.get_area()));
+        resolutions.sort_by_key(|&resolution| cmp::Reverse(resolution));
 
         resolutions
     }
+}
 
-    pub fn get_orientations(&self) -> Vec<Orientation> {
-        ROTATIONS
-            .map(|transform| Orientation {
-                transform,
-                ratio: DisplayRatio::from(self.get_geometry()),
-            })
-            .to_vec()
+impl GetList<RefreshRate> for CcDisplayMonitor {
+    fn get_list(&self) -> Vec<RefreshRate> {
+        let current_mode = self.get_current_mode();
+
+        let mut refresh_rates = self
+            .modes
+            .iter()
+            .filter(|mode| mode.get_resolution() == current_mode.get_resolution())
+            .filter(|mode| mode.get_refresh_rate_mode() == current_mode.get_refresh_rate_mode())
+            .map(|mode| mode.get_refresh_rate())
+            .collect::<Vec<_>>();
+
+        refresh_rates.dedup();
+        refresh_rates.sort_by_key(|&refresh_rate| cmp::Reverse(refresh_rate));
+
+        refresh_rates
     }
 }
 
-pub struct Geometry {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
+impl GetList<Scale> for CcDisplayMonitor {
+    fn get_list(&self) -> Vec<Scale> {
+        self.get_current_mode().get_list()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -247,11 +147,11 @@ pub enum DisplayRatio {
     Landscape,
 }
 
-impl From<Geometry> for DisplayRatio {
-    fn from(value: Geometry) -> Self {
-        if value.width > value.height {
+impl From<Resolution> for DisplayRatio {
+    fn from(value: Resolution) -> Self {
+        if value.0 > value.1 {
             Self::Landscape
-        } else if value.width < value.height {
+        } else if value.0 < value.1 {
             Self::Portrait
         } else {
             Self::Square

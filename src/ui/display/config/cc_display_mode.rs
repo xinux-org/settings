@@ -1,40 +1,17 @@
-use enumflags2::{BitFlags, bitflags};
-use std::fmt::Display;
+use std::{cmp, fmt::Display};
 
 use crate::ui::display::display_mode::{DisplayMode, RefreshRateMode};
 
-#[repr(u8)]
-#[bitflags]
-#[derive(Copy, Clone, Debug, PartialEq)]
-enum CcDisplayModeFlags {
-    Current = 1 << 1,
-    Preferred = 1 << 0,
-    Interlaced = 1 << 2,
-}
+use super::GetList;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CcDisplayMode {
     inner: DisplayMode,
-    flags: BitFlags<CcDisplayModeFlags>,
 }
 
 impl From<DisplayMode> for CcDisplayMode {
     fn from(inner: DisplayMode) -> Self {
-        let mut flags = BitFlags::empty();
-
-        if inner.properties.is_current.is_some_and(|x| x) {
-            flags |= CcDisplayModeFlags::Current;
-        }
-
-        if inner.properties.is_preferred.is_some_and(|x| x) {
-            flags |= CcDisplayModeFlags::Preferred;
-        }
-
-        if inner.properties.is_interlaced.is_some_and(|x| x) {
-            flags |= CcDisplayModeFlags::Interlaced;
-        }
-
-        Self { inner, flags }
+        Self { inner }
     }
 }
 
@@ -44,15 +21,19 @@ impl CcDisplayMode {
     }
 
     pub fn is_current(&self) -> bool {
-        self.flags.contains(CcDisplayModeFlags::Current)
+        self.inner.properties.is_current.unwrap_or_default()
+    }
+
+    pub fn set_current(&mut self, is: bool) {
+        self.inner.properties.is_current = Some(is);
     }
 
     pub fn is_preferred(&self) -> bool {
-        self.flags.contains(CcDisplayModeFlags::Preferred)
+        self.inner.properties.is_preferred.unwrap_or_default()
     }
 
     pub fn is_interlaced(&self) -> bool {
-        self.flags.contains(CcDisplayModeFlags::Interlaced)
+        self.inner.properties.is_interlaced.unwrap_or_default()
     }
 
     pub fn get_resolution(&self) -> Resolution {
@@ -68,10 +49,14 @@ impl CcDisplayMode {
     }
 
     pub fn get_preferred_scale(&self) -> Scale {
+        println!("{:?}", self.inner.preferred_scale);
+
         Scale::from(self.inner.preferred_scale)
     }
+}
 
-    pub fn get_supported_scales(&self) -> Vec<Scale> {
+impl GetList<Scale> for CcDisplayMode {
+    fn get_list(&self) -> Vec<Scale> {
         self.inner
             .supported_scales
             .iter()
@@ -80,7 +65,7 @@ impl CcDisplayMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Resolution(pub i32, pub i32);
 
 impl Display for Resolution {
@@ -114,22 +99,10 @@ impl Resolution {
             _ => None,
         }
     }
-
-    pub fn get_area(&self) -> i32 {
-        self.0 * self.1
-    }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RefreshRate(pub f64);
-
-impl std::ops::Sub for RefreshRate {
-    type Output = f64;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.0 - rhs.0
-    }
-}
 
 impl Display for RefreshRate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -137,13 +110,27 @@ impl Display for RefreshRate {
     }
 }
 
-impl PartialEq for RefreshRate {
-    fn eq(&self, other: &Self) -> bool {
-        approx::relative_eq!(self.0, other.0, max_relative = 0.01)
+impl Eq for RefreshRate {}
+
+impl PartialOrd for RefreshRate {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        self.cmp(other).into()
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+impl Ord for RefreshRate {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        if self.0 > other.0 {
+            cmp::Ordering::Greater
+        } else if self.0 < other.0 {
+            cmp::Ordering::Less
+        } else {
+            cmp::Ordering::Equal
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Scale(pub f64);
 
 impl From<f64> for Scale {
@@ -154,12 +141,12 @@ impl From<f64> for Scale {
 
 impl Display for Scale {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:.0} %", self.0 * 100.0))
+        f.write_fmt(format_args!("{:.0} %", (self.0 * 100.0).trunc()))
     }
 }
 
-impl PartialEq for Scale {
-    fn eq(&self, other: &Self) -> bool {
-        approx::relative_eq!(self.0, other.0, max_relative = 0.01)
+impl Default for Scale {
+    fn default() -> Self {
+        Self(1.0)
     }
 }

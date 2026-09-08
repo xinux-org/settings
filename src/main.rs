@@ -1,4 +1,3 @@
-use better_tracing::fmt::format::FmtSpan;
 use clap::{Command, arg, command, value_parser};
 use gettextrs::{LocaleCategory, gettext};
 use relm4::{
@@ -16,6 +15,7 @@ use settings::{
     },
 };
 use tracing::error;
+use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
 
 relm4::new_action_group!(AppActionGroup, "app");
 relm4::new_stateless_action!(QuitAction, AppActionGroup, "quit");
@@ -41,9 +41,9 @@ fn setup_locale() {
 
 fn main() {
     // Enable logging
-    better_tracing::fmt()
+    tracing_subscriber::fmt()
         .with_span_events(FmtSpan::ACTIVE)
-        .with_env_filter(better_tracing::EnvFilter::from_default_env())
+        .with_env_filter(EnvFilter::from_default_env())
         .init();
 
     let matches = command!()

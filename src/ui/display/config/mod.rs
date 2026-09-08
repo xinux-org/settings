@@ -7,3 +7,7 @@ mod cc_display_config;
 mod cc_display_mode;
 mod cc_display_monitor;
 mod cc_logical_monitor;
+
+pub trait GetList<T> {
+    fn get_list(&self) -> Vec<T>;
+}

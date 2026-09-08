@@ -10,23 +10,14 @@ use super::{
 };
 
 #[derive(Debug)]
-pub enum DisplayMsg {
-    DisplaySettingsChanged(),
-}
-
-#[derive(Debug)]
 pub struct DisplayModel {
-    #[allow(dead_code)]
-    manager: Arc<DisplayConfigManager>,
-
-    apply: AsyncController<Apply>,
     display_settings: Controller<DisplaySettingsModel>,
 }
 
 #[relm4::component(pub async)]
 impl SimpleAsyncComponent for DisplayModel {
     type Init = DisplayConfigManager;
-    type Input = DisplayMsg;
+    type Input = ();
     type Output = ();
 
     view! {
@@ -45,7 +36,7 @@ impl SimpleAsyncComponent for DisplayModel {
                     set_content = &adw::PreferencesPage {
                         #[name(single_display_settings_group)]
                         adw::PreferencesGroup {
-                            add = model.display_settings.widget(),
+                            model.display_settings.widget(),
                         },
                     },
                 },
@@ -63,16 +54,7 @@ impl SimpleAsyncComponent for DisplayModel {
         let DisplayConfigType::Single(monitor) = manager.get_current_config().get_monitor();
 
         let model = DisplayModel {
-            manager: Arc::clone(&manager),
-            apply: Apply::builder().launch(manager).detach(),
-            display_settings: DisplaySettingsModel::builder().launch(monitor).forward(
-                sender.input_sender(),
-                |output| match output {
-                    DisplaySettingsOutput::SettingsChanged() => {
-                        DisplayMsg::DisplaySettingsChanged()
-                    }
-                },
-            ),
+            display_settings: DisplaySettingsModel::builder().launch(monitor).detach(),
         };
 
         let widgets = view_output!();
@@ -88,5 +70,3 @@ impl SimpleAsyncComponent for DisplayModel {
         }
     }
 }
-
-impl DisplayModel {}

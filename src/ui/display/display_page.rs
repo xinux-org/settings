@@ -9,11 +9,10 @@ pub struct DisplayPage {
 }
 
 #[relm4::component(pub async)]
-impl AsyncComponent for DisplayPage {
+impl SimpleAsyncComponent for DisplayPage {
     type Init = ();
     type Input = ();
     type Output = ();
-    type CommandOutput = ();
 
     view! {
         #[root]

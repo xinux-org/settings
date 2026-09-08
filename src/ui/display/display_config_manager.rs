@@ -5,8 +5,6 @@ use super::{DisplayConfigProxy, apply_monitors::ApplyMethod, config::CcDisplayCo
 #[derive(Debug)]
 pub struct DisplayConfigManager {
     current_config: CcDisplayConfig,
-    #[allow(dead_code)]
-    proxy: DisplayConfigProxy<'static>,
 }
 
 impl DisplayConfigManager {
@@ -15,12 +13,14 @@ impl DisplayConfigManager {
         let proxy = DisplayConfigProxy::new(&conn).await?;
 
         let state = proxy.get_current_state().await?;
+
+        if state.monitors.len() > 1 {
+            anyhow::bail!("currently multiple monitors are not supported");
+        }
+
         let current_config = CcDisplayConfig::from(state);
 
-        Ok(Self {
-            proxy,
-            current_config,
-        })
+        Ok(Self { current_config })
     }
 
     pub fn get_current_config(&self) -> &CcDisplayConfig {
