@@ -1,11 +1,11 @@
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::sync::Arc;
 
 use gettextrs::{dgettext, gettext};
 use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::config::{CcDisplayMonitor, GetList, Orientation};
+use super::config::{CcDisplayMode, CcDisplayMonitor, GetList, GetListVia, Orientation};
 use super::{RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
@@ -71,8 +71,8 @@ pub struct DisplaySettings {
     pub underscanning: Option<bool>,
 }
 
-impl From<&RwLockReadGuard<'_, CcDisplayMonitor>> for DisplaySettings {
-    fn from(value: &RwLockReadGuard<'_, CcDisplayMonitor>) -> Self {
+impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
+    fn from(value: &Arc<CcDisplayMonitor>) -> Self {
         let current_mode = value.get_current_mode();
         let scale = value
             .get_logical_monitor()
@@ -92,7 +92,7 @@ impl From<&RwLockReadGuard<'_, CcDisplayMonitor>> for DisplaySettings {
 
 #[derive(Debug)]
 pub struct DisplaySettingsModel {
-    monitor: Arc<RwLock<CcDisplayMonitor>>,
+    monitor: Arc<CcDisplayMonitor>,
 
     settings: DisplaySettings,
 
@@ -128,7 +128,7 @@ pub enum DisplaySettingsMsg {
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsModel {
-    type Init = Arc<RwLock<CcDisplayMonitor>>;
+    type Init = Arc<CcDisplayMonitor>;
     type Input = DisplaySettingsMsg;
     type Output = ();
 
@@ -168,7 +168,6 @@ impl SimpleComponent for DisplaySettingsModel {
                     set_visible: model.settings.hdr.is_some(),
 
                     #[watch]
-                    #[block_signal(hdr_handler)]
                     set_active: model.settings.hdr.is_some_and(|x| x),
 
                     set_width_request: 100,
@@ -177,7 +176,7 @@ impl SimpleComponent for DisplaySettingsModel {
 
                     connect_active_notify[sender] => move |hdr| {
                         sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { hdr: Some(hdr.is_active()), ..Default::default() }));
-                    } @hdr_handler
+                    }
                 },
 
                 #[name(underscanning_row)]
@@ -186,16 +185,15 @@ impl SimpleComponent for DisplaySettingsModel {
                     set_visible: model.settings.underscanning.is_some(),
 
                     #[watch]
-                    #[block_signal(underscanning_handler)]
                     set_active: model.settings.underscanning.is_some_and(|x| x),
 
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("Adjust for _TV"),
 
-                    connect_activated[sender] => move |underscanning| {
+                    connect_active_notify[sender] => move |underscanning| {
                         sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { underscanning: Some(underscanning.is_active()), ..Default::default() }));
-                    } @underscanning_handler
+                    }
                 },
 
                 model.controllers.scale.widget() -> &adw::ComboRow {
@@ -208,23 +206,19 @@ impl SimpleComponent for DisplaySettingsModel {
     }
 
     fn init(
-        init: Self::Init,
+        monitor: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let monitor = init.read().unwrap();
-
         let lists = Self::build_lists(&monitor);
         let settings = DisplaySettings::from(&monitor);
         let controllers = Self::build_controllers(&monitor, &lists, sender.clone());
 
-        drop(monitor);
-
         let model = DisplaySettingsModel {
             lists,
+            monitor,
             settings,
             controllers,
-            monitor: init,
         };
 
         let widgets = view_output!();
@@ -249,15 +243,11 @@ impl SimpleComponent for DisplaySettingsModel {
             DisplaySettingsMsg::SelectResolution(index) => {
                 let resolution = self.lists.resolution[index];
 
-                if let Ok(mut monitor) = self.monitor.write() {
-                    monitor.set_current_mode(resolution);
+                let current_mode = self.monitor.get_mode_by_resolution(resolution);
 
-                    let current_mode = monitor.get_current_mode();
+                patch_settings!(self, current_mode);
 
-                    patch_settings!(self, current_mode);
-                }
-
-                self.update_model();
+                self.update_model(&current_mode);
             }
         };
     }
@@ -314,13 +304,9 @@ impl DisplaySettingsModel {
         }
     }
 
-    fn update_model(&mut self) {
-        let Ok(monitor) = self.monitor.read() else {
-            return;
-        };
-
-        self.lists.scale = monitor.get_list();
-        self.lists.refresh_rate = monitor.get_list();
+    fn update_model(&mut self, current_mode: &CcDisplayMode) {
+        self.lists.scale = self.monitor.get_list_via(current_mode);
+        self.lists.refresh_rate = self.monitor.get_list_via(current_mode);
 
         update_controller!(&self, scale);
         update_controller!(&self, refresh_rate);

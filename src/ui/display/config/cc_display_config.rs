@@ -1,16 +1,16 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use crate::ui::display::{CcLogicalMonitor, display_state::DisplayState};
 
 use super::CcDisplayMonitor;
 
 pub enum DisplayConfigType {
-    Single(Arc<RwLock<CcDisplayMonitor>>),
+    Single(Arc<CcDisplayMonitor>),
 }
 
 #[derive(Debug, Clone)]
 pub struct CcDisplayConfig {
-    monitors: Vec<Arc<RwLock<CcDisplayMonitor>>>,
+    monitors: Vec<Arc<CcDisplayMonitor>>,
 }
 
 impl From<DisplayState> for CcDisplayConfig {
@@ -19,7 +19,6 @@ impl From<DisplayState> for CcDisplayConfig {
             .logical_monitors
             .into_iter()
             .map(CcLogicalMonitor::from)
-            .map(Arc::new)
             .collect::<Vec<_>>();
 
         let monitors = inner
@@ -33,7 +32,6 @@ impl From<DisplayState> for CcDisplayConfig {
 
                 CcDisplayMonitor::new(m, lm)
             })
-            .map(RwLock::new)
             .map(Arc::new)
             .collect::<Vec<_>>();
 
