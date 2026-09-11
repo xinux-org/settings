@@ -1,13 +1,13 @@
-pub use cc_display_config::*;
-pub use cc_display_mode::*;
-pub use cc_display_monitor::*;
-pub use cc_logical_monitor::*;
+pub use display_config::*;
+pub use display_mode::*;
+pub use display_monitor::*;
+pub use logical_monitor::*;
 pub use types::*;
 
-mod cc_display_config;
-mod cc_display_mode;
-mod cc_display_monitor;
-mod cc_logical_monitor;
+mod display_config;
+mod display_mode;
+mod display_monitor;
+mod logical_monitor;
 mod types;
 
 pub trait GetList<T> {
