@@ -2,7 +2,7 @@ use crate::ui::display::dbus;
 
 use super::Scale;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct LogicalMonitor {
     inner: dbus::LogicalMonitor,
 }

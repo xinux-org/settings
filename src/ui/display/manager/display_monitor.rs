@@ -3,11 +3,11 @@ use std::cmp;
 use crate::ui::display::dbus;
 
 use super::{
-    DisplayMode, LogicalMonitor, DisplayRatio, GetList, GetListVia, Orientation, RefreshRate,
+    DisplayMode, DisplayRatio, GetList, GetListVia, LogicalMonitor, Orientation, RefreshRate,
     Resolution, Scale,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DisplayMonitor {
     modes: Vec<DisplayMode>,
     properties: dbus::MonitorProperties,

@@ -8,7 +8,7 @@ pub enum DisplayConfigType {
     Single(Arc<DisplayMonitor>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DisplayConfig {
     monitors: Vec<Arc<DisplayMonitor>>,
 }
