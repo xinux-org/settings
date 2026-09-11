@@ -3,7 +3,7 @@ use std::{fmt::Display, sync::Arc};
 use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 
-use super::DisplayConfigManager;
+use crate::ui::display::manager::DisplayConfigManager;
 
 #[derive(Debug)]
 pub struct Apply {

@@ -1,30 +1,26 @@
 use std::sync::{Arc, RwLock};
 
-use crate::ui::display::{
-    CcLogicalMonitor,
-    apply_monitors::{ApplyMethod, ApplyMonitorsConfig, ApplyMonitorsConfigProperties},
-    display_state::{DisplayState, DisplayStateProperties},
-};
+use crate::ui::display::dbus::{ApplyMethod, ApplyMonitorsConfig, ApplyMonitorsConfigProperties, DisplayState, DisplayStateProperties};
 
-use super::CcDisplayMonitor;
+use super::{DisplayMonitor, LogicalMonitor};
 
 pub enum DisplayConfigType {
-    Single(Arc<RwLock<CcDisplayMonitor>>),
+    Single(Arc<RwLock<DisplayMonitor>>),
 }
 
 #[derive(Debug, Clone)]
-pub struct CcDisplayConfig {
+pub struct DisplayConfig {
     serial: u32,
     properties: DisplayStateProperties,
-    monitors: Vec<Arc<RwLock<CcDisplayMonitor>>>,
+    monitors: Vec<Arc<RwLock<DisplayMonitor>>>,
 }
 
-impl From<DisplayState> for CcDisplayConfig {
+impl From<DisplayState> for DisplayConfig {
     fn from(inner: DisplayState) -> Self {
         let mut logical_monitors = inner
             .logical_monitors
             .into_iter()
-            .map(CcLogicalMonitor::from)
+            .map(LogicalMonitor::from)
             .collect::<Vec<_>>();
 
         let monitors = inner
@@ -36,7 +32,7 @@ impl From<DisplayState> for CcDisplayConfig {
                     .position(|lm| lm.has_output(&m.spec))
                     .map(|index| logical_monitors.swap_remove(index));
 
-                CcDisplayMonitor::new(m, lm)
+                DisplayMonitor::new(m, lm)
             })
             .map(RwLock::new)
             .map(Arc::new)
@@ -50,7 +46,7 @@ impl From<DisplayState> for CcDisplayConfig {
     }
 }
 
-impl CcDisplayConfig {
+impl DisplayConfig {
     pub fn get_monitor(&self) -> DisplayConfigType {
         if self.monitors.len() == 1
             && let Some(monitor) = self.monitors.first()

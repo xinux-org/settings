@@ -52,9 +52,9 @@ pub trait DisplayConfig {
     fn apply_monitors_config(
         &self,
         serial: u32,
-        method: super::types::apply_monitors::ApplyMethod,
-        logical_monitors: &[super::types::apply_monitors::LogicalMonitor],
-        properties: super::types::apply_monitors::ApplyMonitorsConfigProperties,
+        method: crate::ui::display::dbus::ApplyMethod,
+        logical_monitors: &[crate::ui::display::dbus::ApplyLogicalMonitor],
+        properties: crate::ui::display::dbus::ApplyMonitorsConfigProperties,
     ) -> zbus::Result<()>;
 
     /// ChangeBacklight method
@@ -68,7 +68,7 @@ pub trait DisplayConfig {
     ) -> zbus::Result<(Vec<u16>, Vec<u16>, Vec<u16>)>;
 
     /// GetCurrentState method
-    fn get_current_state(&self) -> zbus::Result<super::types::display_state::DisplayState>;
+    fn get_current_state(&self) -> zbus::Result<crate::ui::display::dbus::DisplayState>;
 
     /// GetResources method
     #[allow(clippy::type_complexity)]

@@ -1,43 +1,42 @@
 use std::sync::RwLockReadGuard;
 
-use crate::ui::display::{
-    CcDisplayMonitor, Scale, apply_monitors, logical_monitor::LogicalMonitor,
-    monitor_spec::MonitorSpec, transform::Transform,
-};
+use crate::ui::display::{DisplayMonitor, dbus};
+
+use super::Scale;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CcLogicalMonitor {
-    inner: LogicalMonitor,
+pub struct LogicalMonitor {
+    inner: dbus::LogicalMonitor,
 }
 
-impl From<LogicalMonitor> for CcLogicalMonitor {
-    fn from(inner: LogicalMonitor) -> Self {
+impl From<dbus::LogicalMonitor> for LogicalMonitor {
+    fn from(inner: dbus::LogicalMonitor) -> Self {
         Self { inner }
     }
 }
 
-impl CcLogicalMonitor {
+impl LogicalMonitor {
     pub fn get_scale(&self) -> Scale {
         Scale::from(self.inner.scale)
     }
 
-    pub fn get_transform(&self) -> Transform {
+    pub fn get_transform(&self) -> dbus::Transform {
         self.inner.transform
     }
 
-    pub fn has_output(&self, spec: &MonitorSpec) -> bool {
+    pub fn has_output(&self, spec: &dbus::MonitorSpec) -> bool {
         self.inner.monitors.contains(spec)
     }
 
     pub fn set_scale(&mut self, scale: Scale) {
-        self.inner.scale = scale.0;
+        self.inner.scale = scale.into();
     }
 
     pub fn into_apply(
         &self,
-        monitors: &[RwLockReadGuard<'_, CcDisplayMonitor>],
-    ) -> apply_monitors::LogicalMonitor {
-        apply_monitors::LogicalMonitor {
+        monitors: &[RwLockReadGuard<'_, DisplayMonitor>],
+    ) -> dbus::ApplyLogicalMonitor {
+        dbus::ApplyLogicalMonitor {
             x: self.inner.x,
             y: self.inner.y,
             scale: self.inner.scale,
@@ -52,10 +51,10 @@ impl CcLogicalMonitor {
                         .iter()
                         .find(|&monitor| monitor.get_spec() == monitor_spec)
                 })
-                .map(|monitor| apply_monitors::LogicalMonitorOutput {
+                .map(|monitor| dbus::LogicalMonitorOutput {
                     connector: monitor.get_spec().connector.clone(),
                     monitor_mode_id: monitor.get_current_mode().get_id().to_string(),
-                    properties: apply_monitors::LogicalMonitorOutputProperties {
+                    properties: dbus::LogicalMonitorOutputProperties {
                         color_mode: monitor.get_color_mode(),
                         underscanning: monitor.is_underscanning(),
                     },

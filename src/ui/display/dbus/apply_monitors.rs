@@ -1,11 +1,7 @@
 use serde::Serialize;
 use zbus::zvariant::{SerializeDict, Type};
 
-use crate::ui::display::transform::Transform;
-
-use super::color_mode::ColorMode;
-use super::layout_mode::LayoutMode;
-use super::monitor_spec::MonitorSpec;
+use super::{ColorMode, LayoutMode, MonitorSpec, Transform};
 
 #[derive(Serialize, Type, Debug)]
 pub enum ApplyMethod {
@@ -18,12 +14,12 @@ pub enum ApplyMethod {
 pub struct ApplyMonitorsConfig {
     pub serial: u32,
     pub method: ApplyMethod,
-    pub logical_monitors: Vec<LogicalMonitor>,
+    pub logical_monitors: Vec<ApplyLogicalMonitor>,
     pub properties: ApplyMonitorsConfigProperties,
 }
 
 #[derive(Serialize, Type, Debug)]
-pub struct LogicalMonitor {
+pub struct ApplyLogicalMonitor {
     pub x: i32,
     pub y: i32,
     pub scale: f64,

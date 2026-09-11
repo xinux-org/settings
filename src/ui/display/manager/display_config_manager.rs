@@ -1,11 +1,13 @@
 use zbus::Connection;
 
-use super::{DisplayConfigProxy, apply_monitors::ApplyMethod, config::CcDisplayConfig};
+use crate::ui::display::dbus::ApplyMethod;
+
+use super::{DisplayConfig, DisplayConfigProxy};
 
 #[derive(Debug)]
 pub struct DisplayConfigManager {
     conn: Connection,
-    current_config: CcDisplayConfig,
+    current_config: DisplayConfig,
 }
 
 impl DisplayConfigManager {
@@ -22,7 +24,7 @@ impl DisplayConfigManager {
             }
         }
 
-        let current_config = CcDisplayConfig::from(state);
+        let current_config = DisplayConfig::from(state);
 
         Ok(Self {
             conn,
@@ -30,7 +32,7 @@ impl DisplayConfigManager {
         })
     }
 
-    pub fn get_current_config(&self) -> &CcDisplayConfig {
+    pub fn get_current_config(&self) -> &DisplayConfig {
         &self.current_config
     }
 

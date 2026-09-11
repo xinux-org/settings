@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize};
 use zbus::zvariant::{OwnedValue, Type};
 
 use super::monitor_spec::MonitorSpec;

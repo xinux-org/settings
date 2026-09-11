@@ -5,8 +5,8 @@ use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::config::{CcDisplayMode, CcDisplayMonitor, GetList, GetListVia, Orientation};
-use super::{RefreshRate, Resolution, Scale};
+use crate::ui::display::manager::{DisplayMonitor, GetList, Orientation};
+use crate::ui::display::{RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
     ($self:ident, $name:ident, $index:ident) => {
@@ -71,8 +71,8 @@ pub struct DisplaySettings {
     pub underscanning: Option<bool>,
 }
 
-impl From<&RwLockReadGuard<'_, CcDisplayMonitor>> for DisplaySettings {
-    fn from(value: &RwLockReadGuard<'_, CcDisplayMonitor>) -> Self {
+impl From<&RwLockReadGuard<'_, DisplayMonitor>> for DisplaySettings {
+    fn from(value: &RwLockReadGuard<'_, DisplayMonitor>) -> Self {
         let current_mode = value.get_current_mode();
         let scale = value
             .get_logical_monitor()
@@ -92,7 +92,7 @@ impl From<&RwLockReadGuard<'_, CcDisplayMonitor>> for DisplaySettings {
 
 #[derive(Debug)]
 pub struct DisplaySettingsModel {
-    monitor: Arc<RwLock<CcDisplayMonitor>>,
+    monitor: Arc<RwLock<DisplayMonitor>>,
 
     settings: DisplaySettings,
 
@@ -133,7 +133,7 @@ pub enum DisplaySettingsOutput {
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsModel {
-    type Init = Arc<RwLock<CcDisplayMonitor>>;
+    type Init = Arc<RwLock<DisplayMonitor>>;
     type Input = DisplaySettingsMsg;
     type Output = DisplaySettingsOutput;
 
@@ -238,7 +238,6 @@ impl SimpleComponent for DisplaySettingsModel {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             DisplaySettingsMsg::UpdateSettings(settings) => {
-                println!("Settings updated: {:?}", settings);
                 self.settings.apply(settings);
             }
             DisplaySettingsMsg::SelectScale(index) => {
@@ -257,9 +256,9 @@ impl SimpleComponent for DisplaySettingsModel {
                     let current_mode = monitor.get_mode_by_resolution(resolution);
 
                     patch_settings!(self, current_mode);
-
-                    // self.update_model(&current_mode);
                 }
+
+                self.update_model();
             }
         };
 
@@ -270,7 +269,7 @@ impl SimpleComponent for DisplaySettingsModel {
 }
 
 impl DisplaySettingsModel {
-    fn build_lists(monitor: &CcDisplayMonitor) -> DisplaySettingsLists {
+    fn build_lists(monitor: &DisplayMonitor) -> DisplaySettingsLists {
         let current_mode = monitor.get_current_mode();
 
         DisplaySettingsLists {
@@ -282,7 +281,7 @@ impl DisplaySettingsModel {
     }
 
     fn build_controllers(
-        monitor: &CcDisplayMonitor,
+        monitor: &DisplayMonitor,
         lists: &DisplaySettingsLists,
         sender: ComponentSender<Self>,
     ) -> DisplaySettingsControllers {
@@ -320,7 +319,7 @@ impl DisplaySettingsModel {
         }
     }
 
-    fn update_model(&mut self, current_mode: &CcDisplayMode) {
+    fn update_model(&mut self) {
         // self.lists.scale = self.monitor.get_list_via(current_mode);
         // self.lists.refresh_rate = self.monitor.get_list_via(current_mode);
 

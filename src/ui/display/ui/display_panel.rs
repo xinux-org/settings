@@ -3,21 +3,19 @@ use std::sync::Arc;
 use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 
-use super::{
-    DisplayConfigManager, DisplayConfigType,
-    apply::{Apply, ApplyMsg},
-    display_settings::{DisplaySettingsModel, DisplaySettingsOutput},
-};
+use crate::ui::display::{DisplayConfigManager, DisplayConfigType};
 
-#[derive(Debug)]
-pub enum DisplayMsg {
-    DisplaySettingsChanged(),
-}
+use super::{Apply, ApplyMsg, DisplaySettingsModel, DisplaySettingsOutput};
 
 #[derive(Debug)]
 pub struct DisplayModel {
     apply: AsyncController<Apply>,
     display_settings: Controller<DisplaySettingsModel>,
+}
+
+#[derive(Debug)]
+pub enum DisplayMsg {
+    DisplaySettingsChanged(),
 }
 
 #[relm4::component(pub async)]
