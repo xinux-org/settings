@@ -173,7 +173,6 @@ impl SimpleComponent for DisplaySettingsModel {
                     set_visible: model.settings.hdr.is_some(),
 
                     #[watch]
-                    #[block_signal(hdr_handler)]
                     set_active: model.settings.hdr.is_some_and(|x| x),
 
                     set_width_request: 100,
@@ -182,7 +181,7 @@ impl SimpleComponent for DisplaySettingsModel {
 
                     connect_active_notify[sender] => move |hdr| {
                         sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { hdr: Some(hdr.is_active()), ..Default::default() }));
-                    } @hdr_handler
+                    }
                 },
 
                 #[name(underscanning_row)]
@@ -191,16 +190,15 @@ impl SimpleComponent for DisplaySettingsModel {
                     set_visible: model.settings.underscanning.is_some(),
 
                     #[watch]
-                    #[block_signal(underscanning_handler)]
                     set_active: model.settings.underscanning.is_some_and(|x| x),
 
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("Adjust for _TV"),
 
-                    connect_activated[sender] => move |underscanning| {
+                    connect_active_notify[sender] => move |underscanning| {
                         sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { underscanning: Some(underscanning.is_active()), ..Default::default() }));
-                    } @underscanning_handler
+                    }
                 },
 
                 model.controllers.scale.widget() -> &adw::ComboRow {
@@ -240,6 +238,7 @@ impl SimpleComponent for DisplaySettingsModel {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
             DisplaySettingsMsg::UpdateSettings(settings) => {
+                println!("Settings updated: {:?}", settings);
                 self.settings.apply(settings);
             }
             DisplaySettingsMsg::SelectScale(index) => {

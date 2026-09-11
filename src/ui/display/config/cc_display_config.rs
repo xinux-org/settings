@@ -58,30 +58,33 @@ impl CcDisplayConfig {
             return DisplayConfigType::Single(Arc::clone(monitor));
         }
 
-        if let Some(index) = self
+        let index = self
             .monitors
             .iter()
             .enumerate()
             .filter_map(|(i, m)| m.read().ok().map(|m| (i, m)))
             .find(|(_, m)| m.is_builtin())
             .map(|(i, _)| i)
-        {
-            return DisplayConfigType::Single(Arc::clone(&self.monitors[index]));
-        };
+            .unwrap_or_default();
 
-        unimplemented!()
+        DisplayConfigType::Single(Arc::clone(&self.monitors[index]))
     }
 
-    pub fn build_apply_parameters<'a>(&'a self, method: ApplyMethod) -> ApplyMonitorsConfig<'a> {
+    pub fn build_apply_parameters(&self, method: ApplyMethod) -> ApplyMonitorsConfig {
         let read_monitors = self
             .monitors
             .iter()
             .filter_map(|monitor| monitor.read().ok())
             .collect::<Vec<_>>();
 
+        let monitors_for_lease = read_monitors
+            .iter()
+            .map(|monitor| monitor.get_spec().clone())
+            .collect::<Vec<_>>();
+
         let logical_monitors = read_monitors
             .iter()
-            // .filter(|monitor| !monitors_for_lease.contains(&monitor))
+            .filter(|monitor| !monitors_for_lease.contains(monitor.get_spec()))
             .filter_map(|monitor| monitor.get_logical_monitor())
             .map(|lm| lm.into_apply(read_monitors.as_slice()))
             .collect::<Vec<_>>();
@@ -91,7 +94,7 @@ impl CcDisplayConfig {
             logical_monitors,
             serial: self.serial,
             properties: ApplyMonitorsConfigProperties {
-                monitors_for_lease: vec![],
+                monitors_for_lease,
                 layout_mode: self.properties.layout_mode,
             },
         }

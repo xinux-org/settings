@@ -15,11 +15,11 @@ pub enum ApplyMethod {
 }
 
 #[derive(Serialize, Type, Debug)]
-pub struct ApplyMonitorsConfig<'a> {
+pub struct ApplyMonitorsConfig {
     pub serial: u32,
     pub method: ApplyMethod,
     pub logical_monitors: Vec<LogicalMonitor>,
-    pub properties: ApplyMonitorsConfigProperties<'a>,
+    pub properties: ApplyMonitorsConfigProperties,
 }
 
 #[derive(Serialize, Type, Debug)]
@@ -48,7 +48,7 @@ pub struct LogicalMonitorOutputProperties {
 
 #[derive(SerializeDict, Type, Debug)]
 #[zvariant(signature = "a{sv}", rename_all = "kebab-case")]
-pub struct ApplyMonitorsConfigProperties<'a> {
+pub struct ApplyMonitorsConfigProperties {
     pub layout_mode: Option<LayoutMode>,
-    pub monitors_for_lease: Vec<&'a MonitorSpec>,
+    pub monitors_for_lease: Vec<MonitorSpec>,
 }

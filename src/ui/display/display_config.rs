@@ -54,7 +54,7 @@ pub trait DisplayConfig {
         serial: u32,
         method: super::types::apply_monitors::ApplyMethod,
         logical_monitors: &[super::types::apply_monitors::LogicalMonitor],
-        properties: super::types::apply_monitors::ApplyMonitorsConfigProperties<'_>,
+        properties: super::types::apply_monitors::ApplyMonitorsConfigProperties,
     ) -> zbus::Result<()>;
 
     /// ChangeBacklight method
