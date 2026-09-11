@@ -8,7 +8,7 @@ pub enum DisplayConfigType {
     Single(Arc<RwLock<DisplayMonitor>>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DisplayConfig {
     serial: u32,
     properties: DisplayStateProperties,

@@ -7,7 +7,7 @@ use super::{
     Resolution, Scale,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DisplayMonitor {
     spec: dbus::MonitorSpec,
     modes: Vec<DisplayMode>,
