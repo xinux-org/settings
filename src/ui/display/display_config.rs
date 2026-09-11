@@ -37,7 +37,7 @@ pub trait DisplayConfig {
     ) -> zbus::Result<(Vec<u16>, Vec<u16>, Vec<u16>)>;
 
     /// GetCurrentState method
-    fn get_current_state(&self) -> zbus::Result<super::dbus::display_state::DisplayState>;
+    fn get_current_state(&self) -> zbus::Result<super::dbus::DisplayState>;
 
     /// GetResources method
     #[allow(clippy::type_complexity)]

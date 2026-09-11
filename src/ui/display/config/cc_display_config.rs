@@ -1,24 +1,24 @@
 use std::sync::Arc;
 
-use crate::ui::display::{CcLogicalMonitor, display_state::DisplayState};
+use crate::ui::display::dbus::DisplayState;
 
-use super::CcDisplayMonitor;
+use super::{LogicalMonitor, DisplayMonitor};
 
 pub enum DisplayConfigType {
-    Single(Arc<CcDisplayMonitor>),
+    Single(Arc<DisplayMonitor>),
 }
 
 #[derive(Debug, Clone)]
-pub struct CcDisplayConfig {
-    monitors: Vec<Arc<CcDisplayMonitor>>,
+pub struct DisplayConfig {
+    monitors: Vec<Arc<DisplayMonitor>>,
 }
 
-impl From<DisplayState> for CcDisplayConfig {
+impl From<DisplayState> for DisplayConfig {
     fn from(inner: DisplayState) -> Self {
         let mut logical_monitors = inner
             .logical_monitors
             .into_iter()
-            .map(CcLogicalMonitor::from)
+            .map(LogicalMonitor::from)
             .collect::<Vec<_>>();
 
         let monitors = inner
@@ -30,7 +30,7 @@ impl From<DisplayState> for CcDisplayConfig {
                     .position(|lm| lm.has_output(&m.spec))
                     .map(|index| logical_monitors.swap_remove(index));
 
-                CcDisplayMonitor::new(m, lm)
+                DisplayMonitor::new(m, lm)
             })
             .map(Arc::new)
             .collect::<Vec<_>>();
@@ -39,7 +39,7 @@ impl From<DisplayState> for CcDisplayConfig {
     }
 }
 
-impl CcDisplayConfig {
+impl DisplayConfig {
     pub fn get_monitor(&self) -> DisplayConfigType {
         if self.monitors.len() == 1
             && let Some(monitor) = self.monitors.first()

@@ -1,7 +1,7 @@
 use gettextrs::dgettext;
 use std::{cmp, fmt::Display};
 
-use crate::ui::display::transform::Transform;
+use crate::ui::display::dbus::Transform;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DisplayRatio {

@@ -1,19 +1,19 @@
-use crate::ui::display::display_mode::{DisplayMode, RefreshRateMode};
+use crate::ui::display::dbus;
 
 use super::{GetList, RefreshRate, Resolution, Scale};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CcDisplayMode {
-    inner: DisplayMode,
+pub struct DisplayMode {
+    inner: dbus::DisplayMode,
 }
 
-impl From<DisplayMode> for CcDisplayMode {
-    fn from(inner: DisplayMode) -> Self {
+impl From<dbus::DisplayMode> for DisplayMode {
+    fn from(inner: dbus::DisplayMode) -> Self {
         Self { inner }
     }
 }
 
-impl CcDisplayMode {
+impl DisplayMode {
     pub fn get_id(&self) -> &str {
         &self.inner.id
     }
@@ -42,7 +42,7 @@ impl CcDisplayMode {
         RefreshRate(self.inner.refresh_rate)
     }
 
-    pub fn get_refresh_rate_mode(&self) -> RefreshRateMode {
+    pub fn get_refresh_rate_mode(&self) -> dbus::RefreshRateMode {
         self.inner.properties.refresh_rate_mode.unwrap_or_default()
     }
 
@@ -51,7 +51,7 @@ impl CcDisplayMode {
     }
 }
 
-impl GetList<Scale> for CcDisplayMode {
+impl GetList<Scale> for DisplayMode {
     fn get_list(&self) -> Vec<Scale> {
         self.inner
             .supported_scales

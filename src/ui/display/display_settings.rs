@@ -5,7 +5,7 @@ use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::config::{CcDisplayMode, CcDisplayMonitor, GetList, GetListVia, Orientation};
+use super::config::{DisplayMode, DisplayMonitor, GetList, GetListVia, Orientation};
 use super::{RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
@@ -71,8 +71,8 @@ pub struct DisplaySettings {
     pub underscanning: Option<bool>,
 }
 
-impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
-    fn from(value: &Arc<CcDisplayMonitor>) -> Self {
+impl From<&Arc<DisplayMonitor>> for DisplaySettings {
+    fn from(value: &Arc<DisplayMonitor>) -> Self {
         let current_mode = value.get_current_mode();
         let scale = value
             .get_logical_monitor()
@@ -92,7 +92,7 @@ impl From<&Arc<CcDisplayMonitor>> for DisplaySettings {
 
 #[derive(Debug)]
 pub struct DisplaySettingsModel {
-    monitor: Arc<CcDisplayMonitor>,
+    monitor: Arc<DisplayMonitor>,
 
     settings: DisplaySettings,
 
@@ -128,7 +128,7 @@ pub enum DisplaySettingsMsg {
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsModel {
-    type Init = Arc<CcDisplayMonitor>;
+    type Init = Arc<DisplayMonitor>;
     type Input = DisplaySettingsMsg;
     type Output = ();
 
@@ -254,7 +254,7 @@ impl SimpleComponent for DisplaySettingsModel {
 }
 
 impl DisplaySettingsModel {
-    fn build_lists(monitor: &CcDisplayMonitor) -> DisplaySettingsLists {
+    fn build_lists(monitor: &DisplayMonitor) -> DisplaySettingsLists {
         let current_mode = monitor.get_current_mode();
 
         DisplaySettingsLists {
@@ -266,7 +266,7 @@ impl DisplaySettingsModel {
     }
 
     fn build_controllers(
-        monitor: &CcDisplayMonitor,
+        monitor: &DisplayMonitor,
         lists: &DisplaySettingsLists,
         sender: ComponentSender<Self>,
     ) -> DisplaySettingsControllers {
@@ -304,7 +304,7 @@ impl DisplaySettingsModel {
         }
     }
 
-    fn update_model(&mut self, current_mode: &CcDisplayMode) {
+    fn update_model(&mut self, current_mode: &DisplayMode) {
         self.lists.scale = self.monitor.get_list_via(current_mode);
         self.lists.refresh_rate = self.monitor.get_list_via(current_mode);
 

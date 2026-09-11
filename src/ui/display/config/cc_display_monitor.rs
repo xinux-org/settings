@@ -1,37 +1,33 @@
 use std::cmp;
 
-use crate::ui::display::{
-    color_mode::ColorMode,
-    monitor::{Monitor, MonitorProperties},
-    transform::Transform,
-};
+use crate::ui::display::dbus;
 
 use super::{
-    CcDisplayMode, CcLogicalMonitor, DisplayRatio, GetList, GetListVia, Orientation, RefreshRate,
+    DisplayMode, LogicalMonitor, DisplayRatio, GetList, GetListVia, Orientation, RefreshRate,
     Resolution, Scale,
 };
 
 #[derive(Debug, Clone)]
-pub struct CcDisplayMonitor {
-    modes: Vec<CcDisplayMode>,
-    properties: MonitorProperties,
-    logical_monitor: Option<CcLogicalMonitor>,
+pub struct DisplayMonitor {
+    modes: Vec<DisplayMode>,
+    properties: dbus::MonitorProperties,
+    logical_monitor: Option<LogicalMonitor>,
 }
 
-impl CcDisplayMonitor {
-    pub fn new(monitor: Monitor, logical_monitor: Option<CcLogicalMonitor>) -> Self {
+impl DisplayMonitor {
+    pub fn new(monitor: dbus::Monitor, logical_monitor: Option<LogicalMonitor>) -> Self {
         Self {
             logical_monitor,
             properties: monitor.properties,
             modes: monitor
                 .modes
                 .into_iter()
-                .map(CcDisplayMode::from)
+                .map(DisplayMode::from)
                 .collect::<Vec<_>>(),
         }
     }
 
-    pub fn get_logical_monitor(&self) -> Option<&CcLogicalMonitor> {
+    pub fn get_logical_monitor(&self) -> Option<&LogicalMonitor> {
         self.logical_monitor.as_ref()
     }
 
@@ -44,14 +40,14 @@ impl CcDisplayMonitor {
         )
     }
 
-    pub fn get_current_mode(&self) -> &CcDisplayMode {
+    pub fn get_current_mode(&self) -> &DisplayMode {
         self.modes
             .iter()
             .find(|&mode| mode.is_current())
             .unwrap_or(&self.modes[0])
     }
 
-    pub fn get_mode_by_resolution(&self, resolution: Resolution) -> CcDisplayMode {
+    pub fn get_mode_by_resolution(&self, resolution: Resolution) -> DisplayMode {
         self.modes
             .iter()
             .find(|&mode| mode.get_resolution() == resolution)
@@ -63,12 +59,12 @@ impl CcDisplayMonitor {
         self.properties
             .supported_color_modes
             .as_ref()
-            .map(|color_modes| color_modes.contains(&ColorMode::BT2100))
+            .map(|color_modes| color_modes.contains(&dbus::ColorMode::BT2100))
             .and_then(|has_hdr| {
                 if has_hdr {
                     self.properties
                         .color_mode
-                        .map(|color_mode| color_mode == ColorMode::BT2100)
+                        .map(|color_mode| color_mode == dbus::ColorMode::BT2100)
                 } else {
                     None
                 }
@@ -80,14 +76,14 @@ impl CcDisplayMonitor {
     }
 }
 
-impl GetList<Orientation> for CcDisplayMonitor {
+impl GetList<Orientation> for DisplayMonitor {
     fn get_list(&self) -> Vec<Orientation> {
         let rotations = const {
             [
-                Transform::Normal,
-                Transform::Rotate90,
-                Transform::Rotate180,
-                Transform::Rotate270,
+                dbus::Transform::Normal,
+                dbus::Transform::Rotate90,
+                dbus::Transform::Rotate180,
+                dbus::Transform::Rotate270,
             ]
         };
 
@@ -102,7 +98,7 @@ impl GetList<Orientation> for CcDisplayMonitor {
     }
 }
 
-impl GetList<Resolution> for CcDisplayMonitor {
+impl GetList<Resolution> for DisplayMonitor {
     fn get_list(&self) -> Vec<Resolution> {
         let mut resolutions = self
             .modes
@@ -117,15 +113,15 @@ impl GetList<Resolution> for CcDisplayMonitor {
     }
 }
 
-impl GetList<RefreshRate> for CcDisplayMonitor {
+impl GetList<RefreshRate> for DisplayMonitor {
     fn get_list(&self) -> Vec<RefreshRate> {
         let current_mode = self.get_current_mode();
         self.get_list_via(current_mode)
     }
 }
 
-impl GetListVia<RefreshRate, CcDisplayMode> for CcDisplayMonitor {
-    fn get_list_via(&self, current_mode: &CcDisplayMode) -> Vec<RefreshRate> {
+impl GetListVia<RefreshRate, DisplayMode> for DisplayMonitor {
+    fn get_list_via(&self, current_mode: &DisplayMode) -> Vec<RefreshRate> {
         let mut refresh_rates = self
             .modes
             .iter()
@@ -141,15 +137,15 @@ impl GetListVia<RefreshRate, CcDisplayMode> for CcDisplayMonitor {
     }
 }
 
-impl GetList<Scale> for CcDisplayMonitor {
+impl GetList<Scale> for DisplayMonitor {
     fn get_list(&self) -> Vec<Scale> {
         let current_mode = self.get_current_mode();
         self.get_list_via(current_mode)
     }
 }
 
-impl GetListVia<Scale, CcDisplayMode> for CcDisplayMonitor {
-    fn get_list_via(&self, current_mode: &CcDisplayMode) -> Vec<Scale> {
+impl GetListVia<Scale, DisplayMode> for DisplayMonitor {
+    fn get_list_via(&self, current_mode: &DisplayMode) -> Vec<Scale> {
         current_mode.get_list()
     }
 }
