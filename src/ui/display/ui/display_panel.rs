@@ -1,7 +1,9 @@
 use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 
-use super::{DisplayConfigManager, DisplayConfigType, display_settings::DisplaySettingsModel};
+use crate::ui::display::{DisplayConfigManager, DisplayConfigType};
+
+use super::DisplaySettingsModel;
 
 #[derive(Debug)]
 pub struct DisplayModel {

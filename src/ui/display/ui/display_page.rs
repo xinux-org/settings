@@ -1,7 +1,9 @@
 use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 
-use super::{DisplayConfigManager, DisplayModel};
+use crate::ui::display::DisplayConfigManager;
+
+use super::DisplayModel;
 
 #[derive(Debug, Default)]
 pub struct DisplayPage {

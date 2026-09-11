@@ -5,8 +5,8 @@ use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::manager::{DisplayMode, DisplayMonitor, GetList, GetListVia, Orientation};
-use super::{RefreshRate, Resolution, Scale};
+use crate::ui::display::manager::{DisplayMode, DisplayMonitor, GetList, GetListVia, Orientation};
+use crate::ui::display::{RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
     ($self:ident, $name:ident, $index:ident) => {
