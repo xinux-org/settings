@@ -1,7 +1,7 @@
 use zbus::Connection;
 
 use super::DisplayConfigProxy;
-use super::config::DisplayConfig;
+use super::manager::DisplayConfig;
 
 #[derive(Debug)]
 pub struct DisplayConfigManager {

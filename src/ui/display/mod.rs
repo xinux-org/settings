@@ -1,10 +1,10 @@
-pub use config::*;
+pub use manager::*;
 pub use display_config::*;
 pub use display_config_manager::*;
 pub use display_page::*;
 pub use display_panel::*;
 
-mod config;
+mod manager;
 mod dbus;
 mod display_config;
 mod display_config_manager;

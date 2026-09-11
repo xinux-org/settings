@@ -5,7 +5,7 @@ use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::config::{DisplayMode, DisplayMonitor, GetList, GetListVia, Orientation};
+use super::manager::{DisplayMode, DisplayMonitor, GetList, GetListVia, Orientation};
 use super::{RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
