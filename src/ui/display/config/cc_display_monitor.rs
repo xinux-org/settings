@@ -1,21 +1,15 @@
-use gettextrs::dgettext;
-use std::{cmp, fmt::Display};
+use std::cmp;
 
 use crate::ui::display::{
-    GetListVia, RefreshRate, Resolution, Scale,
     color_mode::ColorMode,
     monitor::{Monitor, MonitorProperties},
     transform::Transform,
 };
 
-use super::{CcDisplayMode, CcLogicalMonitor, GetList};
-
-const ROTATIONS: [Transform; 4] = [
-    Transform::Normal,
-    Transform::Rotate90,
-    Transform::Rotate180,
-    Transform::Rotate270,
-];
+use super::{
+    CcDisplayMode, CcLogicalMonitor, DisplayRatio, GetList, GetListVia, Orientation, RefreshRate,
+    Resolution, Scale,
+};
 
 #[derive(Debug, Clone)]
 pub struct CcDisplayMonitor {
@@ -42,13 +36,12 @@ impl CcDisplayMonitor {
     }
 
     pub fn get_orientation(&self) -> Orientation {
-        Orientation {
-            ratio: DisplayRatio::from(self.get_current_mode().get_resolution()),
-            transform: self
-                .get_logical_monitor()
+        Orientation::new(
+            DisplayRatio::from(self.get_current_mode().get_resolution()),
+            self.get_logical_monitor()
                 .map(|lm| lm.get_transform())
                 .unwrap_or_default(),
-        }
+        )
     }
 
     pub fn get_current_mode(&self) -> &CcDisplayMode {
@@ -89,10 +82,21 @@ impl CcDisplayMonitor {
 
 impl GetList<Orientation> for CcDisplayMonitor {
     fn get_list(&self) -> Vec<Orientation> {
-        ROTATIONS
-            .map(|transform| Orientation {
-                transform,
-                ratio: DisplayRatio::from(self.get_current_mode().get_resolution()),
+        let rotations = const {
+            [
+                Transform::Normal,
+                Transform::Rotate90,
+                Transform::Rotate180,
+                Transform::Rotate270,
+            ]
+        };
+
+        rotations
+            .map(|transform| {
+                Orientation::new(
+                    DisplayRatio::from(self.get_current_mode().get_resolution()),
+                    transform,
+                )
             })
             .to_vec()
     }
@@ -147,79 +151,5 @@ impl GetList<Scale> for CcDisplayMonitor {
 impl GetListVia<Scale, CcDisplayMode> for CcDisplayMonitor {
     fn get_list_via(&self, current_mode: &CcDisplayMode) -> Vec<Scale> {
         current_mode.get_list()
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum DisplayRatio {
-    Square,
-    Portrait,
-    Landscape,
-}
-
-impl From<Resolution> for DisplayRatio {
-    fn from(value: Resolution) -> Self {
-        if value.0 > value.1 {
-            Self::Landscape
-        } else if value.0 < value.1 {
-            Self::Portrait
-        } else {
-            Self::Square
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Orientation {
-    ratio: DisplayRatio,
-    transform: Transform,
-}
-
-impl Display for Orientation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let label = match self.ratio {
-            DisplayRatio::Landscape => match self.transform {
-                Transform::Normal | Transform::Flipped180 => {
-                    dgettext("Display rotation", "Landscape")
-                }
-                Transform::Rotate90 | Transform::Flipped270 => {
-                    dgettext("Display rotation", "Portrait Right")
-                }
-                Transform::Rotate270 | Transform::Flipped90 => {
-                    dgettext("Display rotation", "Portrait Left")
-                }
-                Transform::Rotate180 | Transform::Flipped => {
-                    dgettext("Display rotation", "Landscape (flipped)")
-                }
-            },
-            DisplayRatio::Portrait => match self.transform {
-                Transform::Normal | Transform::Flipped180 => {
-                    dgettext("Display rotation", "Portrait")
-                }
-                Transform::Rotate90 | Transform::Flipped270 => {
-                    dgettext("Display rotation", "Landscape Right")
-                }
-                Transform::Rotate270 | Transform::Flipped90 => {
-                    dgettext("Display rotation", "Landscape Left")
-                }
-                Transform::Rotate180 | Transform::Flipped => {
-                    dgettext("Display rotation", "Portrait (flipped)")
-                }
-            },
-            DisplayRatio::Square => match self.transform {
-                Transform::Normal | Transform::Flipped180 => {
-                    dgettext("Display rotation", "Upright")
-                }
-                Transform::Rotate90 | Transform::Flipped270 => {
-                    dgettext("Display rotation", "Right")
-                }
-                Transform::Rotate270 | Transform::Flipped90 => dgettext("Display rotation", "Left"),
-                Transform::Rotate180 | Transform::Flipped => {
-                    dgettext("Display rotation", "Flipped")
-                }
-            },
-        };
-
-        f.write_str(&label)
     }
 }
