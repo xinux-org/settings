@@ -11,3 +11,7 @@ mod cc_logical_monitor;
 pub trait GetList<T> {
     fn get_list(&self) -> Vec<T>;
 }
+
+pub trait GetListVia<T, V> {
+    fn get_list_via(&self, via: &V) -> Vec<T>;
+}

@@ -2,11 +2,10 @@ use gettextrs::dgettext;
 use std::{cmp, fmt::Display};
 
 use crate::ui::display::{
-    RefreshRate, Resolution, Scale, color_mode::ColorMode, transform::Transform,
-};
-use crate::ui::display::{
+    GetListVia, RefreshRate, Resolution, Scale,
+    color_mode::ColorMode,
     monitor::{Monitor, MonitorProperties},
-    monitor_spec::MonitorSpec,
+    monitor_spec::MonitorSpec, transform::Transform,
 };
 
 use super::{CcDisplayMode, CcLogicalMonitor, GetList};
@@ -63,6 +62,14 @@ impl CcDisplayMonitor {
 
     pub fn get_modes(&self) -> &[CcDisplayMode] {
         &self.modes
+    }
+
+    pub fn get_mode_by_resolution(&self, resolution: Resolution) -> CcDisplayMode {
+        self.modes
+            .iter()
+            .find(|&mode| mode.get_resolution() == resolution)
+            .unwrap_or(&self.modes[0])
+            .clone()
     }
 
     pub fn get_color_mode(&self) -> ColorMode {
@@ -174,7 +181,12 @@ impl GetList<Resolution> for CcDisplayMonitor {
 impl GetList<RefreshRate> for CcDisplayMonitor {
     fn get_list(&self) -> Vec<RefreshRate> {
         let current_mode = self.get_current_mode();
+        self.get_list_via(current_mode)
+    }
+}
 
+impl GetListVia<RefreshRate, CcDisplayMode> for CcDisplayMonitor {
+    fn get_list_via(&self, current_mode: &CcDisplayMode) -> Vec<RefreshRate> {
         let mut refresh_rates = self
             .modes
             .iter()
@@ -191,7 +203,14 @@ impl GetList<RefreshRate> for CcDisplayMonitor {
 
 impl GetList<Scale> for CcDisplayMonitor {
     fn get_list(&self) -> Vec<Scale> {
-        self.get_current_mode().get_list()
+        let current_mode = self.get_current_mode();
+        self.get_list_via(current_mode)
+    }
+}
+
+impl GetListVia<Scale, CcDisplayMode> for CcDisplayMonitor {
+    fn get_list_via(&self, current_mode: &CcDisplayMode) -> Vec<Scale> {
+        current_mode.get_list()
     }
 }
 

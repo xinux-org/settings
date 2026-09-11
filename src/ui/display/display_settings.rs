@@ -5,7 +5,7 @@ use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
-use super::config::{CcDisplayMonitor, GetList, Orientation};
+use super::config::{CcDisplayMode, CcDisplayMonitor, GetList, GetListVia, Orientation};
 use super::{RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
@@ -253,15 +253,13 @@ impl SimpleComponent for DisplaySettingsModel {
             DisplaySettingsMsg::SelectResolution(index) => {
                 let resolution = self.lists.resolution[index];
 
-                if let Ok(mut monitor) = self.monitor.write() {
-                    monitor.set_current_mode(resolution);
-
-                    let current_mode = monitor.get_current_mode();
+                if let Ok(monitor) = self.monitor.read() {
+                    let current_mode = monitor.get_mode_by_resolution(resolution);
 
                     patch_settings!(self, current_mode);
-                }
 
-                self.update_model();
+                    // self.update_model(&current_mode);
+                }
             }
         };
 
@@ -322,13 +320,9 @@ impl DisplaySettingsModel {
         }
     }
 
-    fn update_model(&mut self) {
-        let Ok(monitor) = self.monitor.read() else {
-            return;
-        };
-
-        self.lists.scale = monitor.get_list();
-        self.lists.refresh_rate = monitor.get_list();
+    fn update_model(&mut self, current_mode: &CcDisplayMode) {
+        // self.lists.scale = self.monitor.get_list_via(current_mode);
+        // self.lists.refresh_rate = self.monitor.get_list_via(current_mode);
 
         update_controller!(&self, scale);
         update_controller!(&self, refresh_rate);

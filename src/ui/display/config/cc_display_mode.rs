@@ -50,8 +50,6 @@ impl CcDisplayMode {
     }
 
     pub fn get_preferred_scale(&self) -> Scale {
-        println!("{:?}", self.inner.preferred_scale);
-
         Scale::from(self.inner.preferred_scale)
     }
 
