@@ -1,10 +1,10 @@
+use gettextrs::gettext;
 use nmrs::WifiSecurity;
 use relm4::{
     adw::{self, prelude::*},
     gtk::{self},
     prelude::*,
 };
-use gettextrs::gettext;
 
 #[derive(Debug)]
 pub struct WifiNetwork {
@@ -17,7 +17,7 @@ pub struct WifiNetwork {
 #[derive(Debug)]
 pub enum NetworkRowMsg {
     Connect(String),
-    ClickQr(String)
+    ClickQr(String),
 }
 
 #[derive(Debug)]
@@ -64,7 +64,7 @@ impl FactoryComponent for WifiNetwork {
                     set_valign: gtk::Align::Center,
                     set_tooltip_text: Some(&gettext("Share Network")),
                     // connect_clicked => NetworkRowMsg::ClickQr
-                    connect_clicked[sender, index, ssid = self.ssid.to_owned()] => move |_|
+                    connect_clicked[sender, ssid = self.ssid.to_owned()] => move |_|
                         sender.input(NetworkRowMsg::ClickQr(
                             ssid.to_string()
                         )
@@ -76,11 +76,11 @@ impl FactoryComponent for WifiNetwork {
                     add_css_class: "flat",
                     set_valign: gtk::Align::Center,
                     set_tooltip_text: Some(&gettext("Network Options")),
-                    
+
                 }
             },
 
-            connect_activated[sender, index, ssid = self.ssid.to_owned()] => move |_|
+            connect_activated[sender, ssid = self.ssid.to_owned()] => move |_|
                 sender.input(NetworkRowMsg::Connect(
                     ssid.to_string()
                 )
@@ -118,15 +118,10 @@ impl FactoryComponent for WifiNetwork {
                         });
                     let _ = sender.output(NetworkRowOutput::ConnectResult(result));
                 });
-            },
+            }
             NetworkRowMsg::ClickQr(ssid) => {
                 let _ = sender.output(NetworkRowOutput::ShowQr(ssid));
             }
         }
     }
 }
-
-// async fn connect_network(ssid: &str) -> nmrs::Result<()> {
-//     let nm = NetworkManager::new().await?;
-//     nm.connect(ssid, WifiSecurity::Open).await
-// }

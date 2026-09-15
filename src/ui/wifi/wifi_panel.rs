@@ -1,11 +1,15 @@
-use core::{
-    clone::Clone,
+use crate::{
+    ui::{
+        wifi::{
+            wifi_panel_row::{NetworkRowOutput, WifiNetwork},
+            wifi_qr_dialog::{WifiQrDialog, WifiQrInput},
+        },
+        window::AppMsg,
+    },
+    utils::power::get_battery_path,
 };
-use crate::ui::{
-    wifi::wifi_panel_row::{NetworkRowOutput, WifiNetwork},
-    wifi::wifi_qr_dialog::{WifiQrDialog, WifiQrInput},
-    window::AppMsg,
-};
+use core::clone::Clone;
+use gettextrs::gettext;
 use nmrs::NetworkManager;
 use relm4::{
     Controller,
@@ -18,7 +22,6 @@ use relm4::{
     prelude::*,
 };
 use tracing::debug;
-use gettextrs::gettext;
 
 pub struct WifiModel {
     wifi_enabled: bool,
@@ -30,27 +33,8 @@ pub struct WifiModel {
     client: nmrs::NetworkManager,
     active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
     qr_dialog: Controller<WifiQrDialog>,
-    // Store the proxy to call methods later
-    // proxy: Option<RfkillProxy<'static>>,
+    is_laptop: bool,
 }
-
-// use zbus::proxy;
-
-// #[proxy(
-//     interface = "org.gnome.SettingsDaemon.Rfkill",
-//     default_service = "org.gnome.SettingsDaemon.Rfkill",
-//     default_path = "/org/gnome/SettingsDaemon/Rfkill"
-// )]
-// trait Rfkill {
-//     /// Read the AirplaneMode property
-//     #[zbus(property)]
-//     fn airplane_mode(&self) -> zbus::Result<bool>;
-
-//     /// Set the AirplaneMode property
-//     #[zbus(property)]
-//     fn set_airplane_mode(&self, value: bool) -> zbus::Result<()>;
-// }
-
 #[derive(Debug)]
 pub enum WifiInput {
     NetworksLoaded(Vec<WifiNetwork>),
@@ -60,9 +44,6 @@ pub enum WifiInput {
     ToggleWifi(bool),
     ToggleAirplaneMode(bool),
     ShowQr(String),
-    // Received update from System D-Bus
-    // AirplaneModeChanged(bool),
-    // ProxyInitialized(RfkillProxy<'static>),
 }
 
 #[derive(Debug)]
@@ -129,17 +110,18 @@ impl SimpleAsyncComponent for WifiModel {
                     }
                 },
                 adw::PreferencesGroup {
-                    // FIXME: show only in laptop!
+                    // show only in laptop!
+                    set_visible: model.is_laptop,
                     adw::SwitchRow {
                         set_title: &gettext("Airplane Mode"),
                         set_subtitle: &gettext("Disables Wi-Fi, Bluetooth and mobile broadband"),
                         set_use_underline: true,
-                        // #[watch]
-                        // set_active: model.airplane_mode,
-                        // connect_active_notify[sender] => move |row| {
-                        //     let is_active = row.is_active();
-                        //     sender.input(WifiInput::ToggleAirplaneMode(is_active));
-                        // }
+                        #[watch]
+                        set_active: model.airplane_mode,
+                        connect_active_notify[sender] => move |row| {
+                            let is_active = row.is_active();
+                            sender.input(WifiInput::ToggleAirplaneMode(is_active));
+                        }
                     }
                 },
                 adw::PreferencesGroup {
@@ -231,12 +213,12 @@ impl SimpleAsyncComponent for WifiModel {
             networks,
             loading: true,
             wifi_stack: gtk::Stack::new(),
-            wifi_stack_page, // fixme with airplane mode
+            wifi_stack_page,
             airplane_mode: false,
             client: nm,
             active_toggle_task: None,
             qr_dialog,
-            // proxy: None,
+            is_laptop: !get_battery_path().is_empty(),
         };
         let networks_group = model.networks.widget();
 
@@ -248,26 +230,6 @@ impl SimpleAsyncComponent for WifiModel {
         let wifi_stack = widgets.wifi_stack.clone();
         model.wifi_stack = wifi_stack;
 
-        // let sender_clone = sender.clone();
-        // relm4::spawn_local(async move {
-        //     let connection = zbus::Connection::session().await.unwrap();
-        //     let proxy = RfkillProxy::new(&connection).await.unwrap();
-        //     sender_clone.input(WifiInput::ProxyInitialized(proxy.clone()));
-
-        //     // initial state
-        //     if let Ok(on) = proxy.airplane_mode().await {
-        //         sender_clone.input(WifiInput::AirplaneModeChanged(on));
-        //     }
-
-        //     // zbus generates 'receive_<prop>_changed' automatically
-        //     let mut stream = proxy.receive_airplane_mode_changed().await;
-        //     while let Some(update) = futures_util::StreamExt::next(&mut stream).await {
-        //         if let Ok(on) = update.get().await {
-        //             sender_clone.input(WifiInput::AirplaneModeChanged(on));
-        //         }
-        //     }
-        // });
-
         AsyncComponentParts { model, widgets }
     }
 
@@ -276,7 +238,6 @@ impl SimpleAsyncComponent for WifiModel {
             WifiInput::LoadNetworks => {
                 if self.wifi_enabled && !self.airplane_mode {
                     sender.input(WifiInput::ClearNetworksList);
-                    // glib::timeout_future(std::time::Duration::from_secs(5)).await;
 
                     match load_networks(&self.client).await {
                         Ok(nets) => sender.input(WifiInput::NetworksLoaded(nets)),
@@ -339,23 +300,7 @@ impl SimpleAsyncComponent for WifiModel {
                     security,
                 });
             }
-            WifiInput::ToggleAirplaneMode(on) => {
-                // if let Some(ref proxy) = self.proxy {
-                //     // we let the D-Bus stream (above) tell us when it's done.
-                //     let p = proxy.clone();
-                //     relm4::spawn_local(async move {
-                //         let _ = p.set_airplane_mode(on).await;
-                //     });
-                // }
-            } // WifiInput::AirplaneModeChanged(on) => {
-              //     self.airplane_mode = on;
-              //     if !on {
-              //         self.wifi_stack = WifiStack::Airplane;
-              //     }
-              // }
-              // WifiInput::ProxyInitialized(proxy) => {
-              //     self.proxy = Some(proxy);
-              // }
+            WifiInput::ToggleAirplaneMode(_on) => {}
         }
     }
 }
@@ -386,7 +331,7 @@ async fn load_networks(client: &nmrs::NetworkManager) -> nmrs::Result<Vec<WifiNe
         })
         .collect();
 
-    networks.sort_by(|a, b| b.strength.cmp(&a.strength));
+    networks.sort_by_key(|b| std::cmp::Reverse(b.strength));
 
     Ok(networks)
 }
@@ -504,47 +449,9 @@ fn nm_value_as_ssid(val: &zbus::zvariant::OwnedValue) -> Option<String> {
 }
 
 fn nm_value_as_str(val: &zbus::zvariant::OwnedValue) -> Option<String> {
-    // let r = val.clone().try_to_owned();
     if let zbus::zvariant::Value::Str(s) = &**val {
         Some(s.as_str().to_string())
     } else {
         None
     }
 }
-
-// async fn is_wifi_enabled() -> bool {
-//     #[proxy(
-//         interface = "org.freedesktop.NetworkManager",
-//         default_service = "org.freedesktop.NetworkManager",
-//         default_path = "/org/freedesktop/NetworkManager"
-//     )]
-//     trait NetworkManagerDBus {
-//         #[zbus(property)]
-//         fn wireless_enabled(&self) -> zbus::Result<bool>;
-//     }
-
-//     let Ok(conn) = Connection::system().await else {
-//         return false;
-//     };
-//     let Ok(proxy) = NetworkManagerDBusProxy::new(&conn).await else {
-//         return false;
-//     };
-//     proxy.wireless_enabled().await.unwrap_or(false)
-// }
-
-// async fn set_wifi_enabled(enabled: bool) -> Result<(), Box<dyn std::error::Error>> {
-//     #[proxy(
-//         interface = "org.freedesktop.NetworkManager",
-//         default_service = "org.freedesktop.NetworkManager",
-//         default_path = "/org/freedesktop/NetworkManager"
-//     )]
-//     trait NetworkManagerDBus {
-//         #[zbus(property)]
-//         fn set_wireless_enabled(&self, enabled: bool) -> zbus::Result<()>;
-//     }
-
-//     let conn = Connection::system().await?;
-//     let proxy = NetworkManagerDBusProxy::new(&conn).await?;
-//     proxy.set_wireless_enabled(enabled).await?;
-//     Ok(())
-// }
