@@ -35,7 +35,8 @@ pub struct DisplayModeProperties {
 }
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone, Copy, PartialEq, Eq)]
-#[zvariant(signature = "s", rename_all = "kebab-case")]
+#[serde(rename_all = "lowercase")]
+#[zvariant(signature = "s")]
 pub enum RefreshRateMode {
     #[default]
     Fixed,
