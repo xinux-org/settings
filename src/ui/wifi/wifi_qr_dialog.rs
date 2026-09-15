@@ -1,12 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
+use gettextrs::gettext;
 use qrcodegen::{QrCode, QrCodeEcc};
 use relm4::{
     ComponentParts, ComponentSender, SimpleComponent,
     adw::{self, prelude::*},
     gtk::{self},
 };
-use gettextrs::gettext;
 
 pub struct WifiQrDialog {
     ssid: String,
@@ -49,6 +49,7 @@ impl SimpleComponent for WifiQrDialog {
         #[root]
         adw::Dialog {
             set_content_width: 360,
+            set_content_height: 516,
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
@@ -124,47 +125,52 @@ impl SimpleComponent for WifiQrDialog {
         model.drawing_area = widgets.drawing_area.clone();
 
         let qr_ref = qr_data.clone();
-        widgets.drawing_area.set_draw_func(move |_area, cr, width, height| {
-            cr.set_source_rgb(1.0, 1.0, 1.0);
-            let _ = cr.paint();
+        widgets
+            .drawing_area
+            .set_draw_func(move |_area, cr, width, height| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                let _ = cr.paint();
 
-            let guard = qr_ref.borrow();
-            if let Some(ref qr) = *guard {
-                let size = qr.size() as f64;
-                let quiet = 2.0_f64;
-                let total = size + 2.0 * quiet;
-                let module_px = (width.min(height) as f64) / total;
-                let offset_x = (width as f64 - total * module_px) / 2.0;
-                let offset_y = (height as f64 - total * module_px) / 2.0;
+                let guard = qr_ref.borrow();
+                if let Some(ref qr) = *guard {
+                    let size = qr.size() as f64;
+                    let quiet = 2.0_f64;
+                    let total = size + 2.0 * quiet;
+                    let module_px = (width.min(height) as f64) / total;
+                    let offset_x = (width as f64 - total * module_px) / 2.0;
+                    let offset_y = (height as f64 - total * module_px) / 2.0;
 
-                cr.set_source_rgb(0.0, 0.0, 0.0);
-                for y in 0..qr.size() {
-                    for x in 0..qr.size() {
-                        if qr.get_module(x, y) {
-                            let px = offset_x + (x as f64 + quiet) * module_px;
-                            let py = offset_y + (y as f64 + quiet) * module_px;
-                            cr.rectangle(px, py, module_px, module_px);
-                            let _ = cr.fill();
+                    cr.set_source_rgb(0.0, 0.0, 0.0);
+                    for y in 0..qr.size() {
+                        for x in 0..qr.size() {
+                            if qr.get_module(x, y) {
+                                let px = offset_x + (x as f64 + quiet) * module_px;
+                                let py = offset_y + (y as f64 + quiet) * module_px;
+                                cr.rectangle(px, py, module_px, module_px);
+                                let _ = cr.fill();
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
 
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
-            WifiQrInput::Show { ssid, password, security } => {
+            WifiQrInput::Show {
+                ssid,
+                password,
+                security,
+            } => {
                 let wifi_str = format!(
                     "WIFI:T:{};S:{};P:{};;",
                     security,
                     escape_wifi(&ssid),
                     escape_wifi(password.as_deref().unwrap_or("")),
                 );
-                *self.qr_data.borrow_mut() =
-                    QrCode::encode_text(&wifi_str, QrCodeEcc::Medium).ok();
+                *self.qr_data.borrow_mut() = QrCode::encode_text(&wifi_str, QrCodeEcc::Medium).ok();
 
                 let pass = password.unwrap_or_default();
                 self.has_password = !pass.is_empty();
