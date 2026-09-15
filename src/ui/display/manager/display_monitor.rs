@@ -1,6 +1,6 @@
 use std::cmp;
 
-use crate::ui::display::dbus;
+use crate::ui::display::{DisplaySettings, dbus};
 
 use super::{
     DisplayMode, DisplayRatio, GetList, GetListVia, LogicalMonitor, Orientation, RefreshRate,
@@ -29,6 +29,29 @@ impl DisplayMonitor {
         }
     }
 
+    pub fn apply_settings(&mut self, settings: &DisplaySettings) {
+        self.properties.is_underscanning = settings.underscanning;
+        self.properties.color_mode = settings.hdr.map(|is| {
+            if is {
+                dbus::ColorMode::BT2100
+            } else {
+                dbus::ColorMode::Default
+            }
+        });
+
+        if let Some(logical_monitor) = self.logical_monitor.as_mut() {
+            logical_monitor.set_scale(settings.scale);
+            logical_monitor.set_transform(settings.orientation.transform);
+        }
+
+        self.modes.iter_mut().for_each(|mode| {
+            mode.set_current(
+                mode.get_resolution() == settings.resolution
+                    && mode.get_refresh_rate() == settings.refresh_rate,
+            );
+        });
+    }
+
     pub fn get_logical_monitor(&self) -> Option<&LogicalMonitor> {
         self.logical_monitor.as_ref()
     }
@@ -49,12 +72,11 @@ impl DisplayMonitor {
             .unwrap_or(&self.modes[0])
     }
 
-    pub fn get_mode_by_resolution(&self, resolution: Resolution) -> DisplayMode {
+    pub fn get_mode_by_resolution(&self, resolution: Resolution) -> &DisplayMode {
         self.modes
             .iter()
             .find(|&mode| mode.get_resolution() == resolution)
             .unwrap_or(&self.modes[0])
-            .clone()
     }
 
     pub fn get_spec(&self) -> &dbus::MonitorSpec {
@@ -83,6 +105,10 @@ impl DisplayMonitor {
 
     pub fn is_builtin(&self) -> bool {
         self.properties.is_builtin.unwrap_or_default()
+    }
+
+    pub fn is_for_lease(&self) -> bool {
+        self.properties.is_for_lease.unwrap_or_default()
     }
 
     pub fn is_underscanning(&self) -> Option<bool> {

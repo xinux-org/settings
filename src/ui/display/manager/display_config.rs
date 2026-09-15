@@ -1,6 +1,9 @@
 use std::sync::{Arc, RwLock};
 
-use crate::ui::display::dbus::{ApplyMethod, ApplyMonitorsConfig, ApplyMonitorsConfigProperties, DisplayState, DisplayStateProperties};
+use crate::ui::display::dbus::{
+    ApplyMethod, ApplyMonitorsConfig, ApplyMonitorsConfigProperties, DisplayState,
+    DisplayStateProperties,
+};
 
 use super::{DisplayMonitor, LogicalMonitor};
 
@@ -54,16 +57,7 @@ impl DisplayConfig {
             return DisplayConfigType::Single(Arc::clone(monitor));
         }
 
-        let index = self
-            .monitors
-            .iter()
-            .enumerate()
-            .filter_map(|(i, m)| m.read().ok().map(|m| (i, m)))
-            .find(|(_, m)| m.is_builtin())
-            .map(|(i, _)| i)
-            .unwrap_or_default();
-
-        DisplayConfigType::Single(Arc::clone(&self.monitors[index]))
+        unimplemented!()
     }
 
     pub fn build_apply_parameters(&self, method: ApplyMethod) -> ApplyMonitorsConfig {
@@ -75,6 +69,7 @@ impl DisplayConfig {
 
         let monitors_for_lease = read_monitors
             .iter()
+            .filter(|monitor| monitor.is_for_lease())
             .map(|monitor| monitor.get_spec().clone())
             .collect::<Vec<_>>();
 

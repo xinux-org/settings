@@ -71,3 +71,9 @@ allmytoes = "0.5.1"
 rand = "0.10.1"
 clap = { version = "4.1", features = [ "derive", "cargo" ] }
 struct-patch = "0.13.2"
+
+[patch.crates-io]
+relm4 = { path = "/home/ezozbek/OpenSource/Relm4/relm4" }
+relm4-css = { path = "/home/ezozbek/OpenSource/Relm4/relm4-css" }
+relm4-macros = { path = "/home/ezozbek/OpenSource/Relm4/relm4-macros" }
+relm4-components = { path = "/home/ezozbek/OpenSource/Relm4/relm4-components" }

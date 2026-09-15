@@ -24,8 +24,8 @@ impl From<Resolution> for DisplayRatio {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Orientation {
-    ratio: DisplayRatio,
-    transform: Transform,
+    pub ratio: DisplayRatio,
+    pub transform: Transform,
 }
 
 impl Display for Orientation {

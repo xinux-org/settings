@@ -6,7 +6,7 @@ use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
 
 use crate::ui::display::manager::{DisplayMonitor, GetList, Orientation};
-use crate::ui::display::{RefreshRate, Resolution, Scale};
+use crate::ui::display::{GetListVia, RefreshRate, Resolution, Scale};
 
 macro_rules! patch_settings {
     ($self:ident, $name:ident, $index:ident) => {
@@ -252,15 +252,21 @@ impl SimpleComponent for DisplaySettingsModel {
             DisplaySettingsMsg::SelectResolution(index) => {
                 let resolution = self.lists.resolution[index];
 
-                if let Ok(monitor) = self.monitor.read() {
-                    let current_mode = monitor.get_mode_by_resolution(resolution);
+                {
+                    if let Ok(monitor) = self.monitor.read() {
+                        let current_mode = monitor.get_mode_by_resolution(resolution);
 
-                    patch_settings!(self, current_mode);
+                        patch_settings!(self, current_mode);
+                    }
                 }
 
                 self.update_model();
             }
         };
+
+        if let Ok(mut monitor) = self.monitor.write() {
+            monitor.apply_settings(&self.settings);
+        }
 
         sender
             .output_sender()
@@ -320,8 +326,14 @@ impl DisplaySettingsModel {
     }
 
     fn update_model(&mut self) {
-        // self.lists.scale = self.monitor.get_list_via(current_mode);
-        // self.lists.refresh_rate = self.monitor.get_list_via(current_mode);
+        let Ok(monitor) = self.monitor.read() else {
+            return;
+        };
+
+        let current_mode = monitor.get_mode_by_resolution(self.settings.resolution);
+
+        self.lists.scale = monitor.get_list_via(current_mode);
+        self.lists.refresh_rate = monitor.get_list_via(current_mode);
 
         update_controller!(&self, scale);
         update_controller!(&self, refresh_rate);

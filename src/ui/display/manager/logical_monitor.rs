@@ -32,6 +32,10 @@ impl LogicalMonitor {
         self.inner.scale = scale.into();
     }
 
+    pub fn set_transform(&mut self, transform: dbus::Transform) {
+        self.inner.transform = transform;
+    }
+
     pub fn into_apply(
         &self,
         monitors: &[RwLockReadGuard<'_, DisplayMonitor>],

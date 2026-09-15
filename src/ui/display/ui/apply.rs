@@ -13,17 +13,21 @@ pub struct Apply {
 
 #[derive(Debug)]
 pub enum ApplyState {
+    Applied,
     NoChanges,
     Applicable,
-    NoApplicalble,
+    ApplyFailed,
+    NoApplicable,
 }
 
 impl Display for ApplyState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let title = match self {
+            ApplyState::Applied => None,
             ApplyState::NoChanges => None,
             ApplyState::Applicable => Some("Apply Changes?"),
-            ApplyState::NoApplicalble => Some("Cannot Apply Changes!"),
+            ApplyState::ApplyFailed => Some("Apply failed!"),
+            ApplyState::NoApplicable => Some("Cannot Apply Changes!"),
         };
 
         f.write_fmt(format_args!("{}", title.map(gettext).unwrap_or_default()))
@@ -49,9 +53,9 @@ impl SimpleAsyncComponent for Apply {
             set_show_title: true,
 
             #[watch]
-            set_show_end_title_buttons: matches!(model.state, ApplyState::NoChanges),
+            set_show_end_title_buttons: matches!(model.state, ApplyState::NoChanges | ApplyState::Applied),
             #[watch]
-            set_show_start_title_buttons: matches!(model.state, ApplyState::NoChanges),
+            set_show_start_title_buttons: matches!(model.state, ApplyState::NoChanges | ApplyState::Applied),
 
             #[wrap(Some)]
             set_title_widget = &adw::WindowTitle {
@@ -65,7 +69,7 @@ impl SimpleAsyncComponent for Apply {
                 set_label: &gettext("Cancel"),
                 connect_clicked => ApplyMsg::Cancel,
                 #[watch]
-                set_visible: !matches!(model.state, ApplyState::NoChanges),
+                set_visible: !matches!(model.state, ApplyState::NoChanges | ApplyState::Applied),
             },
 
             pack_end = &gtk::Button {
@@ -75,7 +79,7 @@ impl SimpleAsyncComponent for Apply {
                 add_css_class: "suggested-action",
                 connect_clicked => ApplyMsg::Apply,
                 #[watch]
-                set_visible: !matches!(model.state, ApplyState::NoChanges),
+                set_visible: !matches!(model.state, ApplyState::NoChanges | ApplyState::Applied),
                 #[watch]
                 set_sensitive: matches!(model.state, ApplyState::Applicable),
             },
@@ -99,20 +103,25 @@ impl SimpleAsyncComponent for Apply {
 
     async fn update(&mut self, message: Self::Input, _sender: AsyncComponentSender<Self>) {
         match message {
-            ApplyMsg::Apply => {}
+            ApplyMsg::Apply => {
+                self.state = self
+                    .manager
+                    .config_apply()
+                    .await
+                    .inspect_err(|err| tracing::error!("{err}"))
+                    .map_or(ApplyState::ApplyFailed, |()| ApplyState::Applied);
+            }
             ApplyMsg::Cancel => {
                 self.state = ApplyState::NoChanges;
             }
-            ApplyMsg::SettingsChanged() => match self.manager.config_is_applicable().await {
-                Ok(()) => {
-                    self.state = ApplyState::Applicable;
-                }
-                Err(err) => {
-                    tracing::error!("{err}");
-
-                    self.state = ApplyState::NoApplicalble;
-                }
-            },
+            ApplyMsg::SettingsChanged() => {
+                self.state = self
+                    .manager
+                    .config_is_applicable()
+                    .await
+                    .inspect_err(|err| tracing::error!("{err}"))
+                    .map_or(ApplyState::NoApplicable, |()| ApplyState::Applicable);
+            }
         }
     }
 }
