@@ -32,7 +32,7 @@ pub struct WifiModel {
     airplane_mode: bool,
     client: nmrs::NetworkManager,
     active_toggle_task: Option<gtk::glib::JoinHandle<()>>,
-    qr_dialog: Controller<WifiQrDialog>,
+    qr_dialog: AsyncController<WifiQrDialog>,
     is_laptop: bool,
 }
 #[derive(Debug)]

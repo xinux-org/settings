@@ -3,9 +3,10 @@ use std::{cell::RefCell, rc::Rc};
 use gettextrs::gettext;
 use qrcodegen::{QrCode, QrCodeEcc};
 use relm4::{
-    ComponentParts, ComponentSender, SimpleComponent,
     adw::{self, prelude::*},
+    component::{AsyncComponent, AsyncComponentParts},
     gtk::{self},
+    *,
 };
 
 pub struct WifiQrDialog {
@@ -39,50 +40,49 @@ fn escape_wifi(s: &str) -> String {
     out
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for WifiQrDialog {
+#[relm4::component(pub, async)]
+impl AsyncComponent for WifiQrDialog {
     type Init = gtk::Widget;
     type Input = WifiQrInput;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         #[root]
         adw::Dialog {
-            set_content_width: 360,
-            set_content_height: 516,
+            set_content_width: 350,
+            set_content_height: 510,
+            set_title: &gettext("Share Network"),
             #[wrap(Some)]
             set_child = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
-                add_top_bar = &adw::HeaderBar {
-                    #[wrap(Some)]
-                    set_title_widget = &adw::WindowTitle {
-                        set_title: &gettext("Share Network"),
-                    },
-                },
+                add_top_bar = &adw::HeaderBar {},
                 #[wrap(Some)]
                 set_content = &adw::PreferencesPage {
                     adw::PreferencesGroup {
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
-                            set_spacing: 20,
-                            set_margin_top: 8,
-                            set_margin_bottom: 8,
                             gtk::Box {
+                                set_margin_bottom: 8,
                                 set_halign: gtk::Align::Center,
                                 #[name(drawing_area)]
                                 gtk::DrawingArea {
-                                    set_content_width: 220,
-                                    set_content_height: 220,
+                                    set_content_width: 200,
+                                    set_content_height: 200,
                                 },
                             },
                             gtk::Label {
                                 add_css_class: "title-1",
                                 set_text: &gettext("Scan to Connect"),
+                                set_wrap: true,
+                                set_justify: gtk::Justification::Center,
                             },
                         },
                     },
                     adw::PreferencesGroup {
                         adw::ActionRow {
+                            add_css_class: "property",
+                            set_use_markup: false,
                             set_title: &gettext("Network Name"),
                             #[watch]
                             set_subtitle: &model.ssid,
@@ -90,6 +90,8 @@ impl SimpleComponent for WifiQrDialog {
                         },
 
                         adw::ActionRow {
+                            add_css_class: "property",
+                            set_use_markup: false,
                             set_title: &gettext("Password"),
                             #[watch]
                             set_subtitle: &model.password,
@@ -103,11 +105,11 @@ impl SimpleComponent for WifiQrDialog {
         }
     }
 
-    fn init(
+    async fn init(
         parent: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        _sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
         let qr_data: Rc<RefCell<Option<QrCode>>> = Rc::new(RefCell::new(None));
 
         let mut model = WifiQrDialog {
@@ -121,8 +123,6 @@ impl SimpleComponent for WifiQrDialog {
         };
 
         let widgets = view_output!();
-
-        model.drawing_area = widgets.drawing_area.clone();
 
         let qr_ref = qr_data.clone();
         widgets
@@ -153,11 +153,17 @@ impl SimpleComponent for WifiQrDialog {
                     }
                 }
             });
-
-        ComponentParts { model, widgets }
+        model.drawing_area = widgets.drawing_area.clone();
+        
+        AsyncComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    async fn update(
+        &mut self,
+        message: Self::Input,
+        _sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         match message {
             WifiQrInput::Show {
                 ssid,
