@@ -105,11 +105,11 @@ msgstr "Saqlangan tarmoqlar"
 
 #: src/ui/wifi/wifi_panel.rs:115
 msgid "Connect to Hidden Network..."
-msgstr "Yaşirin tarmoqqa ulaniş..."
+msgstr "Yashirin tarmoqqa ulanish..."
 
 #: src/ui/wifi/wifi_panel.rs:123
 msgid "Turn On Wi-Fi Hotspot..."
-msgstr "Wi-Fi hotspotni yoqiş..."
+msgstr "Wi-Fi hotspotni yoqish..."
 
 #: src/ui/wifi/wifi_panel.rs:134
 msgid "Airplane Mode"
@@ -121,11 +121,11 @@ msgstr "Wi-Fi, Bluetooth va mobil internetni faolsizlantiradi"
 
 #: src/ui/wifi/wifi_panel.rs:181
 msgid "Visible Networks"
-msgstr "Körinadigan tarmoqlar"
+msgstr "Koʻrinadigan tarmoqlar"
 
 #: src/ui/wifi/wifi_panel.rs:192
 msgid "Wi-Fi Off"
-msgstr "Wi-Fi öçiq"
+msgstr "Wi-Fi oʻchiq"
 
 #: src/ui/wifi/wifi_panel.rs:197
 msgid "Airplane Mode On"
@@ -133,7 +133,7 @@ msgstr "Parvoz rejimi yoniq"
 
 #: src/ui/wifi/wifi_panel_row.rs:65 src/ui/wifi/wifi_qr_dialog.rs:58
 msgid "Share Network"
-msgstr "Tarmoqni ulaşiş"
+msgstr "Tarmoqni ulashish"
 
 #: src/ui/wifi/wifi_panel_row.rs:78
 msgid "Network Options"
@@ -141,7 +141,7 @@ msgstr "Tarmoq sozlamalari"
 
 #: src/ui/wifi/wifi_qr_dialog.rs:79
 msgid "Scan to Connect"
-msgstr "Ulaniş uçun skanerlang"
+msgstr "Ulanish uchun skanerlang"
 
 #: src/ui/wifi/wifi_qr_dialog.rs:85
 msgid "Network Name"
