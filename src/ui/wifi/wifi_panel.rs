@@ -130,6 +130,10 @@ impl SimpleAsyncComponent for WifiModel {
                         set_transition_type: gtk::StackTransitionType::Crossfade,
                         set_hhomogeneous: false,
                         set_vhomogeneous: false,
+                        // donʻt translate
+                        add_named: (&wifi_off, Some("wifi-off")),
+                        add_named: (&wifi_connections, Some("wifi-connections")),
+                        add_named: (&wifi_connections, Some("airplane-mode")),
                         #[watch]
                         set_visible_child_name: match model.wifi_stack_page {
                           // donʻt translate
@@ -137,10 +141,6 @@ impl SimpleAsyncComponent for WifiModel {
                             WifiStack::WifiOff => "wifi-off",
                             WifiStack::Airplane => "airplane-mode",
                         },
-                        // donʻt translate
-                        add_named: (&wifi_off, Some("wifi-off")),
-                        add_named: (&wifi_connections, Some("wifi-connections")),
-                        add_named: (&wifi_connections, Some("airplane-mode")),
                     },
                 }
             }
