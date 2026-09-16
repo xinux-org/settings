@@ -47,6 +47,10 @@ impl SimpleAsyncComponent for Apply {
     type Input = ApplyMsg;
     type Output = ();
 
+    additional_fields! {
+        title_widget: Option<adw::WindowTitle>,
+    }
+
     view! {
         #[name(root)]
         adw::HeaderBar {
@@ -56,12 +60,6 @@ impl SimpleAsyncComponent for Apply {
             set_show_end_title_buttons: matches!(model.state, ApplyState::NoChanges | ApplyState::Applied),
             #[watch]
             set_show_start_title_buttons: matches!(model.state, ApplyState::NoChanges | ApplyState::Applied),
-
-            #[wrap(Some)]
-            set_title_widget = &adw::WindowTitle {
-                #[watch]
-                set_title: &model.state.to_string(),
-            },
 
             pack_start = &gtk::Button {
                 set_can_shrink: true,
@@ -96,7 +94,11 @@ impl SimpleAsyncComponent for Apply {
             state: ApplyState::NoChanges,
         };
 
-        let widgets = view_output!();
+        let title_widget = None;
+
+        let mut widgets = view_output!();
+
+        model.render_title(&mut widgets);
 
         AsyncComponentParts { model, widgets }
     }
@@ -123,5 +125,25 @@ impl SimpleAsyncComponent for Apply {
                     .map_or(ApplyState::NoApplicable, |()| ApplyState::Applicable);
             }
         }
+    }
+
+    fn post_view() {
+        self.render_title(widgets);
+    }
+}
+
+impl Apply {
+    fn render_title(&self, widgets: &mut <Self as SimpleAsyncComponent>::Widgets) {
+        let title = self.state.to_string();
+
+        let title_widget: Option<adw::WindowTitle> = match title.is_empty() {
+            true => None,
+            false => {
+                let title_widget = adw::WindowTitle::builder().title(&title).build();
+                Some(title_widget)
+            }
+        };
+
+        widgets.root.set_title_widget(title_widget.as_ref());
     }
 }

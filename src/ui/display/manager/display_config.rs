@@ -51,8 +51,7 @@ impl From<DisplayState> for DisplayConfig {
 
 impl DisplayConfig {
     pub fn get_monitor(&self) -> DisplayConfigType {
-        if self.monitors.len() == 1
-            && let Some(monitor) = self.monitors.first()
+        if let Some(monitor) = self.monitors.first()
         {
             return DisplayConfigType::Single(Arc::clone(monitor));
         }
