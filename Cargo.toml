@@ -73,7 +73,7 @@ clap = { version = "4.1", features = [ "derive", "cargo" ] }
 struct-patch = "0.13.2"
 
 [patch.crates-io]
-relm4 = { path = "/home/ezozbek/OpenSource/Relm4/relm4" }
-relm4-css = { path = "/home/ezozbek/OpenSource/Relm4/relm4-css" }
-relm4-macros = { path = "/home/ezozbek/OpenSource/Relm4/relm4-macros" }
-relm4-components = { path = "/home/ezozbek/OpenSource/Relm4/relm4-components" }
+relm4 = { git = "https://github.com/ezozbek36/Relm4.git" }
+relm4-css = { git = "https://github.com/ezozbek36/Relm4.git" }
+relm4-macros = { git = "https://github.com/ezozbek36/Relm4.git" }
+relm4-components = { git = "https://github.com/ezozbek36/Relm4.git" }

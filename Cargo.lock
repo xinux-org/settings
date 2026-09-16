@@ -4345,6 +4345,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 [[package]]
 name = "relm4"
 version = "0.11.0"
+source = "git+https://github.com/ezozbek36/Relm4.git#19767b53637d983e2e2463395b358cef9d12cabd"
 dependencies = [
  "flume",
  "fragile",
@@ -4361,6 +4362,7 @@ dependencies = [
 [[package]]
 name = "relm4-components"
 version = "0.11.0"
+source = "git+https://github.com/ezozbek36/Relm4.git#19767b53637d983e2e2463395b358cef9d12cabd"
 dependencies = [
  "once_cell",
  "relm4",
@@ -4370,10 +4372,12 @@ dependencies = [
 [[package]]
 name = "relm4-css"
 version = "0.11.0"
+source = "git+https://github.com/ezozbek36/Relm4.git#19767b53637d983e2e2463395b358cef9d12cabd"
 
 [[package]]
 name = "relm4-macros"
 version = "0.11.0"
+source = "git+https://github.com/ezozbek36/Relm4.git#19767b53637d983e2e2463395b358cef9d12cabd"
 dependencies = [
  "proc-macro2",
  "quote",
