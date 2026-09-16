@@ -1,4 +1,4 @@
-use std::cmp;
+use std::{cmp, fmt::Display};
 
 use crate::ui::display::dbus;
 
@@ -9,15 +9,29 @@ use super::{
 
 #[derive(Debug)]
 pub struct DisplayMonitor {
+    spec: dbus::MonitorSpec,
     modes: Vec<DisplayMode>,
     properties: dbus::MonitorProperties,
     logical_monitor: Option<LogicalMonitor>,
+}
+
+impl Display for DisplayMonitor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "{}",
+            self.properties
+                .display_name
+                .as_ref()
+                .unwrap_or(&self.spec.connector)
+        ))
+    }
 }
 
 impl DisplayMonitor {
     pub fn new(monitor: dbus::Monitor, logical_monitor: Option<LogicalMonitor>) -> Self {
         Self {
             logical_monitor,
+            spec: monitor.spec,
             properties: monitor.properties,
             modes: monitor
                 .modes
@@ -73,6 +87,12 @@ impl DisplayMonitor {
 
     pub fn is_underscanning(&self) -> Option<bool> {
         self.properties.is_underscanning
+    }
+
+    pub fn is_primary(&self) -> bool {
+        self.logical_monitor
+            .as_ref()
+            .is_some_and(|logical_monitor| logical_monitor.is_primary())
     }
 }
 

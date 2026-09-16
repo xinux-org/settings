@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use crate::ui::display::dbus::DisplayState;
 
-use super::{LogicalMonitor, DisplayMonitor};
+use super::{DisplayMonitor, LogicalMonitor};
 
 pub enum DisplayConfigType {
     Single(Arc<DisplayMonitor>),
+    Multi(Vec<Arc<DisplayMonitor>>),
 }
 
 #[derive(Debug)]
@@ -47,6 +48,6 @@ impl DisplayConfig {
             return DisplayConfigType::Single(Arc::clone(monitor));
         }
 
-        unimplemented!()
+        DisplayConfigType::Multi(self.monitors.iter().map(Arc::clone).collect())
     }
 }

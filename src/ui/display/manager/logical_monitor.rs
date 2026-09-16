@@ -25,4 +25,8 @@ impl LogicalMonitor {
     pub fn has_output(&self, spec: &dbus::MonitorSpec) -> bool {
         self.inner.monitors.contains(spec)
     }
+
+    pub fn is_primary(&self) -> bool {
+        self.inner.is_primary
+    }
 }

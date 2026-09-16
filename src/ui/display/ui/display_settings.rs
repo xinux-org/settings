@@ -134,74 +134,76 @@ impl SimpleComponent for DisplaySettingsModel {
 
     view! {
         #[root]
-        gtk::Box {
-            set_spacing: 18,
-            set_orientation: gtk::Orientation::Vertical,
+        adw::PreferencesGroup {
+            gtk::Box {
+                set_spacing: 18,
+                set_orientation: gtk::Orientation::Vertical,
 
-            #[name(listbox)]
-            gtk::ListBox {
-                set_hexpand: true,
-                add_css_class: "boxed-list",
-                set_selection_mode: gtk::SelectionMode::None,
+                #[name(listbox)]
+                gtk::ListBox {
+                    set_hexpand: true,
+                    add_css_class: "boxed-list",
+                    set_selection_mode: gtk::SelectionMode::None,
 
-                model.controllers.orientation.widget() -> &adw::ComboRow {
-                   set_width_request: 100,
-                   set_use_underline: true,
-                   set_title: &dgettext("display setting", "_Orientation"),
-                },
-
-                model.controllers.resolution.widget() -> &adw::ComboRow {
+                    model.controllers.orientation.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
-                    set_title: &dgettext("display setting", "_Resolution")
-                },
+                    set_title: &dgettext("display setting", "_Orientation"),
+                    },
 
-                model.controllers.refresh_rate.widget() -> &adw::ComboRow {
-                    set_width_request: 100,
-                    set_use_underline: true,
-                    set_title: &dgettext("display setting", "R_efresh Rate")
-                },
+                    model.controllers.resolution.widget() -> &adw::ComboRow {
+                        set_width_request: 100,
+                        set_use_underline: true,
+                        set_title: &dgettext("display setting", "_Resolution")
+                    },
 
-                #[name(hdr_row)]
-                adw::SwitchRow {
-                    #[watch]
-                    set_visible: model.settings.hdr.is_some(),
+                    model.controllers.refresh_rate.widget() -> &adw::ComboRow {
+                        set_width_request: 100,
+                        set_use_underline: true,
+                        set_title: &dgettext("display setting", "R_efresh Rate")
+                    },
 
-                    #[watch]
-                    set_active: model.settings.hdr.is_some_and(|x| x),
+                    #[name(hdr_row)]
+                    adw::SwitchRow {
+                        #[watch]
+                        set_visible: model.settings.hdr.is_some(),
 
-                    set_width_request: 100,
-                    set_use_underline: true,
-                    set_title: &gettext("_HDR (High Dynamic Range)"),
+                        #[watch]
+                        set_active: model.settings.hdr.is_some_and(|x| x),
 
-                    connect_active_notify[sender] => move |hdr| {
-                        sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { hdr: Some(hdr.is_active()), ..Default::default() }));
+                        set_width_request: 100,
+                        set_use_underline: true,
+                        set_title: &gettext("_HDR (High Dynamic Range)"),
+    
+                        connect_active_notify[sender] => move |hdr| {
+                            sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { hdr: Some(hdr.is_active()), ..Default::default() }));
+                        }
+                    },
+
+                    #[name(underscanning_row)]
+                    adw::SwitchRow {
+                        #[watch]
+                        set_visible: model.settings.underscanning.is_some(),
+
+                        #[watch]
+                        set_active: model.settings.underscanning.is_some_and(|x| x),
+
+                        set_width_request: 100,
+                        set_use_underline: true,
+                        set_title: &gettext("Adjust for _TV"),
+
+                        connect_active_notify[sender] => move |underscanning| {
+                            sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { underscanning: Some(underscanning.is_active()), ..Default::default() }));
+                        }
+                    },
+
+                    model.controllers.scale.widget() -> &adw::ComboRow {
+                        set_width_request: 100,
+                        set_use_underline: true,
+                        set_title: &dgettext("display settings", "_Scale"),
                     }
                 },
-
-                #[name(underscanning_row)]
-                adw::SwitchRow {
-                    #[watch]
-                    set_visible: model.settings.underscanning.is_some(),
-
-                    #[watch]
-                    set_active: model.settings.underscanning.is_some_and(|x| x),
-
-                    set_width_request: 100,
-                    set_use_underline: true,
-                    set_title: &gettext("Adjust for _TV"),
-
-                    connect_active_notify[sender] => move |underscanning| {
-                        sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { underscanning: Some(underscanning.is_active()), ..Default::default() }));
-                    }
-                },
-
-                model.controllers.scale.widget() -> &adw::ComboRow {
-                    set_width_request: 100,
-                    set_use_underline: true,
-                    set_title: &dgettext("display settings", "_Scale"),
-                }
-            },
+            }
         }
     }
 
