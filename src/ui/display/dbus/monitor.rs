@@ -1,10 +1,33 @@
 use serde::Deserialize;
 use zbus::zvariant::{DeserializeDict, Type};
 
-use super::color_mode::ColorMode;
-use super::display_mode::DisplayMode;
-use super::monitor_spec::MonitorSpec;
-use super::rgb_range::RgbRange;
+use super::DisplayMode;
+
+#[derive(Deserialize, Type, Debug, Copy, Clone, PartialEq, Eq)]
+pub enum RgbRange {
+    Auto = 1,
+    Full = 2,
+    Limited = 3,
+}
+
+#[derive(Deserialize, Type, Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ColorMode {
+    Default = 0,
+    BT2100 = 1,
+    SDRNative = 2,
+}
+
+#[derive(Deserialize, Type, Debug, Clone, Eq, PartialEq)]
+pub struct MonitorSpec {
+    // connector name (e.g. HDMI-1, DP-1, etc)
+    pub connector: String,
+    // vendor name
+    pub vendor: String,
+    // product name
+    pub product: String,
+    // product serial
+    pub serial: String,
+}
 
 #[derive(Deserialize, Type, Debug, Clone, PartialEq)]
 pub struct Monitor {

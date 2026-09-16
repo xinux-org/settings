@@ -1,9 +1,7 @@
 use serde::Deserialize;
 use zbus::zvariant::{DeserializeDict, Type};
 
-use super::layout_mode::LayoutMode;
-use super::logical_monitor::LogicalMonitor;
-use super::monitor::Monitor;
+use super::{LogicalMonitor, Monitor};
 
 #[derive(Deserialize, Type, Debug, Clone)]
 pub struct DisplayState {
@@ -30,4 +28,16 @@ pub struct DisplayStateProperties {
     // True if all the logical monitors must always use the same scale.
     // Absence of this means logical monitor scales can differ.
     pub global_scale_required: Option<bool>,
+}
+
+// current layout mode represents the way logical monitors are laid out on the screen
+#[derive(Deserialize, Type, Debug, Copy, Clone, PartialEq, Eq)]
+pub enum LayoutMode {
+    // With logical mode, the dimension of a logical monitor is the dimension
+    // of the monitor mode, divided by the logical monitor scale.
+    Logical = 1,
+    // With physical layout mode, each logical monitor has the same dimensions
+    // as the monitor modes of the associated monitors assigned to it, no
+    // matter what scale is in use.
+    Physical = 2,
 }

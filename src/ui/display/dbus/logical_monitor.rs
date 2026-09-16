@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 use zbus::zvariant::{OwnedValue, Type};
 
-use super::monitor_spec::MonitorSpec;
-use super::transform::Transform;
+use super::MonitorSpec;
 
 #[derive(Deserialize, Type, Debug, Clone, PartialEq)]
 pub struct LogicalMonitor {
@@ -21,4 +20,17 @@ pub struct LogicalMonitor {
     // monitors displaying this logical monitor
     pub monitors: Vec<MonitorSpec>,
     pub properties: HashMap<String, OwnedValue>,
+}
+
+#[derive(Deserialize, Type, Default, Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Transform {
+    #[default]
+    Normal = 0,
+    Rotate90 = 1,
+    Rotate180 = 2,
+    Rotate270 = 3,
+    Flipped = 4,
+    Flipped90 = 5,
+    Flipped180 = 6,
+    Flipped270 = 7,
 }
