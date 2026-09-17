@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::ui::display::dbus::DisplayState;
 
-use super::{LogicalMonitor, DisplayMonitor};
+use super::{DisplayMonitor, LogicalMonitor};
 
 pub enum DisplayConfigType {
     Single(Arc<DisplayMonitor>),

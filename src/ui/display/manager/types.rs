@@ -3,6 +3,44 @@ use std::{cmp, fmt::Display};
 
 use crate::ui::display::dbus::Transform;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Resolution(/** width */ pub i32, /** height */ pub i32);
+
+impl Display for Resolution {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(aspect) = self.get_aspect_ratio() {
+            return f.write_fmt(format_args!("{} × {} ({})", self.0, self.1, aspect));
+        }
+
+        f.write_fmt(format_args!("{} × {}", self.0, self.1))
+    }
+}
+
+impl Resolution {
+    /// Calculates display aspect ratio
+    /// NOTE: this function taken from C code
+    pub fn get_aspect_ratio(&self) -> Option<&str> {
+        let ratio = if self.0 > self.1 {
+            self.0 * 10 / self.1
+        } else {
+            self.1 * 10 / self.0
+        };
+
+        match ratio {
+            10 => Some("1:1"),
+            12 => Some("5:4"),
+            13 => Some("4:3"),
+            15 => Some("3:2"),
+            16 => Some("16:10"),
+            17 => Some("16:9"),
+            18 => Some("9:5"),
+            23 => Some("21:9"),
+            35 => Some("32:9"),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DisplayRatio {
     Square,
@@ -61,42 +99,6 @@ impl Orientation {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Resolution(pub i32, pub i32);
-
-impl Display for Resolution {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(aspect) = self.get_aspect_ratio() {
-            return f.write_fmt(format_args!("{} × {} ({})", self.0, self.1, aspect));
-        }
-
-        f.write_fmt(format_args!("{} × {}", self.0, self.1))
-    }
-}
-
-impl Resolution {
-    pub fn get_aspect_ratio(&self) -> Option<&str> {
-        let ratio = if self.0 > self.1 {
-            self.0 * 10 / self.1
-        } else {
-            self.1 * 10 / self.0
-        };
-
-        match ratio {
-            10 => Some("1:1"),
-            12 => Some("5:4"),
-            13 => Some("4:3"),
-            15 => Some("3:2"),
-            16 => Some("16:10"),
-            17 => Some("16:9"),
-            18 => Some("9:5"),
-            23 => Some("21:9"),
-            35 => Some("32:9"),
-            _ => None,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RefreshRate(pub f64);
 
@@ -106,6 +108,8 @@ impl Display for RefreshRate {
     }
 }
 
+// Eq needed by Ord impl, we use for sorting
+// Hack: #[derive(Eq)] will gave error
 impl Eq for RefreshRate {}
 
 impl PartialOrd for RefreshRate {
@@ -127,7 +131,7 @@ impl Ord for RefreshRate {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Scale(pub f64);
+pub struct Scale(/** scale */ pub f64);
 
 impl From<f64> for Scale {
     fn from(value: f64) -> Self {

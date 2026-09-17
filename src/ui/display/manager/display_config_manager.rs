@@ -1,6 +1,8 @@
 use zbus::Connection;
 
-use super::{DisplayConfig, DisplayConfigProxy};
+use crate::ui::display::dbus::DisplayConfigProxy;
+
+use super::DisplayConfig;
 
 #[derive(Debug)]
 pub struct DisplayConfigManager {
