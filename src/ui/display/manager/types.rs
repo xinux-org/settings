@@ -1,4 +1,4 @@
-use gettextrs::dgettext;
+use gettextrs::gettext;
 use std::{cmp, fmt::Display};
 
 use crate::ui::display::dbus::Transform;
@@ -32,44 +32,22 @@ impl Display for Orientation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let label = match self.ratio {
             DisplayRatio::Landscape => match self.transform {
-                Transform::Normal | Transform::Flipped180 => {
-                    dgettext("Display rotation", "Landscape")
-                }
-                Transform::Rotate90 | Transform::Flipped270 => {
-                    dgettext("Display rotation", "Portrait Right")
-                }
-                Transform::Rotate270 | Transform::Flipped90 => {
-                    dgettext("Display rotation", "Portrait Left")
-                }
-                Transform::Rotate180 | Transform::Flipped => {
-                    dgettext("Display rotation", "Landscape (flipped)")
-                }
+                Transform::Normal | Transform::Flipped180 => gettext("Landscape"),
+                Transform::Rotate90 | Transform::Flipped270 => gettext("Portrait Right"),
+                Transform::Rotate270 | Transform::Flipped90 => gettext("Portrait Left"),
+                Transform::Rotate180 | Transform::Flipped => gettext("Landscape (flipped)"),
             },
             DisplayRatio::Portrait => match self.transform {
-                Transform::Normal | Transform::Flipped180 => {
-                    dgettext("Display rotation", "Portrait")
-                }
-                Transform::Rotate90 | Transform::Flipped270 => {
-                    dgettext("Display rotation", "Landscape Right")
-                }
-                Transform::Rotate270 | Transform::Flipped90 => {
-                    dgettext("Display rotation", "Landscape Left")
-                }
-                Transform::Rotate180 | Transform::Flipped => {
-                    dgettext("Display rotation", "Portrait (flipped)")
-                }
+                Transform::Normal | Transform::Flipped180 => gettext("Portrait"),
+                Transform::Rotate90 | Transform::Flipped270 => gettext("Landscape Right"),
+                Transform::Rotate270 | Transform::Flipped90 => gettext("Landscape Left"),
+                Transform::Rotate180 | Transform::Flipped => gettext("Portrait (flipped)"),
             },
             DisplayRatio::Square => match self.transform {
-                Transform::Normal | Transform::Flipped180 => {
-                    dgettext("Display rotation", "Upright")
-                }
-                Transform::Rotate90 | Transform::Flipped270 => {
-                    dgettext("Display rotation", "Right")
-                }
-                Transform::Rotate270 | Transform::Flipped90 => dgettext("Display rotation", "Left"),
-                Transform::Rotate180 | Transform::Flipped => {
-                    dgettext("Display rotation", "Flipped")
-                }
+                Transform::Normal | Transform::Flipped180 => gettext("Upright"),
+                Transform::Rotate90 | Transform::Flipped270 => gettext("Right"),
+                Transform::Rotate270 | Transform::Flipped90 => gettext("Left"),
+                Transform::Rotate180 | Transform::Flipped => gettext("Flipped"),
             },
         };
 

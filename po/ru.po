@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-19 22:14+0500\n"
+"POT-Creation-Date: 2026-09-16 18:20+0500\n"
 "PO-Revision-Date: 2026-04-19 22:16+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -18,79 +18,258 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.6\n"
 
-#: data/uz.xinux.Settings.desktop.in.in:2
-#: data/uz.xinux.Settings.metainfo.xml.in.in:7
-msgid "Xinux Settings"
-msgstr ""
-
-#: data/uz.xinux.Settings.desktop.in.in:3
-#: data/uz.xinux.Settings.metainfo.xml.in.in:10
-msgid "Xinux GTK/libadwaita settings app"
-msgstr ""
-
-#: data/uz.xinux.Settings.desktop.in.in:11
-msgid "Preferences;Settings;"
-msgstr ""
-
-#: data/uz.xinux.Settings.gschema.xml.in:6
-msgid "Window width"
-msgstr ""
-
-#: data/uz.xinux.Settings.gschema.xml.in:10
-msgid "Window height"
-msgstr ""
-
-#: data/uz.xinux.Settings.gschema.xml.in:14
-msgid "Window maximized state"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:8
-msgid "Settings app compatible with NixOS"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:15
-msgid "Main window"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:27
-msgid "bemeritus"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:28
-msgid "ae5259"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:29
-msgid "bahrom04"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:30
-msgid "rafanochi"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:31
-msgid "Xinux Developers"
-msgstr ""
-
-#: data/resources/ui/shortcuts.ui:11
-msgctxt "shortcut window"
-msgid "General"
-msgstr ""
-
-#: data/resources/ui/shortcuts.ui:14
-msgctxt "shortcut window"
-msgid "Show Shortcuts"
-msgstr ""
-
-#: data/resources/ui/shortcuts.ui:20
-msgctxt "shortcut window"
-msgid "Quit"
-msgstr ""
-
-#: src/ui/window.rs:134
+#: src/ui/window.rs:120
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/main.rs:35
+#: src/ui/display/ui/display_page.rs:26
+msgid "Display Settings Disabled"
+msgstr "Настройки дисплея отключены"
+
+#: src/ui/display/ui/display_panel.rs:25
+msgid "Displays"
+msgstr "Дисплеи"
+
+#: src/ui/display/ui/display_settings.rs:150
+msgid "_Orientation"
+msgstr "О_риентация"
+
+#: src/ui/display/ui/display_settings.rs:156
+msgid "_Resolution"
+msgstr "Р_азрешение"
+
+#: src/ui/display/ui/display_settings.rs:162
+msgid "R_efresh Rate"
+msgstr "Частота об_новления"
+
+#: src/ui/display/ui/display_settings.rs:175
+msgid "_HDR (High Dynamic Range)"
+msgstr "_HDR (Расширенный динамический диапазон)"
+
+#: src/ui/display/ui/display_settings.rs:192
+msgid "Adjust for _TV"
+msgstr "Настроить для _ТВ"
+
+#: src/ui/display/ui/display_settings.rs:202
+msgid "_Scale"
+msgstr "Мас_штаб"
+
+#: src/ui/display/manager/types.rs:36
+msgid "Landscape"
+msgstr "Ландшафтная"
+
+#: src/ui/display/manager/types.rs:39
+msgid "Portrait Right"
+msgstr "Портретная справа"
+
+#: src/ui/display/manager/types.rs:42
+msgid "Portrait Left"
+msgstr "Портретная слева"
+
+#: src/ui/display/manager/types.rs:45
+msgid "Landscape (flipped)"
+msgstr "Ландшафтная (перевернутая)"
+
+#: src/ui/display/manager/types.rs:50
+msgid "Portrait"
+msgstr "Портретная"
+
+#: src/ui/display/manager/types.rs:53
+msgid "Landscape Right"
+msgstr "Ландшафтная справа"
+
+#: src/ui/display/manager/types.rs:56
+msgid "Landscape Left"
+msgstr "Ландшафтная слева"
+
+#: src/ui/display/manager/types.rs:59
+msgid "Portrait (flipped)"
+msgstr "Портретная (перевернутая)"
+
+#: src/ui/display/manager/types.rs:64
+msgid "Upright"
+msgstr "Вертикальная"
+
+#: src/ui/display/manager/types.rs:67 src/ui/mouse/mouse.rs:66
+msgid "Right"
+msgstr "Справа"
+
+#: src/ui/display/manager/types.rs:69 src/ui/mouse/mouse.rs:61
+msgid "Left"
+msgstr "Слева"
+
+#: src/ui/display/manager/types.rs:71
+msgid "Flipped"
+msgstr "Перевернутая"
+
+#: src/ui/power/general_page.rs:151
+msgid "Battery Charging"
+msgstr "Зарядка батареи"
+
+#: src/ui/power/general_page.rs:155
+msgid "Maximize Charge"
+msgstr ""
+
+#: src/ui/power/general_page.rs:156
+msgid "Uses all battery capacity. Degrades batteries more quickly."
+msgstr "Используется вся емкость батареи. Быстрее разрушает батарею."
+
+#: src/ui/power/general_page.rs:176
+msgid "Preserve Battery Health"
+msgstr ""
+
+#: src/ui/power/general_page.rs:177
+msgid "Increases battery longevity by maintaining lower charge levels."
+msgstr ""
+
+#: src/ui/power/general_page.rs:201
+msgid "Performance"
+msgstr ""
+
+#: src/ui/power/general_page.rs:202
+msgid "High performance and power usage"
+msgstr "Высокая производительность и энергопотребление"
+
+#: src/ui/power/general_page.rs:222
+msgid "Balanced"
+msgstr ""
+
+#: src/ui/power/general_page.rs:223
+msgid "Standard performance and power usage"
+msgstr "Стандартная производительность и энергопотребление"
+
+#: src/ui/power/general_page.rs:243
+msgid "Power Saver"
+msgstr ""
+
+#: src/ui/power/general_page.rs:244
+msgid "Reduced performance and power usage"
+msgstr "Уменьшенная производительность и энергопотребление"
+
+#: src/ui/power/general_page.rs:264 src/ui/power/power_page.rs:110
+#: src/ui/mouse/mouse.rs:46 src/ui/mouse/touchpad.rs:75
+msgid "General"
+msgstr "Общие"
+
+#: src/ui/power/general_page.rs:269
+msgid "Power Button Behavior"
+msgstr ""
+
+#: src/ui/power/general_page.rs:273
+msgid "Show Battery Percentage"
+msgstr ""
+
+#: src/ui/power/general_page.rs:274
+msgid "Show exact charge level in the top bar"
+msgstr "Показывать точный уровень заряда в верхней панели"
+
+#: src/ui/power/general_page.rs:287
+msgid "Power Saving"
+msgstr "Энергосбережение"
+
+#: src/ui/power/general_page.rs:311 src/ui/power/power_saving.rs:88
+msgid ""
+"Disabling automatic suspend will result in higher power consumption. It is "
+"recomended to keep automatic suspend enabled."
+msgstr ""
+
+#: src/ui/power/power_saving.rs:60
+msgid "Automatic Power Saver"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:61
+msgid "Turn on power saver made when battery power is low"
+msgstr ""
+
+#: src/ui/power/power_saving.rs:75
+msgid "Automatic Suspend"
+msgstr "Автоматический режим ожидания"
+
+#: src/ui/mouse/mouse_page.rs:129
+msgid "Mouse & Touchpad"
+msgstr "Мышь и сенсорная панель"
+
+#: src/ui/mouse/mouse.rs:49
+msgid "Primary Button"
+msgstr "Основная кнопка"
+
+#: src/ui/mouse/mouse.rs:50
+msgid "Order of physical buttons on mice and touchpads"
+msgstr "Порядок расположения физических кнопок на мышах и сенсорных панелях"
+
+#: src/ui/mouse/mouse.rs:79
+msgid "Mouse"
+msgstr "Мышь"
+
+#: src/ui/mouse/mouse.rs:84
+msgid "Mouse Acceleration"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:85 src/ui/mouse/pointing_stick.rs:36
+msgid "Recommended for most users and applications"
+msgstr "Рекомендуется для большинства пользователей и приложений"
+
+#: src/ui/mouse/mouse.rs:94
+msgid ""
+"Turning mouse acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/pointing_stick.rs:59
+#: src/ui/mouse/touchpad.rs:213
+#, fuzzy
+#| msgid "Settings"
+msgid "Test Settings"
+msgstr "Настройки"
+
+#: src/ui/mouse/mouse.rs:144
+msgid "Scroll Direction"
+msgstr "Направление прокрутки"
+
+#: src/ui/mouse/mouse.rs:149
+msgid "Traditional"
+msgstr ""
+
+#: src/ui/mouse/mouse.rs:150 src/ui/mouse/mouse.rs:159
+msgid "Scrolling moves the view"
+msgstr "Прокрутка перемещает вид"
+
+#: src/ui/mouse/mouse.rs:158
+msgid "Natural"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:30
+msgid "Pointing Stick"
+msgstr "Джойстик"
+
+#: src/ui/mouse/pointing_stick.rs:35
+msgid "Pointing Stick Acceleration"
+msgstr ""
+
+#: src/ui/mouse/pointing_stick.rs:45
+msgid ""
+"Turning pointing stick acceleration off can allow faster and more\n"
+"precise movements, but can also make the mouse more difficult\n"
+"to use."
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:64
+msgid "Touchpad"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:78
+msgid "Disable Touchpad While Typing"
+msgstr ""
+
+#: src/ui/mouse/touchpad.rs:91
+msgid "Clicking"
+msgstr "Нажатие"
+
+#: src/ui/mouse/touchpad.rs:104
+msgid "Scrolling"
+msgstr "Прокрутка"
+
+#: src/main.rs:28
 msgid "Xinux settings"
 msgstr ""

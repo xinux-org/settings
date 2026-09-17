@@ -4,6 +4,11 @@ data/uz.xinux.Settings.metainfo.xml.in.in
 data/resources/ui/shortcuts.ui
 src/ui/window.rs 
 
+src/ui/display/ui/display_page.rs
+src/ui/display/ui/display_panel.rs
+src/ui/display/ui/display_settings.rs
+src/ui/display/manager/types.rs
+
 src/ui/power/general_page.rs 
 src/ui/power/power_saving.rs 
 src/ui/power/power_page.rs 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 18:55+0500\n"
+"POT-Creation-Date: 2026-09-16 18:20+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,77 +17,88 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/uz.xinux.Settings.desktop.in.in:2
-#: data/uz.xinux.Settings.metainfo.xml.in.in:7
-msgid "Xinux Settings"
-msgstr ""
-
-#: data/uz.xinux.Settings.desktop.in.in:3
-#: data/uz.xinux.Settings.metainfo.xml.in.in:10
-msgid "Xinux GTK/libadwaita settings app"
-msgstr ""
-
-#: data/uz.xinux.Settings.desktop.in.in:11
-msgid "Preferences;Settings;"
-msgstr ""
-
-#: data/uz.xinux.Settings.gschema.xml.in:6
-msgid "Window width"
-msgstr ""
-
-#: data/uz.xinux.Settings.gschema.xml.in:10
-msgid "Window height"
-msgstr ""
-
-#: data/uz.xinux.Settings.gschema.xml.in:14
-msgid "Window maximized state"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:8
-msgid "Settings app compatible with NixOS"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:15
-msgid "Main window"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:27
-msgid "bemeritus"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:28
-msgid "ae5259"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:29
-msgid "bahrom04"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:30
-msgid "rafanochi"
-msgstr ""
-
-#: data/uz.xinux.Settings.metainfo.xml.in.in:31
-msgid "Xinux Developers"
-msgstr ""
-
-#: data/resources/ui/shortcuts.ui:11
-msgctxt "shortcut window"
-msgid "General"
-msgstr ""
-
-#: data/resources/ui/shortcuts.ui:14
-msgctxt "shortcut window"
-msgid "Show Shortcuts"
-msgstr ""
-
-#: data/resources/ui/shortcuts.ui:20
-msgctxt "shortcut window"
-msgid "Quit"
-msgstr ""
-
-#: src/ui/window.rs:135
+#: src/ui/window.rs:120
 msgid "Settings"
+msgstr ""
+
+#: src/ui/display/ui/display_page.rs:26
+msgid "Display Settings Disabled"
+msgstr ""
+
+#: src/ui/display/ui/display_panel.rs:25
+msgid "Displays"
+msgstr ""
+
+#: src/ui/display/ui/display_settings.rs:150
+msgid "_Orientation"
+msgstr ""
+
+#: src/ui/display/ui/display_settings.rs:156
+msgid "_Resolution"
+msgstr ""
+
+#: src/ui/display/ui/display_settings.rs:162
+msgid "R_efresh Rate"
+msgstr "R_efresh Rate"
+
+#: src/ui/display/ui/display_settings.rs:175
+msgid "_HDR (High Dynamic Range)"
+msgstr ""
+
+#: src/ui/display/ui/display_settings.rs:192
+msgid "Adjust for _TV"
+msgstr ""
+
+#: src/ui/display/ui/display_settings.rs:202
+msgid "_Scale"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:36
+msgid "Landscape"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:39
+msgid "Portrait Right"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:42
+msgid "Portrait Left"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:45
+msgid "Landscape (flipped)"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:50
+msgid "Portrait"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:53
+msgid "Landscape Right"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:56
+msgid "Landscape Left"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:59
+msgid "Portrait (flipped)"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:64
+msgid "Upright"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:67 src/ui/mouse/mouse.rs:66
+msgid "Right"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:69 src/ui/mouse/mouse.rs:61
+msgid "Left"
+msgstr ""
+
+#: src/ui/display/manager/types.rs:71
+msgid "Flipped"
 msgstr ""
 
 #: src/ui/power/general_page.rs:151
@@ -185,14 +196,6 @@ msgstr ""
 msgid "Order of physical buttons on mice and touchpads"
 msgstr ""
 
-#: src/ui/mouse/mouse.rs:61
-msgid "Left"
-msgstr ""
-
-#: src/ui/mouse/mouse.rs:66
-msgid "Right"
-msgstr ""
-
 #: src/ui/mouse/mouse.rs:79
 msgid "Mouse"
 msgstr ""
@@ -212,7 +215,8 @@ msgid ""
 "to use."
 msgstr ""
 
-#: src/ui/mouse/mouse.rs:109 src/ui/mouse/touchpad.rs:213
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/pointing_stick.rs:59
+#: src/ui/mouse/touchpad.rs:213
 msgid "Test Settings"
 msgstr ""
 
@@ -263,6 +267,6 @@ msgstr ""
 msgid "Scrolling"
 msgstr ""
 
-#: src/main.rs:35
+#: src/main.rs:28
 msgid "Xinux settings"
 msgstr ""

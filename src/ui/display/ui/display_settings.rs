@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gettextrs::{dgettext, gettext};
+use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
 use relm4_components::simple_adw_combo_row::{SimpleComboRow, SimpleComboRowMsg};
 use struct_patch::Patch;
@@ -147,19 +147,19 @@ impl SimpleComponent for DisplaySettingsModel {
                 model.controllers.orientation.widget() -> &adw::ComboRow {
                    set_width_request: 100,
                    set_use_underline: true,
-                   set_title: &dgettext("display setting", "_Orientation"),
+                   set_title: &gettext("_Orientation"),
                 },
 
                 model.controllers.resolution.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
-                    set_title: &dgettext("display setting", "_Resolution")
+                    set_title: &gettext("_Resolution")
                 },
 
                 model.controllers.refresh_rate.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
-                    set_title: &dgettext("display setting", "R_efresh Rate")
+                    set_title: &gettext("R_efresh Rate")
                 },
 
                 #[name(hdr_row)]
@@ -199,7 +199,7 @@ impl SimpleComponent for DisplaySettingsModel {
                 model.controllers.scale.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
-                    set_title: &dgettext("display settings", "_Scale"),
+                    set_title: &gettext("_Scale"),
                 }
             },
         }
