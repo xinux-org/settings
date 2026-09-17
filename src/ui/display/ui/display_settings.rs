@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use gettextrs::gettext;
 use relm4::{adw::prelude::*, prelude::*};
@@ -7,56 +7,6 @@ use struct_patch::Patch;
 
 use crate::ui::display::manager::{DisplayMode, DisplayMonitor, GetList, GetListVia, Orientation};
 use crate::ui::display::{RefreshRate, Resolution, Scale};
-
-macro_rules! patch_settings {
-    ($self:ident, $name:ident, $index:ident) => {
-        let option = $self.lists.$name.get($index);
-        let patch = DisplaySettingsPatch {
-            $name: option.copied(),
-            ..Default::default()
-        };
-        $self.settings.apply(patch);
-    };
-    ($self:ident, $current_mode:ident) => {
-        let patch = DisplaySettingsPatch {
-            scale: Some($current_mode.get_preferred_scale()),
-            resolution: Some($current_mode.get_resolution()),
-            refresh_rate: Some($current_mode.get_refresh_rate()),
-            ..Default::default()
-        };
-        $self.settings.apply(patch);
-    };
-}
-
-macro_rules! build_combo_row {
-    ($lists:ident, $name:ident, $value:ident) => {
-        SimpleComboRow {
-            active_index: $lists.$name.iter().position(|&$name| $name == $value),
-            variants: $lists.$name.clone(),
-        }
-    };
-}
-
-macro_rules! build_controller {
-    ($lists: ident, $name:ident, $value:ident, $input:ident, $sender:ident) => {
-        SimpleComboRow::builder()
-            .launch(build_combo_row!($lists, $name, $value))
-            .forward($sender.input_sender(), DisplaySettingsMsg::$input)
-    };
-}
-
-macro_rules! update_controller {
-    (&$model:ident, $name:ident) => {
-        let lists = &$model.lists;
-        let value = $model.settings.$name;
-        let update = build_combo_row!(lists, $name, value);
-
-        $model
-            .controllers
-            .$name
-            .emit(SimpleComboRowMsg::UpdateData(update));
-    };
-}
 
 #[derive(Debug, Clone, PartialEq, Patch)]
 #[patch(attribute(derive(Debug, Default, Clone)))]
@@ -71,8 +21,8 @@ pub struct DisplaySettings {
     pub underscanning: Option<bool>,
 }
 
-impl From<&Arc<DisplayMonitor>> for DisplaySettings {
-    fn from(value: &Arc<DisplayMonitor>) -> Self {
+impl From<&Rc<DisplayMonitor>> for DisplaySettings {
+    fn from(value: &Rc<DisplayMonitor>) -> Self {
         let current_mode = value.get_current_mode();
         let scale = value
             .get_logical_monitor()
@@ -92,7 +42,7 @@ impl From<&Arc<DisplayMonitor>> for DisplaySettings {
 
 #[derive(Debug)]
 pub struct DisplaySettingsModel {
-    monitor: Arc<DisplayMonitor>,
+    monitor: Rc<DisplayMonitor>,
 
     settings: DisplaySettings,
 
@@ -128,7 +78,7 @@ pub enum DisplaySettingsMsg {
 
 #[relm4::component(pub)]
 impl SimpleComponent for DisplaySettingsModel {
-    type Init = Arc<DisplayMonitor>;
+    type Init = Rc<DisplayMonitor>;
     type Input = DisplaySettingsMsg;
     type Output = ();
 
@@ -137,65 +87,52 @@ impl SimpleComponent for DisplaySettingsModel {
         gtk::Box {
             set_spacing: 18,
             set_orientation: gtk::Orientation::Vertical,
-
             #[name(listbox)]
             gtk::ListBox {
                 set_hexpand: true,
                 add_css_class: "boxed-list",
                 set_selection_mode: gtk::SelectionMode::None,
-
                 model.controllers.orientation.widget() -> &adw::ComboRow {
                    set_width_request: 100,
                    set_use_underline: true,
                    set_title: &gettext("_Orientation"),
                 },
-
                 model.controllers.resolution.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("_Resolution")
                 },
-
                 model.controllers.refresh_rate.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("R_efresh Rate")
                 },
-
                 #[name(hdr_row)]
                 adw::SwitchRow {
                     #[watch]
                     set_visible: model.settings.hdr.is_some(),
-
                     #[watch]
                     set_active: model.settings.hdr.is_some_and(|x| x),
-
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("_HDR (High Dynamic Range)"),
-
                     connect_active_notify[sender] => move |hdr| {
                         sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { hdr: Some(hdr.is_active()), ..Default::default() }));
                     }
                 },
-
                 #[name(underscanning_row)]
                 adw::SwitchRow {
                     #[watch]
                     set_visible: model.settings.underscanning.is_some(),
-
                     #[watch]
                     set_active: model.settings.underscanning.is_some_and(|x| x),
-
                     set_width_request: 100,
                     set_use_underline: true,
                     set_title: &gettext("Adjust for _TV"),
-
                     connect_active_notify[sender] => move |underscanning| {
                         sender.input(DisplaySettingsMsg::UpdateSettings(DisplaySettingsPatch { underscanning: Some(underscanning.is_active()), ..Default::default() }));
                     }
                 },
-
                 model.controllers.scale.widget() -> &adw::ComboRow {
                     set_width_request: 100,
                     set_use_underline: true,
@@ -232,25 +169,60 @@ impl SimpleComponent for DisplaySettingsModel {
                 self.settings.apply(settings);
             }
             DisplaySettingsMsg::SelectScale(index) => {
-                patch_settings!(self, scale, index);
+                let patch = DisplaySettingsPatch {
+                    scale: Some(self.lists.scale[index]),
+                    ..Default::default()
+                };
+                self.settings.apply(patch);
             }
             DisplaySettingsMsg::SelectRefreshRate(index) => {
-                patch_settings!(self, refresh_rate, index);
+                let patch = DisplaySettingsPatch {
+                    refresh_rate: Some(self.lists.refresh_rate[index]),
+                    ..Default::default()
+                };
+                self.settings.apply(patch);
             }
             DisplaySettingsMsg::SelectOrientation(index) => {
-                patch_settings!(self, orientation, index);
+                let patch = DisplaySettingsPatch {
+                    orientation: Some(self.lists.orientation[index]),
+                    ..Default::default()
+                };
+                self.settings.apply(patch);
             }
             DisplaySettingsMsg::SelectResolution(index) => {
                 let resolution = self.lists.resolution[index];
 
                 let current_mode = self.monitor.get_mode_by_resolution(resolution);
 
-                patch_settings!(self, current_mode);
+                let patch = DisplaySettingsPatch {
+                    scale: Some(current_mode.get_preferred_scale()),
+                    resolution: Some(current_mode.get_resolution()),
+                    refresh_rate: Some(current_mode.get_refresh_rate()),
+                    ..Default::default()
+                };
+                self.settings.apply(patch);
 
                 self.update_model(&current_mode);
             }
         };
     }
+}
+
+macro_rules! build_combo_row {
+    ($lists:ident, $name:ident, $value:ident) => {
+        SimpleComboRow {
+            active_index: $lists.$name.iter().position(|&$name| $name == $value),
+            variants: $lists.$name.clone(),
+        }
+    };
+}
+
+macro_rules! build_controller {
+    ($lists: ident, $name:ident, $value:ident, $input:ident, $sender:ident) => {
+        SimpleComboRow::builder()
+            .launch(build_combo_row!($lists, $name, $value))
+            .forward($sender.input_sender(), DisplaySettingsMsg::$input)
+    };
 }
 
 impl DisplaySettingsModel {
@@ -308,7 +280,28 @@ impl DisplaySettingsModel {
         self.lists.scale = self.monitor.get_list_via(current_mode);
         self.lists.refresh_rate = self.monitor.get_list_via(current_mode);
 
-        update_controller!(&self, scale);
-        update_controller!(&self, refresh_rate);
+        let update_data = SimpleComboRow {
+            active_index: self
+                .lists
+                .scale
+                .iter()
+                .position(|&scale| scale == self.settings.scale),
+            variants: self.lists.scale.clone(),
+        };
+        self.controllers
+            .scale
+            .emit(SimpleComboRowMsg::UpdateData(update_data));
+
+        let update_data = SimpleComboRow {
+            active_index: self
+                .lists
+                .refresh_rate
+                .iter()
+                .position(|&refresh_rate| refresh_rate == self.settings.refresh_rate),
+            variants: self.lists.refresh_rate.clone(),
+        };
+        self.controllers
+            .refresh_rate
+            .emit(SimpleComboRowMsg::UpdateData(update_data));
     }
 }

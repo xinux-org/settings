@@ -18,13 +18,18 @@ impl SimpleAsyncComponent for DisplayPage {
 
     view! {
         #[root]
-        adw::Bin {
-            #[name(status_page)]
-            adw::StatusPage {
-                set_vexpand: true,
-                set_icon_name: Some("computer-symbolic"),
-                set_title: &gettext("Display Settings Disabled"),
-            },
+        gtk::Stack {
+            set_visible_child_name: if model.panel.is_some() { "display" } else { "status" },
+            add_named: (&display_page, Some("display")),
+            add_named: (&status_page, Some("status")),
+        },
+        display_page = &adw::Bin {
+            set_child: model.panel.as_ref().map(|panel| panel.widget()),
+        },
+        status_page = &adw::StatusPage {
+            set_vexpand: true,
+            set_icon_name: Some("computer-symbolic"),
+            set_title: &gettext("Display Settings Disabled"),
         }
     }
 
@@ -40,12 +45,7 @@ impl SimpleAsyncComponent for DisplayPage {
             .map(|manager| DisplayModel::builder().launch(manager).detach());
 
         let model = DisplayPage { panel };
-
         let widgets = view_output!();
-
-        if let Some(panel) = model.panel.as_ref() {
-            root.set_child(Some(panel.widget()));
-        }
 
         AsyncComponentParts { model, widgets }
     }

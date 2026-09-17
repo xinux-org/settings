@@ -1,16 +1,16 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::ui::display::dbus::DisplayState;
 
 use super::{DisplayMonitor, LogicalMonitor};
 
 pub enum DisplayConfigType {
-    Single(Arc<DisplayMonitor>),
+    Single(Rc<DisplayMonitor>),
 }
 
 #[derive(Debug)]
 pub struct DisplayConfig {
-    monitors: Vec<Arc<DisplayMonitor>>,
+    monitors: Vec<Rc<DisplayMonitor>>,
 }
 
 impl From<DisplayState> for DisplayConfig {
@@ -32,7 +32,7 @@ impl From<DisplayState> for DisplayConfig {
 
                 DisplayMonitor::new(m, lm)
             })
-            .map(Arc::new)
+            .map(Rc::new)
             .collect::<Vec<_>>();
 
         Self { monitors }
@@ -44,9 +44,12 @@ impl DisplayConfig {
         if self.monitors.len() == 1
             && let Some(monitor) = self.monitors.first()
         {
-            return DisplayConfigType::Single(Arc::clone(monitor));
+            return DisplayConfigType::Single(Rc::clone(monitor));
         }
 
+        // This won't happen.
+        // Display config manager garrants safety
+        // Else cases implements in the future
         unimplemented!()
     }
 }

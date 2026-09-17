@@ -23,12 +23,10 @@ impl SimpleAsyncComponent for DisplayModel {
             #[name(main_page)]
             adw::NavigationPage {
                 set_title: &gettext("Displays"),
-
                 #[wrap(Some)]
                 set_child = &adw::ToolbarView {
                     #[name(displays_titlebar)]
                     add_top_bar = &adw::HeaderBar { set_show_title: true },
-
                     #[wrap(Some)]
                     set_content = &adw::PreferencesPage {
                         #[name(single_display_settings_group)]
@@ -51,7 +49,6 @@ impl SimpleAsyncComponent for DisplayModel {
         let model = DisplayModel {
             display_settings: DisplaySettingsModel::builder().launch(monitor).detach(),
         };
-
         let widgets = view_output!();
 
         AsyncComponentParts { model, widgets }
