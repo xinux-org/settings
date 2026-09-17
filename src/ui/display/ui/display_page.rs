@@ -19,9 +19,9 @@ impl SimpleAsyncComponent for DisplayPage {
     view! {
         #[root]
         gtk::Stack {
-            set_visible_child_name: if model.panel.is_some() { "display" } else { "status" },
             add_named: (&display_page, Some("display")),
             add_named: (&status_page, Some("status")),
+            set_visible_child_name: if model.panel.is_some() { "display" } else { "status" },
         },
         display_page = &adw::Bin {
             set_child: model.panel.as_ref().map(|panel| panel.widget()),

@@ -208,19 +208,14 @@ impl SimpleComponent for DisplaySettingsModel {
     }
 }
 
-macro_rules! build_combo_row {
-    ($lists:ident, $name:ident, $value:ident) => {
-        SimpleComboRow {
-            active_index: $lists.$name.iter().position(|&$name| $name == $value),
-            variants: $lists.$name.clone(),
-        }
-    };
-}
-
+/// This macro used to reduce repeated boileprate code for creating [`Controller<T>`] instances.
 macro_rules! build_controller {
     ($lists: ident, $name:ident, $value:ident, $input:ident, $sender:ident) => {
         SimpleComboRow::builder()
-            .launch(build_combo_row!($lists, $name, $value))
+            .launch(SimpleComboRow {
+                active_index: $lists.$name.iter().position(|&$name| $name == $value),
+                variants: $lists.$name.clone(),
+            })
             .forward($sender.input_sender(), DisplaySettingsMsg::$input)
     };
 }
