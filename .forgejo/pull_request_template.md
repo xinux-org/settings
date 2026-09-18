@@ -1,7 +1,3 @@
-## Type of Change
-
-[Please delete options that are not relevant:]: #
-
 ## Description
 
 [Brief description of the changes in this pull request. ]: #
@@ -21,7 +17,6 @@ Relates to #(issue number)
 ## Checklist
 
 - [ ] My code follows the project's style guidelines
-- [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] My changes generate no new issue, error or problem
 - [ ] New and existing unit tests pass locally with my changes
 
