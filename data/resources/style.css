@@ -1,3 +1,35 @@
+.style-toggle {
+    padding: 0px;
+    background-color: rgba(0, 0, 0, 0);
+    border-radius: 6px;
+    border: 2px none red;
+    outline: rgba(0, 0, 0, 0) solid 2px;
+}
+
+.style-toggle:checked {
+    outline-color: var(--accent-bg-color);
+    transition: all 1s;
+}
+
+.wallpaper-button {
+    padding: 0px;
+}
+
+.wallpaper-button + .circular {
+    border-radius: 50%;
+}
+
+.selected-icon {
+    opacity: 0%;
+    border-radius: 50%;
+    background-color: var(--accent-bg-color);
+    color: #fff;
+}
+
+.wallpaper-button:checked + .selected-icon {
+    opacity: 100%;
+}
+
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2025 GNOME Foundation, Inc.
