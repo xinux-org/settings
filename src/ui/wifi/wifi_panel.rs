@@ -133,7 +133,7 @@ impl SimpleAsyncComponent for WifiModel {
                         // donʻt translate
                         add_named: (&wifi_off, Some("wifi-off")),
                         add_named: (&wifi_connections, Some("wifi-connections")),
-                        add_named: (&wifi_connections, Some("airplane-mode")),
+                        add_named: (&airplane, Some("airplane-mode")),
                         #[watch]
                         set_visible_child_name: match model.wifi_stack_page {
                           // donʻt translate
