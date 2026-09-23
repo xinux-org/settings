@@ -66,6 +66,7 @@ uzers = "0.12.2"
 input = "0.10.0"
 libc = "0.2.186"
 gio-unix = "0.22.6"
+qrcodegen = "1.8.0"
 glycin = {version = "3.1.0", features = ["gdk4"]}
 allmytoes = "0.5.1"
 rand = "0.10.1"

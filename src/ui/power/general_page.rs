@@ -8,7 +8,9 @@ use crate::{
         },
         power_page::PowerMsg,
     },
-    utils::power::{POWER_BUTTON_ACTIONS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES},
+    utils::power::{
+        POWER_BUTTON_ACTIONS, SCREEN_BLANK_DELAY_VALUES, SUSPEND_DELAY_VALUES, get_battery_path,
+    },
 };
 
 use gettextrs::gettext;
@@ -499,22 +501,6 @@ fn get_current_profile(proxy: &PpdProxyBlocking) -> PowerMode {
         "disabled" => PowerMode::Disabled,
         _ => PowerMode::Balanced,
     }
-}
-
-pub(super) fn get_battery_path() -> Vec<fs::DirEntry> {
-    // for debugging: /home/bahrom/workplace/xinux/settings/batteries /BAT0/capacity
-    let global_path = Path::new("/sys/class/power_supply/");
-    let re = Regex::new(r"BAT[0-9]+").expect("Wrong RegEx");
-
-    let entries = match global_path.read_dir() {
-        Ok(els) => els,
-        Err(_) => return Vec::new(),
-    };
-
-    entries
-        .filter_map(|el| el.ok())
-        .filter(|el| re.is_match(el.path().to_str().unwrap()))
-        .collect()
 }
 
 pub(super) fn read_file(file_name: &str, no_entry: String) -> Vec<String> {

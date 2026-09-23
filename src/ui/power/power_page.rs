@@ -2,12 +2,12 @@ use gettextrs::gettext;
 use relm4::{adw::prelude::*, gtk, prelude::*};
 use std::convert::identity;
 
-use crate::ui::{
-    power::{
-        general_page::{GeneralPowerPageView, get_battery_path},
-        power_saving::SavingPowerPageView,
+use crate::{
+    ui::{
+        power::{general_page::GeneralPowerPageView, power_saving::SavingPowerPageView},
+        window::AppMsg,
     },
-    window::AppMsg,
+    utils::power::get_battery_path,
 };
 
 #[derive(Debug)]
