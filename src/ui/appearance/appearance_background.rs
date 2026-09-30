@@ -26,16 +26,6 @@ impl AsyncFactoryComponent for Background {
         #[root]
         adw::Clamp{
             set_maximum_size: 130,
-
-            // gtk::FlowBoxChild {
-            //     set_width_request: 150,
-            //     set_height_request: 100,
-            //     set_halign: gtk::Align::Center,
-            //     set_accessible_role: gtk::AccessibleRole::ToggleButton,
-
-                // adw::Clamp{
-                //     set_maximum_size: 120,
-
                 gtk::Overlay{
                     add_css_class: "background-thumbnail",
 
@@ -59,7 +49,6 @@ impl AsyncFactoryComponent for Background {
                         gtk::Picture {
                             set_content_fit: gtk::ContentFit::Cover,
                             set_isolate_contents: true,
-                            // set_paintable: Some(&self.texture),
                             set_filename: Some(&self.thumb),
                             set_can_shrink: true,
                             set_height_request: 50,
@@ -94,8 +83,6 @@ impl AsyncFactoryComponent for Background {
                             }
                         },
                     },
-                // },
-            // }
             },
         },
     }

@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 # Optimize release binary as much as possible
-# [profile.release]
-# lto = true
-# opt-level = "z"
+[profile.release]
+lto = true
+opt-level = "z"
 
 [dependencies]
 anyhow.workspace = true

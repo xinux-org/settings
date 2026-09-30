@@ -5,7 +5,6 @@ pub mod modules;
 pub mod power;
 pub mod state;
 
-use allmytoes::{AMT, AMTConfiguration, ThumbSize};
 use relm4::gtk;
 use std::path::PathBuf;
 
@@ -13,6 +12,8 @@ use crate::ui::appearance::{
     appearance::{AppearanceModel, AppearanceStyle},
     appearance_background::Background,
 };
+
+use thumbnailer::*;
 
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]

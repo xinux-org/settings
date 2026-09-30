@@ -7,7 +7,6 @@ use crate::ui::{
 };
 
 use crate::utils::{add_wallpaper, parse_dconf, thumb, wallpaper_filters};
-use allmytoes::ThumbSize;
 use rand::{self, prelude::*};
 use relm4::{
     adw::prelude::*, gtk, gtk::gio::Settings, loading_widgets::LoadingWidgets, prelude::*, view,

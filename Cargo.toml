@@ -10,14 +10,14 @@ authors = ["bemeritus", "ae5259"]
 publish = false
 
 [workspace]
-resolver = "2"
+resolver = "3"
 default-members = ["."]
 members = [".", "s-helper", "thumbnailer"]
 
 [workspace.dependencies]
-clap = { version = "4.1", features = [ "derive", "cargo" ] }
 anyhow = "1.0.102"
 uzers = "0.12.2"
+clap = { version = "4.1", features = [ "derive", "cargo" ] }
 
 # Optimize release binary as much as possible
 [profile.release]
@@ -72,5 +72,10 @@ libc = "0.2.186"
 gio-unix = "0.22.6"
 qrcodegen = "1.8.0"
 glycin = {version = "3.1.0", features = ["gdk4"]}
-allmytoes = "0.5.1"
 rand = "0.10.1"
+anyhow.workspace = true
+uzers.workspace = true
+clap.workspace = true
+
+[dependencies.thumbnailer]
+path = "thumbnailer"
