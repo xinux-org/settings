@@ -1,0 +1,11 @@
+[package]
+name = "thumbnailer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+magick_rust = "2.1.1"
+mime = "0.3.17"
+md5 = "0.8.1"
+expanded-pathbuf = "1.0.0"

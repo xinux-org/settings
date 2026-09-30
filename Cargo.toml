@@ -10,8 +10,14 @@ authors = ["bemeritus", "ae5259"]
 publish = false
 
 [workspace]
-members = [".", "s-helper"]
-default-members = [".", "s-helper"]
+resolver = "2"
+default-members = ["."]
+members = [".", "s-helper", "thumbnailer"]
+
+[workspace.dependencies]
+clap = { version = "4.1", features = [ "derive", "cargo" ] }
+anyhow = "1.0.102"
+uzers = "0.12.2"
 
 # Optimize release binary as much as possible
 [profile.release]
@@ -43,7 +49,6 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3"
 tracker = "0.2.2"
 thiserror = "2.0.18"
-anyhow = "1.0.102"
 walkdir = "2.3"
 serde = { version = "1.0.228", features = ["derive"] }
 xdg = "3.0.0"
@@ -62,7 +67,6 @@ zbus = { version = "5.15", default-features = false }
 notify = { version = "8.1.0", features = ["serde"] }
 regex = "1.12.4"
 nmrs = "2.0.1"
-uzers = "0.12.2"
 input = "0.10.0"
 libc = "0.2.186"
 gio-unix = "0.22.6"
@@ -70,4 +74,3 @@ qrcodegen = "1.8.0"
 glycin = {version = "3.1.0", features = ["gdk4"]}
 allmytoes = "0.5.1"
 rand = "0.10.1"
-clap = { version = "4.1", features = [ "derive", "cargo" ] }
