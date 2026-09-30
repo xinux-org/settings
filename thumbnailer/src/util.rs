@@ -1,7 +1,7 @@
-use crate::{Meta, THUMB_CACHE, THUMB_CACHE_FALLBACK, THUMB_IMAGE_FORMAT, ThumSize};
+use crate::{Meta, ThumbSize, THUMB_CACHE, THUMB_CACHE_FALLBACK, THUMB_IMAGE_FORMAT};
 use anyhow::Result;
 use expanded_pathbuf::ExpandedPathBuf;
-use magick_rust::{MagickWand, magick_wand_genesis};
+use magick_rust::{magick_wand_genesis, MagickWand};
 use mime::Mime;
 use std::{
     fs,
@@ -10,8 +10,29 @@ use std::{
     sync::Once,
 };
 
+pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
+    // gen_thumbnail(filepath, size).or_else(|_| {
+    //     let mut failure_cache = get_cache_fail_path();
+    //     failure_cache.push(gen_filename(filepath));
+
+    //     failure_cache
+    // })
+    if let Some(thumb) = gen_thumbnail(filepath, size).ok() {
+        return thumb;
+    } else {
+        let mut failed_thumbnail_path = get_cache_fail_path();
+        failed_thumbnail_path.push(gen_filename(filepath));
+
+        let mut file = fs::File::create(&failed_thumbnail_path)
+            .expect("couldn't create failed thumbnail file");
+        file.write(&vec![]);
+
+        failed_thumbnail_path
+    }
+}
+
 /// Creates and saves thumbnail, then returns its path
-pub fn thumbnail(filepath: &str, size: ThumSize) -> Result<PathBuf> {
+pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
     // initialize MagickWand to create thumbnail
     let start: Once = Once::new();
     start.call_once(|| {
@@ -42,7 +63,7 @@ pub fn thumbnail(filepath: &str, size: ThumSize) -> Result<PathBuf> {
     Ok(thumb_path)
 }
 
-pub fn gen_thumb_path(filepath: &str, size: ThumSize) -> Result<PathBuf> {
+pub fn gen_thumb_path(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
     // generates path to thumnbnails cache
     let mut cache = get_cache_path()?;
     cache.push(size.path());
@@ -64,11 +85,12 @@ pub fn get_cache_path() -> Result<PathBuf> {
     Ok(cache.into())
 }
 
-pub fn get_cache_fail_path() -> Result<PathBuf> {
-    let mut cache = get_cache_path()?;
+pub fn get_cache_fail_path() -> PathBuf {
+    let mut cache = get_cache_path().expect("Couldn't get cache path");
     cache.push("fail");
+    fs::create_dir_all(&cache).expect("Couldn't create cache directory for failed thumbnails path");
 
-    Ok(cache)
+    cache
 }
 
 pub fn find_mimetype(filepath: &Path) -> Option<Mime> {
@@ -88,7 +110,7 @@ mod tests {
 
     #[test]
     fn gen_thumbnail() {
-        let thumbnail = thumbnail("./test/reze.jxl", ThumSize::Normal);
+        let thumbnail = thumbnail("./test/reze.jxl", ThumbSize::Normal);
         assert!(thumbnail.is_ok(), "Thumbnbail couldn't be created")
     }
 }

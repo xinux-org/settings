@@ -13,6 +13,7 @@ use relm4::{
 };
 use relm4_components::open_dialog::*;
 use std::path::{Path, PathBuf};
+use thumbnailer::ThumbSize;
 use uzers::{get_current_uid, get_user_by_uid};
 
 // default base path for system wallpapers

@@ -13,7 +13,7 @@ use crate::ui::appearance::{
     appearance_background::Background,
 };
 
-use thumbnailer::*;
+use thumbnailer::{util::thumbnail, *};
 
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
@@ -66,9 +66,11 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
 }
 
 pub fn thumb(src: &PathBuf, thumb_size: ThumbSize) -> Option<String> {
-    let configuration = AMTConfiguration::default();
-    let amt = AMT::new(&configuration);
-    amt.get(&src, thumb_size).ok().map(|thumb| thumb.path)
+    // let configuration = AMTConfiguration::default();
+    // let amt = AMT::new(&configuration);
+    // amt.get(&src, thumb_size).ok().map(|thumb| thumb.path)
+    src.to_str()
+        .and_then(|filepath| thumbnail(filepath, thumb_size).to_str())
 }
 
 pub fn wallpaper_filters() -> Vec<gtk::FileFilter> {

@@ -1,5 +1,10 @@
 pub mod util;
 
+extern crate anyhow;
+extern crate expanded_pathbuf;
+extern crate magick_rust;
+extern crate mime;
+
 use anyhow::Result;
 use magick_rust::MagickWand;
 use mime::{Mime, Name, PNG};
@@ -65,25 +70,25 @@ impl Meta {
         ];
 
         let mut map = HashMap::new();
-        list.into_iter()
+        list.iter()
             .filter(|(_, k)| k.is_some())
             .for_each(|(key, v)| {
-                v.and_then(|value| map.insert(key, value));
+                v.as_ref().and_then(|value| map.insert(*key, value.clone()));
             });
         map
     }
 }
 
 #[derive(Clone, Copy)]
-pub enum ThumSize {
+pub enum ThumbSize {
     Normal,
     Large,
     XLarge,
     XXLarge,
 }
-impl ThumSize {
+impl ThumbSize {
     fn path(&self) -> &str {
-        use ThumSize::*;
+        use ThumbSize::*;
         match self {
             Normal => "normal",
             Large => "large",
@@ -92,9 +97,9 @@ impl ThumSize {
         }
     }
 }
-impl From<ThumSize> for usize {
-    fn from(value: ThumSize) -> Self {
-        use ThumSize::*;
+impl From<ThumbSize> for usize {
+    fn from(value: ThumbSize) -> Self {
+        use ThumbSize::*;
         match value {
             Normal => 128,
             Large => 256,
