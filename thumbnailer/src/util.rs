@@ -11,6 +11,24 @@ use std::{
 };
 
 pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
+    // if let Some(path) = fs::exists(filepath).into {
+    //     path
+    // } else
+
+    // gen_thumb_path(filepath, size)
+    //     .and_then(|thumb_path| fs::exists(thumb_path).map)
+    //     // .and_then(|thumb_path| {
+    //     //     fs::exists(thumb_path).map_or(PathBuf::from(filepath), |_| thumb_path)
+    //     //     // if fs::exists(thumb_path).is_ok() {
+    //     //     //     thumb_path
+    //     //     // } else {
+    //     //     //     PathBuf::from(filepath)
+    //     //     // }
+    //     // })
+    //     .unwrap()
+
+    // if gen_thumb_path(filepath, size) {}
+
     if let Some(thumb) = gen_thumbnail(filepath, size).ok() {
         return thumb;
     } else {
@@ -28,16 +46,21 @@ pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
 
 /// Creates and saves thumbnail, then returns its path
 pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
+    let iiii = std::time::Instant::now();
     // initialize MagickWand to create thumbnail
     let start: Once = Once::new();
+    println!("start: {:?}", iiii.elapsed());
     start.call_once(|| {
         magick_wand_genesis();
     });
+    println!("start.call_once(): {:?}", iiii.elapsed());
     let wand = MagickWand::new();
 
     // read and resize image
     wand.read_image(filepath)?;
+    println!("wand.read_image(): {:?}", iiii.elapsed());
     wand.fit(size.into(), size.into());
+    println!("wand.fit(): {:?}", iiii.elapsed());
 
     // add metadata to thumbnail
     let path = PathBuf::from(filepath).canonicalize()?;
@@ -48,11 +71,14 @@ pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
 
     // generate thumbnail path and
     let thumb_path = gen_thumb_path(filepath, size)?;
+    println!("gen_thumb_path(): {:?}", iiii.elapsed());
 
     // saving thumbnail
     let bytes = wand.write_image_blob(THUMB_IMAGE_FORMAT.into())?;
+    println!("wand.write_image_blob(): {:?}", iiii.elapsed());
     let mut file = fs::File::create(&thumb_path)?;
     file.write(&bytes)?;
+    println!("write(): {:?}", iiii.elapsed());
 
     // Return the path to thumbnail
     Ok(thumb_path)
