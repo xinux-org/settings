@@ -11,41 +11,31 @@ use std::{
 };
 
 pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
-    // if let Some(path) = fs::exists(filepath).into {
-    //     path
-    // } else
+    // check if thumbnail path can be generated (folders exist and etc)
+    if let Ok(thumb_path) = gen_thumb_path(filepath, size) {
+        // if thumbnail already exists, return its path
+        if std::fs::exists(&thumb_path).unwrap_or(false)
+            || gen_thumbnail(filepath, &thumb_path, size).is_ok()
+        {
+            return thumb_path;
+        } else {
+            // if thumbnail can't be resized successfully just return empty thumbnail
+            let mut failed_thumbnail_path = get_cache_fail_path();
+            failed_thumbnail_path.push(gen_filename(filepath));
+            let mut file = fs::File::create(&failed_thumbnail_path)
+                .expect("couldn't create failed thumbnail file");
+            file.write(&vec![])
+                .expect("couldn't write inside failed thumbnail file");
 
-    // gen_thumb_path(filepath, size)
-    //     .and_then(|thumb_path| fs::exists(thumb_path).map)
-    //     // .and_then(|thumb_path| {
-    //     //     fs::exists(thumb_path).map_or(PathBuf::from(filepath), |_| thumb_path)
-    //     //     // if fs::exists(thumb_path).is_ok() {
-    //     //     //     thumb_path
-    //     //     // } else {
-    //     //     //     PathBuf::from(filepath)
-    //     //     // }
-    //     // })
-    //     .unwrap()
-
-    // if gen_thumb_path(filepath, size) {}
-
-    if let Some(thumb) = gen_thumbnail(filepath, size).ok() {
-        return thumb;
+            return failed_thumbnail_path;
+        }
     } else {
-        let mut failed_thumbnail_path = get_cache_fail_path();
-        failed_thumbnail_path.push(gen_filename(filepath));
-
-        let mut file = fs::File::create(&failed_thumbnail_path)
-            .expect("couldn't create failed thumbnail file");
-        file.write(&vec![])
-            .expect("couldn't write inside failed thumbnail file");
-
-        failed_thumbnail_path
+        PathBuf::from(filepath)
     }
 }
 
 /// Creates and saves thumbnail, then returns its path
-pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
+pub fn gen_thumbnail(original_filepath: &str, thumb_path: &Path, size: ThumbSize) -> Result<()> {
     let iiii = std::time::Instant::now();
     // initialize MagickWand to create thumbnail
     let start: Once = Once::new();
@@ -57,21 +47,17 @@ pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
     let wand = MagickWand::new();
 
     // read and resize image
-    wand.read_image(filepath)?;
+    wand.read_image(original_filepath)?;
     println!("wand.read_image(): {:?}", iiii.elapsed());
     wand.fit(size.into(), size.into());
     println!("wand.fit(): {:?}", iiii.elapsed());
 
     // add metadata to thumbnail
-    let path = PathBuf::from(filepath).canonicalize()?;
+    let path = PathBuf::from(original_filepath).canonicalize()?;
     let meta = Meta::fetch_meta(&path, &wand)?;
     for (k, v) in meta.to_hashmap() {
         wand.set_image_property(k, &v)?;
     }
-
-    // generate thumbnail path and
-    let thumb_path = gen_thumb_path(filepath, size)?;
-    println!("gen_thumb_path(): {:?}", iiii.elapsed());
 
     // saving thumbnail
     let bytes = wand.write_image_blob(THUMB_IMAGE_FORMAT.into())?;
@@ -81,7 +67,7 @@ pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
     println!("write(): {:?}", iiii.elapsed());
 
     // Return the path to thumbnail
-    Ok(thumb_path)
+    Ok(())
 }
 
 pub fn gen_thumb_path(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
@@ -135,7 +121,13 @@ mod tests {
 
     #[test]
     fn generate_thumbnail() {
-        let thumbnail = gen_thumbnail("./test/reze.jxl", ThumbSize::Normal);
-        assert!(thumbnail.is_ok(), "Thumbnbail couldn't be created")
+        let thumbnail = thumbnail("./test/reze.jxl", ThumbSize::Normal)
+            .to_str()
+            .map(String::from)
+            .unwrap_or_default();
+        assert!(
+            !thumbnail.contains("fail"),
+            "Thumbnbail couldn't be created"
+        )
     }
 }
