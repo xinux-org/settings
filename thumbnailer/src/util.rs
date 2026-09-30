@@ -11,12 +11,6 @@ use std::{
 };
 
 pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
-    // gen_thumbnail(filepath, size).or_else(|_| {
-    //     let mut failure_cache = get_cache_fail_path();
-    //     failure_cache.push(gen_filename(filepath));
-
-    //     failure_cache
-    // })
     if let Some(thumb) = gen_thumbnail(filepath, size).ok() {
         return thumb;
     } else {
@@ -25,7 +19,8 @@ pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
 
         let mut file = fs::File::create(&failed_thumbnail_path)
             .expect("couldn't create failed thumbnail file");
-        file.write(&vec![]);
+        file.write(&vec![])
+            .expect("couldn't write inside failed thumbnail file");
 
         failed_thumbnail_path
     }
@@ -51,7 +46,7 @@ pub fn gen_thumbnail(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
         wand.set_image_property(k, &v)?;
     }
 
-    // generate thumbnail path
+    // generate thumbnail path and
     let thumb_path = gen_thumb_path(filepath, size)?;
 
     // saving thumbnail
@@ -67,6 +62,9 @@ pub fn gen_thumb_path(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
     // generates path to thumnbnails cache
     let mut cache = get_cache_path()?;
     cache.push(size.path());
+
+    // create folders if doesn't exist
+    fs::create_dir_all(&cache)?;
 
     // adds filename to the end of cache path
     let filename = gen_filename(filepath);
@@ -106,11 +104,12 @@ pub fn gen_filename(filepath: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
-    fn gen_thumbnail() {
-        let thumbnail = thumbnail("./test/reze.jxl", ThumbSize::Normal);
+    fn generate_thumbnail() {
+        let thumbnail = gen_thumbnail("./test/reze.jxl", ThumbSize::Normal);
         assert!(thumbnail.is_ok(), "Thumbnbail couldn't be created")
     }
 }
