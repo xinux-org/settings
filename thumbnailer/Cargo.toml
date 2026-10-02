@@ -1,6 +1,7 @@
 [package]
 name = "thumbnailer"
 version = "0.1.0"
+edition = "2024"
 
 # Optimize release binary as much as possible
 [profile.release]
@@ -9,7 +10,10 @@ opt-level = "z"
 
 [dependencies]
 anyhow.workspace = true
+thiserror.workspace = true
 magick_rust = "2.1.1"
 mime = "0.3.17"
 md5 = "0.8.1"
 expanded-pathbuf = "1.0.0"
+tempfile = "3.27.0"
+log = "0.4.34"

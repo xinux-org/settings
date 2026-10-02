@@ -3,9 +3,9 @@ extern crate expanded_pathbuf;
 extern crate magick_rust;
 extern crate mime;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use expanded_pathbuf::ExpandedPathBuf;
-use magick_rust::{magick_wand_genesis, MagickWand};
+use magick_rust::{MagickWand, magick_wand_genesis};
 use mime::{Mime, Name, PNG};
 use std::{
     collections::HashMap,
@@ -15,10 +15,27 @@ use std::{
     path::{Path, PathBuf},
     sync::Once,
 };
+use tempfile::NamedTempFile;
 
 static THUMB_CACHE: &str = "$XDG_CACHE_HOME/thumbnails";
 static THUMB_CACHE_FALLBACK: &str = "$HOME/.cache/thumbnails";
 static THUMB_IMAGE_FORMAT: Name = PNG;
+static MAGICK_INIT: Once = Once::new();
+
+fn new_wand() -> MagickWand {
+    MAGICK_INIT.call_once(magick_wand_genesis);
+    MagickWand::new()
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ThumbError {
+    #[error("could not compute thumbnail cache path")]
+    NoCachePath,
+    #[error("thumbnail generation previously failed for this file")]
+    KnownFailure,
+    #[error("thumbnail generation failed: {0}")]
+    Generate(#[from] anyhow::Error),
+}
 
 #[derive(Debug)]
 pub struct Meta {
@@ -45,58 +62,21 @@ impl Meta {
             software: wand.get_image_property("Software").ok(),
         })
     }
-    // fn to_hashmap(&self) -> HashMap<String, String> {
-    //     let Meta {
-    //         uri,
-    //         mtime,
-    //         size,
-    //         mimetype,
-    //         description,
-    //         software,
-    //     } = self;
-    //     let list = [
-    //         ("Thumb::URI", Some(uri.to_string())),
-    //         ("Thumb::MTime", Some(mtime.to_string())),
-    //         ("Thumb::Size", size.and_then(|x| x.to_string().into())),
-    //         (
-    //             "Thumb::MimeType",
-    //             mimetype.as_ref().and_then(|x| x.to_string().into()),
-    //         ),
-    //         (
-    //             "Description",
-    //             description.as_ref().and_then(|x| x.to_string().into()),
-    //         ),
-    //         (
-    //             "Software",
-    //             software.as_ref().and_then(|x| x.to_string().into()),
-    //         ),
-    //     ]
-    //     .into_iter()
-    //     .filter_map(|(key, v)| v.and_then(|value| Some(((*key).to_string(), value))))
-    //     .collect::<Vec<(String, String)>>();
-    //     HashMap::from(list)
-    // }
 
-    fn to_hashmap(&self) -> HashMap<&'static str, String> {
-        let Meta {
-            uri,
-            mtime,
-            size,
-            mimetype,
-            description,
-            software,
-        } = self;
-
+    fn to_hashmap(&self) -> HashMap<&str, String> {
         [
-            ("Thumb::URI", Some(uri.clone())),
-            ("Thumb::MTime", Some(mtime.to_string())),
-            ("Thumb::Size", size.map(|x| x.to_string())),
-            ("Thumb::MimeType", mimetype.as_ref().map(|x| x.to_string())),
-            ("Description", description.clone()),
-            ("Software", software.clone()),
+            ("Thumb::URI", Some(self.uri.clone())),
+            ("Thumb::MTime", Some(self.mtime.to_string())),
+            ("Thumb::Size", self.size.map(|x| x.to_string())),
+            (
+                "Thumb::MimeType",
+                self.mimetype.as_ref().map(|x| x.to_string()),
+            ),
+            ("Description", self.description.clone()),
+            ("Software", self.software.clone()),
         ]
         .into_iter()
-        .filter_map(|(key, value)| value.as_ref().map(|v| (*key, v)))
+        .filter_map(|(key, value)| value.map(|v| (key, v)))
         .collect()
     }
 }
@@ -131,67 +111,69 @@ impl From<ThumbSize> for usize {
     }
 }
 
-pub fn thumbnail(filepath: &str, size: ThumbSize) -> PathBuf {
-    // check if thumbnail path can be generated (folders exist and etc)
-    if let Ok(thumb_path) = gen_thumb_path(filepath, size) {
-        // if thumbnail already exists, return its path
-        if std::fs::exists(&thumb_path).unwrap_or(false)
-            || gen_thumbnail(filepath, &thumb_path, size).is_ok()
-        {
-            return thumb_path;
-        } else {
-            // if thumbnail can't be resized successfully just return empty thumbnail
-            let mut failed_thumbnail_path = get_cache_fail_path();
-            failed_thumbnail_path.push(gen_filename(filepath));
-            let mut file = fs::File::create(&failed_thumbnail_path)
-                .expect("couldn't create failed thumbnail file");
-            file.write(&vec![])
-                .expect("couldn't write inside failed thumbnail file");
+pub fn gen_thumbnail(src: &Path, dest: &Path, size: ThumbSize) -> anyhow::Result<()> {
+    let src = src
+        .canonicalize()
+        .with_context(|| format!("canonicalizing {}", src.display()))?;
+    let src_str = src
+        .to_str()
+        .with_context(|| format!("non-UTF-8 path: {}", src.display()))?;
 
-            return failed_thumbnail_path;
-        }
-    } else {
-        PathBuf::from(filepath)
-    }
-}
+    let mut wand = new_wand();
 
-/// Creates and saves thumbnail, then returns its path
-pub fn gen_thumbnail(original_filepath: &str, thumb_path: &Path, size: ThumbSize) -> Result<()> {
-    let iiii = std::time::Instant::now();
-    // initialize MagickWand to create thumbnail
-    let start: Once = Once::new();
-    println!("start: {:?}", iiii.elapsed());
-    start.call_once(|| {
-        magick_wand_genesis();
-    });
-    println!("start.call_once(): {:?}", iiii.elapsed());
-    let wand = MagickWand::new();
+    let px: usize = size.into();
+    wand.set_option("jpeg:size", &format!("{0}x{0}", px * 2))?;
 
-    // read and resize image
-    wand.read_image(original_filepath)?;
-    println!("wand.read_image(): {:?}", iiii.elapsed());
-    wand.fit(size.into(), size.into());
-    println!("wand.fit(): {:?}", iiii.elapsed());
+    wand.read_image(src_str)
+        .with_context(|| format!("reading image {}", src.display()))?;
+    wand.fit(px, px);
 
-    // add metadata to thumbnail
-    let path = PathBuf::from(original_filepath).canonicalize()?;
-    let meta = Meta::read(&path, &wand)?;
+    let meta = Meta::read(&src, &wand).context("fetching metadata")?;
     for (k, v) in meta.to_hashmap() {
         wand.set_image_property(k, &v)?;
     }
 
-    // saving thumbnail
-    let bytes = wand.write_image_blob(THUMB_IMAGE_FORMAT.into())?;
-    println!("wand.write_image_blob(): {:?}", iiii.elapsed());
-    let mut file = fs::File::create(&thumb_path)?;
-    file.write(&bytes)?;
-    println!("write(): {:?}", iiii.elapsed());
+    let bytes = wand
+        .write_image_blob(THUMB_IMAGE_FORMAT.as_str())
+        .context("encoding thumbnail")?;
 
-    // Return the path to thumbnail
+    let dir = dest.parent().context("thumbnail path has no parent")?;
+    let mut tmp = NamedTempFile::new_in(dir).context("creating temp file")?;
+    tmp.write_all(&bytes).context("writing thumbnail")?;
+    tmp.persist(dest)
+        .with_context(|| format!("persisting thumbnail to {}", dest.display()))?;
+
     Ok(())
 }
 
-pub fn gen_thumb_path(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
+pub fn thumbnail(src: &Path, size: ThumbSize) -> Result<PathBuf, ThumbError> {
+    let thumb_path = gen_thumb_path(src, size).map_err(|_| ThumbError::NoCachePath)?;
+    if thumb_path.is_file() {
+        return Ok(thumb_path);
+    }
+
+    let path = src.to_string_lossy().to_string();
+    let fail_marker = get_cache_fail_path().join(gen_filename(&path));
+    if fail_marker.is_file() {
+        return Err(ThumbError::KnownFailure);
+    }
+
+    match gen_thumbnail(src, &thumb_path, size) {
+        Ok(()) => Ok(thumb_path),
+        Err(e) => {
+            if let Err(io) = std::fs::File::create(&fail_marker) {
+                log::warn!("couldn't write fail marker {}: {io}", fail_marker.display());
+            }
+            Err(ThumbError::Generate(e))
+        }
+    }
+}
+
+pub fn thumbnail_or_original(src: &Path, size: ThumbSize) -> PathBuf {
+    thumbnail(src, size).unwrap_or_else(|_| src.to_path_buf())
+}
+
+pub fn gen_thumb_path(filepath: &Path, size: ThumbSize) -> Result<PathBuf> {
     // generates path to thumnbnails cache
     let mut cache = get_cache_path()?;
     cache.push(size.path());
@@ -200,7 +182,8 @@ pub fn gen_thumb_path(filepath: &str, size: ThumbSize) -> Result<PathBuf> {
     fs::create_dir_all(&cache)?;
 
     // adds filename to the end of cache path
-    let filename = gen_filename(filepath);
+    let path = filepath.to_string_lossy().to_string();
+    let filename = gen_filename(&path);
     cache.push(filename);
 
     Ok(cache)
@@ -230,14 +213,13 @@ pub fn find_mimetype(filepath: &Path) -> Option<Mime> {
         .and_then(|name| name.to_string_lossy().to_string().parse::<Mime>().ok())
 }
 
-pub fn gen_filename(filepath: &str) -> String {
-    let digest = md5::compute(filepath.as_bytes());
+pub fn gen_filename(path: &str) -> String {
+    let digest = md5::compute(path);
     format!("{digest:?}.{}", THUMB_IMAGE_FORMAT.as_str())
 }
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
