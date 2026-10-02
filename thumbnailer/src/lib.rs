@@ -137,11 +137,10 @@ pub fn gen_thumbnail(src: &Path, dest: &Path, size: ThumbSize) -> anyhow::Result
         .write_image_blob(THUMB_IMAGE_FORMAT.as_str())
         .context("encoding thumbnail")?;
 
-    let dir = dest.parent().context("thumbnail path has no parent")?;
-    let mut tmp = NamedTempFile::new_in(dir).context("creating temp file")?;
-    tmp.write_all(&bytes).context("writing thumbnail")?;
-    tmp.persist(dest)
-        .with_context(|| format!("persisting thumbnail to {}", dest.display()))?;
+    let mut file = fs::File::create(&dest)
+        .with_context(|| format!("creating thumbnail file in {}", dest.display()))?;
+    file.write(&bytes)
+        .with_context(|| format!("saving thumbnail to {}", dest.display()))?;
 
     Ok(())
 }
@@ -224,7 +223,7 @@ mod tests {
 
     #[test]
     fn generate_thumbnail() {
-        let thumbnail = thumbnail("./test/reze.jxl", ThumbSize::Normal)
+        let thumbnail = thumbnail_or_original(&PathBuf::from("./test/reze.jxl"), ThumbSize::Normal)
             .to_str()
             .map(String::from)
             .unwrap_or_default();
