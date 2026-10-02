@@ -11,6 +11,8 @@ use crate::ui::mouse::{
     mouse_page::{MouseMsg, MouseSettings},
 };
 
+use super::RESOURCES_PATH;
+
 #[derive(Debug)]
 pub struct ScrollMethod {
     pub title: String,
@@ -224,10 +226,8 @@ impl SimpleComponent for Touchpad {
     ) -> ComponentParts<Self> {
         let settings = init;
 
-        let tap_to_click_media = gtk::MediaFile::for_filename(format!(
-            "{}/src/ui/mouse/assets/tap-to-click.webm",
-            std::env::current_dir().unwrap().to_str().unwrap()
-        ));
+        let tap_to_click_media =
+            gtk::MediaFile::for_resource(&format!("{}/tap-to-click.webm", RESOURCES_PATH));
 
         let events = settings.touchpad.string("send-events");
         let send_events = events == "enabled";
@@ -250,9 +250,9 @@ impl SimpleComponent for Touchpad {
 
                 default: Default {
                     value: "fingers".to_variant(),
-                    media: gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/push-to-click-anywhere.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
+                    media: gtk::MediaFile::for_resource(&format!(
+                        "{}/push-to-click-anywhere.webm",
+                        RESOURCES_PATH
                     )),
                     title: "Two Finger Push".to_string(),
                     subtitle: "Push anywhere with 2 fingers".to_string(),
@@ -262,9 +262,9 @@ impl SimpleComponent for Touchpad {
 
                 alternate: Alternate {
                     value: "areas".to_variant(),
-                    media: gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/push-areas.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
+                    media: gtk::MediaFile::for_resource(&format!(
+                        "{}/push-areas.webm",
+                        RESOURCES_PATH
                     )),
                     title: "Corner Push".to_string(),
                     subtitle: "Push with a single finger in the corner".to_string(),
@@ -295,9 +295,9 @@ impl SimpleComponent for Touchpad {
 
             default: Default {
                 value: false.to_variant(),
-                media: gtk::MediaFile::for_filename(format!(
-                    "{}/src/ui/mouse/assets/scroll-2finger.webm",
-                    std::env::current_dir().unwrap().to_str().unwrap()
+                media: gtk::MediaFile::for_resource(&format!(
+                    "{}/scroll-2finger.webm",
+                    RESOURCES_PATH
                 )),
                 title: "Two Finger".to_string(),
                 subtitle: "Drag two fingers on the touchpad".to_string(),
@@ -307,9 +307,9 @@ impl SimpleComponent for Touchpad {
 
             alternate: Alternate {
                 value: true.to_variant(),
-                media: gtk::MediaFile::for_filename(format!(
-                    "{}/src/ui/mouse/assets/edge-scroll.webm",
-                    std::env::current_dir().unwrap().to_str().unwrap()
+                media: gtk::MediaFile::for_resource(&format!(
+                    "{}/edge-scroll.webm",
+                    RESOURCES_PATH
                 )),
                 title: "Edge".to_string(),
                 subtitle: "Drag one finger on the edge".to_string(),
@@ -327,9 +327,9 @@ impl SimpleComponent for Touchpad {
 
                 default: Default {
                     value: false.to_variant(),
-                    media: gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/touch-scroll-traditional.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
+                    media: gtk::MediaFile::for_resource(&format!(
+                        "{}/touch-scroll-traditional.webm",
+                        RESOURCES_PATH
                     )),
                     title: "Traditional".to_string(),
                     subtitle: "Scrolling moves the view".to_string(),
@@ -339,9 +339,9 @@ impl SimpleComponent for Touchpad {
 
                 alternate: Alternate {
                     value: true.to_variant(),
-                    media: gtk::MediaFile::for_filename(format!(
-                        "{}/src/ui/mouse/assets/touch-scroll-natural.webm",
-                        std::env::current_dir().unwrap().to_str().unwrap()
+                    media: gtk::MediaFile::for_resource(&format!(
+                        "{}/touch-scroll-natural.webm",
+                        RESOURCES_PATH
                     )),
                     title: "Natural".to_string(),
                     subtitle: "Scrolling moves the view".to_string(),

@@ -1,5 +1,5 @@
-use relm4::{adw::prelude::*, gtk, prelude::*};
 use gettextrs::gettext;
+use relm4::{adw::prelude::*, gtk, prelude::*};
 
 use crate::ui::mouse::{
     components::{
@@ -8,6 +8,8 @@ use crate::ui::mouse::{
     },
     mouse_page::{MouseMsg, MouseSettings},
 };
+
+use super::RESOURCES_PATH;
 
 #[derive(Debug)]
 pub struct Mouse {
@@ -127,15 +129,11 @@ impl SimpleComponent for Mouse {
         let left_handed = settings.mouse.boolean("left-handed");
         let speed = settings.mouse.value("speed").get::<f64>().unwrap();
 
-        let natural_scroll_default_media = gtk::MediaFile::for_filename(format!(
-            "{}/src/ui/mouse/assets/scroll-traditional.webm",
-            std::env::current_dir().unwrap().to_str().unwrap()
-        ));
+        let natural_scroll_default_media =
+            gtk::MediaFile::for_resource(&format!("{RESOURCES_PATH}/scroll-traditional.webm"));
 
-        let natural_scroll_alternate_media = gtk::MediaFile::for_filename(format!(
-            "{}/src/ui/mouse/assets/scroll-natural.webm",
-            std::env::current_dir().unwrap().to_str().unwrap()
-        ));
+        let natural_scroll_alternate_media =
+            gtk::MediaFile::for_resource(&format!("{RESOURCES_PATH}/scroll-natural.webm"));
 
         let natural_scroll_component = Choice::builder()
             .launch(ChoiceInit {
