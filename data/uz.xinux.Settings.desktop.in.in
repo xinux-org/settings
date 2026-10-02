@@ -15,3 +15,4 @@ X-Purism-FormFactor=Workstation;Mobile;
 Icon=@icon@
 StartupNotify=true
 StartupWMClass=settings
+SingleMainWindow=true
