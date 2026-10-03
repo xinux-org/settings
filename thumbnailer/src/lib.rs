@@ -223,13 +223,7 @@ mod tests {
 
     #[test]
     fn generate_thumbnail() {
-        let thumbnail = thumbnail_or_original(&PathBuf::from("./test/reze.jxl"), ThumbSize::Normal)
-            .to_str()
-            .map(String::from)
-            .unwrap_or_default();
-        assert!(
-            !thumbnail.contains("fail"),
-            "Thumbnbail couldn't be created"
-        )
+        let thumbnail = thumbnail(&PathBuf::from("./test/reze.jxl"), ThumbSize::Normal);
+        assert!(thumbnail.is_ok(), "Thumbnbail couldn't be created")
     }
 }
