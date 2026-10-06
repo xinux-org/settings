@@ -44,7 +44,7 @@ fn main() {
         .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
         .with_max_level(tracing::Level::INFO)
         .init();
-    
+
     let matches = command!()
         .subcommand(
             Command::new("open").about("Page to open").arg(
@@ -65,6 +65,7 @@ fn main() {
     setup_locale();
 
     let app = main_application();
+    app.set_application_id(Some(APP_ID));
     app.set_resource_base_path(Some("/uz/xinux/Settings/"));
     let quit_action = {
         let app = app.clone();
