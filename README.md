@@ -59,6 +59,5 @@ nix build . --show-trace
 just run
 
 # Optional. Generate translation words from /po/POTFILES.in if needed.
-cd ./po
-xgettext --directory=.. --files-from=POTFILES.in --from-code=UTF-8 -kgettext -o translations.pot
+just trans
 ```

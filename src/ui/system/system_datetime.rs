@@ -5,6 +5,7 @@ use relm4::{
     gtk::{self, gio},
     prelude::*,
 };
+use std::rc::Rc;
 use tracker;
 
 const CLOCK_SCHEMA: &str = "org.gnome.desktop.interface";
@@ -70,11 +71,6 @@ impl Component for SystemDateTimePage {
                             set_use_underline: true,
                             #[name(time_format_toggle_group)]
                             add_suffix = &adw::ToggleGroup {
-                                set_valign: gtk::Align::Center,
-                                set_homogeneous: true,
-                                #[watch]
-                                #[block_signal(toggle_handler)]
-                                set_active_name: Some(&model.active_clock_format),
                                 add = adw::Toggle {
                                     set_label: Some(&gettext("24-hour")),
                                     set_name: Some("24h"), // donʻt trans
@@ -85,6 +81,12 @@ impl Component for SystemDateTimePage {
                                     set_name: Some("12h"), // donʻt trans
                                     set_use_underline: true,
                                 },
+
+                                set_valign: gtk::Align::Center,
+                                set_homogeneous: true,
+                                #[watch]
+                                #[block_signal(toggle_handler)]
+                                set_active_name: Some(&model.active_clock_format),
                                 connect_active_name_notify[sender] => move |toggle| {
                                     sender.input(SystemDateTimeMsg::Switcher(ToggleSwitcher::ClockFormat(toggle.active_name().map(|toggle| toggle.to_string()))))
                                 } @toggle_handler,
@@ -148,19 +150,20 @@ impl Component for SystemDateTimePage {
         let clock_settings = gio::Settings::new(CLOCK_SCHEMA);
         let calendar_settings = gio::Settings::new(CALENDAR_SCHEMA);
 
+        let sender = Rc::new(sender);
         for clock_settings_key in [
             CLOCK_FORMAT_KEY,
             CLOCK_SHOW_WEEKDAY_KEY,
             CLOCK_SHOW_DATE_KEY,
             CLOCK_SHOW_SECONDS_KEY,
         ] {
-            let sender = sender.clone();
+            let sender = Rc::clone(&sender);
             clock_settings.connect_changed(Some(clock_settings_key), move |_settings, _key| {
                 sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
             });
         }
         for calendar_settings_key in [CALENDAR_SCHEMA, CALENDAR_SHOW_WEEK_NUMBERS_KEY] {
-            let sender = sender.clone();
+            let sender = Rc::clone(&sender);
             calendar_settings.connect_changed(
                 Some(calendar_settings_key),
                 move |_settings, _key| {
@@ -172,7 +175,7 @@ impl Component for SystemDateTimePage {
         let model = Self {
             clock_settings,
             calendar_settings,
-            active_clock_format: String::default(),
+            active_clock_format: String::from("24h"),
             active_week_day: false,
             active_date: false,
             active_seconds: false,
@@ -182,11 +185,6 @@ impl Component for SystemDateTimePage {
         sender.input(SystemDateTimeMsg::ReloadFromGSettingsAll);
 
         let widgets = view_output!();
-        // set after widgets exist to avoid timing issue on
-        // setting before toggles drawed
-        widgets
-            .time_format_toggle_group
-            .set_active_name(Some(&model.active_clock_format));
 
         ComponentParts { model, widgets }
     }

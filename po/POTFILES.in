@@ -4,6 +4,10 @@ data/uz.xinux.Settings.metainfo.xml.in.in
 data/resources/ui/shortcuts.ui
 src/ui/window.rs 
 
+src/ui/wifi/wifi_panel.rs 
+src/ui/wifi/wifi_panel_row.rs 
+src/ui/wifi/wifi_qr_dialog.rs 
+
 src/ui/power/general_page.rs 
 src/ui/power/power_saving.rs 
 src/ui/power/power_page.rs 

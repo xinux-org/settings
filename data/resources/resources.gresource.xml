@@ -4,10 +4,17 @@
     <!-- see https://gtk-rs.org/gtk4-rs/git/docs/gtk4/struct.Application.html#automatic-resources -->
     <file compressed="true" preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">ui/shortcuts.ui</file>
     <file compressed="true">style.css</file>
-    <file compressed="true">style-dark.css</file>
-    <file compressed="true">style-hc.css</file>
-  </gresource>
 
+    <file>ui/mouse/edge-scroll.webm</file>
+    <file>ui/mouse/scroll-2finger.webm</file>
+    <file>ui/mouse/scroll-traditional.webm</file>
+    <file>ui/mouse/scroll-natural.webm</file>
+    <file>ui/mouse/push-areas.webm</file>
+    <file>ui/mouse/push-to-click-anywhere.webm</file>
+    <file>ui/mouse/touch-scroll-natural.webm</file>
+    <file>ui/mouse/touch-scroll-traditional.webm</file>
+    <file>ui/mouse/tap-to-click.webm</file>
+  </gresource>
 
   <gresource prefix="/uz/xinux/Settings/icons/scalable/emblems">
     <file compressed="true" preprocess="xml-stripblanks" alias="check-icon-symbolic.svg">../icons/check-icon-symbolic.svg</file>

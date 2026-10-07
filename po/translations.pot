@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 18:55+0500\n"
+"POT-Creation-Date: 2026-07-30 13:35+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,8 +86,68 @@ msgctxt "shortcut window"
 msgid "Quit"
 msgstr ""
 
-#: src/ui/window.rs:135
+#: src/ui/window.rs:119
 msgid "Settings"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:89 src/ui/wifi/wifi_panel.rs:96
+msgid "Wi-Fi"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:90
+msgid "this is subtit"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:107
+msgid "Saved Networks"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:115
+msgid "Connect to Hidden Network..."
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:123
+msgid "Turn On Wi-Fi Hotspot..."
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:134
+msgid "Airplane Mode"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:135
+msgid "Disables Wi-Fi, Bluetooth and mobile broadband"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:181
+msgid "Visible Networks"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:192
+msgid "Wi-Fi Off"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel.rs:197
+msgid "Airplane Mode On"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel_row.rs:65 src/ui/wifi/wifi_qr_dialog.rs:58
+msgid "Share Network"
+msgstr ""
+
+#: src/ui/wifi/wifi_panel_row.rs:78
+msgid "Network Options"
+msgstr ""
+
+#: src/ui/wifi/wifi_qr_dialog.rs:79
+msgid "Scan to Connect"
+msgstr ""
+
+#: src/ui/wifi/wifi_qr_dialog.rs:85
+msgid "Network Name"
+msgstr ""
+
+#: src/ui/wifi/wifi_qr_dialog.rs:92
+msgid "Password"
 msgstr ""
 
 #: src/ui/power/general_page.rs:151
@@ -212,7 +272,8 @@ msgid ""
 "to use."
 msgstr ""
 
-#: src/ui/mouse/mouse.rs:109 src/ui/mouse/touchpad.rs:213
+#: src/ui/mouse/mouse.rs:109 src/ui/mouse/pointing_stick.rs:59
+#: src/ui/mouse/touchpad.rs:213
 msgid "Test Settings"
 msgstr ""
 
@@ -263,6 +324,6 @@ msgstr ""
 msgid "Scrolling"
 msgstr ""
 
-#: src/main.rs:35
+#: src/main.rs:52
 msgid "Xinux settings"
 msgstr ""

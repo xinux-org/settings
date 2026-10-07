@@ -7,7 +7,7 @@ use crate::ui::{
 };
 
 use crate::utils::{add_wallpaper, parse_dconf, thumb, wallpaper_filters};
-use allmytoes::{AMT, AMTConfiguration, ThumbSize};
+use allmytoes::ThumbSize;
 use rand::{self, prelude::*};
 use relm4::{
     adw::prelude::*, gtk, gtk::gio::Settings, loading_widgets::LoadingWidgets, prelude::*, view,
@@ -123,13 +123,22 @@ impl AsyncComponent for AppearanceModel {
                 ],
 
                 add_setters: &[
-                    (recent_wallpaper_box, "margin_all", &6),
-                    (wallpaper_box, "margin_all", &6),
+                    (recent_wallpaper_box, "margin_top", &6),
+                    (recent_wallpaper_box, "margin_bottom", &6),
+                    (recent_wallpaper_box, "margin_start", &6),
+                    (recent_wallpaper_box, "margin_end", &6),
+                ],
+
+                add_setters: &[
+                    (wallpaper_box, "margin_top", &6),
+                    (wallpaper_box, "margin_bottom", &6),
+                    (wallpaper_box, "margin_start", &6),
+                    (wallpaper_box, "margin_end", &6),
                 ],
 
                 add_setters: &[
                     (&default_style, "height_request", &100),
-                    (&dark_style, "heigh_request", &100),
+                    (&dark_style, "height_request", &100),
                 ],
 
                 add_setters:  &[
@@ -145,40 +154,50 @@ impl AsyncComponent for AppearanceModel {
                 )
             ) {
                add_setters: &[
-                    (recent_wallpaper_box, "min_children_per_line", &3),
-                    (recent_wallpaper_box, "max_children_per_line", &3)
+                    (recent_wallpaper_box, "min_children_per_line", 3),
+                    (recent_wallpaper_box, "max_children_per_line", 3)
                 ],
 
                 add_setters: &[
-                    (wallpaper_box, "min_children_per_line", &3),
-                    (wallpaper_box, "max_children_per_line", &3)
+                    (wallpaper_box, "min_children_per_line", 3),
+                    (wallpaper_box, "max_children_per_line", 3)
                 ],
 
                 add_setters: &[
-                    (&style_box, "margin_bottom", &12),
-                    (&style_box, "margin_start", &12),
-                    (&style_box, "margin_end", &12),
+                    (&style_box, "margin_bottom", 12),
+                    (&style_box, "margin_start", 12),
+                    (&style_box, "margin_end", 12),
                 ],
 
                 add_setters: &[
-                    (accent_color_box, "margin_top", &12),
-                    (accent_color_box, "margin_bottom", &12),
-                    (accent_color_box, "margin_start", &12),
-                    (accent_color_box, "margin_end", &12),
-                    (accent_color_box, "spacing", &12),
+                    (accent_color_box, "margin_top", 12),
+                    (accent_color_box, "margin_bottom", 12),
+                    (accent_color_box, "margin_start", 12),
+                    (accent_color_box, "margin_end", 12),
+                    (accent_color_box, "spacing", 12),
                 ],
 
                 add_setters: &[
-                    (recent_wallpaper_box, "margin_all", &12),
-                    (wallpaper_box, "margin_all", &12),
+                    (recent_wallpaper_box, "margin_top", 12),
+                    (recent_wallpaper_box, "margin_bottom", 12),
+                    (recent_wallpaper_box, "margin_start", 12),
+                    (recent_wallpaper_box, "margin_end", 12),
                 ],
 
                 add_setters: &[
-                    (&default_style, "height_request", &140),
-                    (&dark_style, "heigh_request", &140),],
+                    (wallpaper_box, "margin_top", 12),
+                    (wallpaper_box, "margin_bottom", 12),
+                    (wallpaper_box, "margin_start", 12),
+                    (wallpaper_box, "margin_end", 12),
+                ],
+
+                add_setters: &[
+                    (&default_style, "height_request", 140),
+                    (&dark_style, "height_request", 140),
+                ],
 
                 add_setters:  &[
-                    (&style_box, "maximum_size", &380)
+                    (&style_box, "maximum_size", 380)
                 ],
             },
 
