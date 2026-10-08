@@ -14,7 +14,7 @@ pkgs.stdenv.mkDerivation {
 
   cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
     src = ../..;
-    hash = "sha256-WB8AwWFquuyHfNQilYpuEi2umtpSWa6ASnfgv4zXYv8=";
+    hash = "sha256-DfKt0hXEaB0L/910O0QSZUxW8a4WR2tg5Yxnodf21oQ=";
   };
 
   nativeBuildInputs = with pkgs; [
@@ -33,6 +33,7 @@ pkgs.stdenv.mkDerivation {
     bubblewrap
     wrapGAppsHook4
     rustPlatform.cargoSetupHook
+    rustPlatform.bindgenHook
     libinput
   ];
 
@@ -46,6 +47,7 @@ pkgs.stdenv.mkDerivation {
     bubblewrap
     libglycin
     glycin-loaders
+    imagemagick
 
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
@@ -55,4 +57,5 @@ pkgs.stdenv.mkDerivation {
     gst_all_1.gst-libav
   ];
 
+  NIX_CFLAGS_COMPILE = "-DMAGICKCORE_HDRI_ENABLE=1 -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_CHANNEL_MASK_DEPTH=32";
 }
