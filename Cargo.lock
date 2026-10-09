@@ -4855,7 +4855,6 @@ dependencies = [
  "magick_rust",
  "md5",
  "mime",
- "tempfile",
  "thiserror 2.0.18",
 ]
 

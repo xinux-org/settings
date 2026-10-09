@@ -1,8 +1,3 @@
-extern crate anyhow;
-extern crate expanded_pathbuf;
-extern crate magick_rust;
-extern crate mime;
-
 use anyhow::{Context, Result};
 use expanded_pathbuf::ExpandedPathBuf;
 use magick_rust::{MagickWand, magick_wand_genesis};
@@ -15,13 +10,14 @@ use std::{
     path::{Path, PathBuf},
     sync::Once,
 };
-use tempfile::NamedTempFile;
 
 static THUMB_CACHE: &str = "$XDG_CACHE_HOME/thumbnails";
 static THUMB_CACHE_FALLBACK: &str = "$HOME/.cache/thumbnails";
 static THUMB_IMAGE_FORMAT: Name = PNG;
 static MAGICK_INIT: Once = Once::new();
 
+// Prior to using the ImageMagick system,
+// the application should invoke `magick_wand_genesis()`, which maps directly to `MagickWandGenesis`
 fn new_wand() -> MagickWand {
     MAGICK_INIT.call_once(magick_wand_genesis);
     MagickWand::new()
@@ -83,10 +79,10 @@ impl Meta {
 
 #[derive(Clone, Copy)]
 pub enum ThumbSize {
-    Normal,
-    Large,
-    XLarge,
-    XXLarge,
+    Normal = 128,
+    Large = 256,
+    XLarge = 512,
+    XXLarge = 1024,
 }
 impl ThumbSize {
     fn path(&self) -> &str {
@@ -99,17 +95,6 @@ impl ThumbSize {
         }
     }
 }
-impl From<ThumbSize> for usize {
-    fn from(value: ThumbSize) -> Self {
-        use ThumbSize::*;
-        match value {
-            Normal => 128,
-            Large => 256,
-            XLarge => 512,
-            XXLarge => 1024,
-        }
-    }
-}
 
 pub fn gen_thumbnail(src: &Path, dest: &Path, size: ThumbSize) -> anyhow::Result<()> {
     let src = src
@@ -119,11 +104,9 @@ pub fn gen_thumbnail(src: &Path, dest: &Path, size: ThumbSize) -> anyhow::Result
         .to_str()
         .with_context(|| format!("non-UTF-8 path: {}", src.display()))?;
 
-    let mut wand = new_wand();
+    let wand = new_wand();
 
-    let px: usize = size.into();
-    wand.set_option("jpeg:size", &format!("{0}x{0}", px * 2))?;
-
+    let px: usize = size as usize;
     wand.read_image(src_str)
         .with_context(|| format!("reading image {}", src.display()))?;
     wand.fit(px, px);

@@ -6,7 +6,7 @@ pub mod power;
 pub mod state;
 
 use relm4::gtk;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::ui::appearance::{
     appearance::{AppearanceModel, AppearanceStyle},
@@ -65,7 +65,7 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
     }
 }
 
-pub fn thumb(src: &PathBuf, thumb_size: ThumbSize) -> Option<String> {
+pub fn thumb(src: &Path, thumb_size: ThumbSize) -> Option<String> {
     thumbnail_or_original(src, thumb_size)
         .to_str()
         .map(String::from)
