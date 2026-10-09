@@ -157,15 +157,15 @@ pub fn thumbnail(src: &Path, size: ThumbSize) -> Result<PathBuf, ThumbError> {
         return Err(ThumbError::KnownFailure);
     }
 
-    match gen_thumbnail(src, &thumb_path, size) {
-        Ok(()) => Ok(thumb_path),
-        Err(e) => {
-            if let Err(io) = std::fs::File::create(&fail_marker) {
-                log::warn!("couldn't write fail marker {}: {io}", fail_marker.display());
-            }
-            Err(ThumbError::Generate(e))
-        }
-    }
+    gen_thumbnail(src, &thumb_path, size)
+        .map(|_| thumb_path)
+        .map_err(|e| {
+            #[allow(unused)]
+            std::fs::File::create(&fail_marker)
+                .inspect_err(|io| log::warn!("couldn't write fail marker {fail_marker:?}: {io}"));
+
+            ThumbError::Generate(e)
+        })
 }
 
 pub fn thumbnail_or_original(src: &Path, size: ThumbSize) -> PathBuf {
