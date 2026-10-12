@@ -135,7 +135,8 @@ pub fn thumbnail(src: &Path, size: ThumbSize) -> Result<PathBuf, ThumbError> {
     }
 
     let path = src.to_string_lossy().to_string();
-    let fail_marker = get_cache_fail_path().join(gen_filename(&path));
+    let cache = get_cache_fail_path()?;
+    let fail_marker = cache.join(gen_filename(&path));
     if fail_marker.is_file() {
         return Err(ThumbError::KnownFailure);
     }
@@ -181,12 +182,13 @@ pub fn get_cache_path() -> Result<PathBuf> {
     Ok(cache.into())
 }
 
-pub fn get_cache_fail_path() -> PathBuf {
-    let mut cache = get_cache_path().expect("Couldn't get cache path");
+pub fn get_cache_fail_path() -> Result<PathBuf> {
+    let mut cache = get_cache_path().with_context(|| format!("Couldn't get cache path"))?;
     cache.push("fail");
-    fs::create_dir_all(&cache).expect("Couldn't create cache directory for failed thumbnails path");
+    fs::create_dir_all(&cache)
+        .with_context(|| format!("Couldn't create cache directory for failed thumbnails path"))?;
 
-    cache
+    Ok(cache)
 }
 
 pub fn find_mimetype(filepath: &Path) -> Option<Mime> {
