@@ -40,6 +40,8 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
             let file_path = entry.path();
 
             let x = file_path.to_string_lossy().to_string();
+            let thumb = Thumbnail::thumb(&file_path, ThumbSize::Large);
+
             if is_local {
                 model.recent_wallpapers.guard().push_back(Background {
                     path: x.clone(),
@@ -48,7 +50,7 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
                         AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
                     },
-                    thumb: thumb(&PathBuf::from(&x), ThumbSize::Large).unwrap_or(x),
+                    thumb,
                 });
             } else {
                 model.wallpapers.guard().push_back(Background {
@@ -58,17 +60,11 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
                         AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
                     },
-                    thumb: thumb(&PathBuf::from(&x), ThumbSize::Large).unwrap_or(x),
+                    thumb,
                 });
             }
         }
     }
-}
-
-pub fn thumb(src: &Path, thumb_size: ThumbSize) -> Option<String> {
-    thumbnail_or_original(src, thumb_size)
-        .to_str()
-        .map(String::from)
 }
 
 pub fn wallpaper_filters() -> Vec<gtk::FileFilter> {
