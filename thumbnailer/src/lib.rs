@@ -129,7 +129,9 @@ pub fn gen_thumbnail(src: &Path, dest: &Path, size: ThumbSize) -> anyhow::Result
 }
 
 pub fn thumbnail(src: &Path, size: ThumbSize) -> Result<PathBuf, ThumbError> {
+    // if thumbnail already exists, return that
     let thumb_path = gen_thumb_path(src, size).map_err(|_| ThumbError::NoCachePath)?;
+    dbg!(&thumb_path);
     if thumb_path.is_file() {
         return Ok(thumb_path);
     }
@@ -198,6 +200,6 @@ pub fn find_mimetype(filepath: &Path) -> Option<Mime> {
 }
 
 pub fn gen_filename(path: &str) -> String {
-    let digest = md5::compute(path);
+    let digest = md5::compute(format!("file://{path}"));
     format!("{digest:?}.{}", THUMB_IMAGE_FORMAT.as_str())
 }
