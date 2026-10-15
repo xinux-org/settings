@@ -5,7 +5,7 @@ pub struct Background {
     pub path: String,
     pub group: gtk::ToggleButton,
     pub active: bool,
-    pub thumb: String,
+    pub thumb: Option<String>,
 }
 
 #[derive(Debug)]
@@ -49,7 +49,7 @@ impl AsyncFactoryComponent for Background {
                         gtk::Picture {
                             set_content_fit: gtk::ContentFit::Cover,
                             set_isolate_contents: true,
-                            set_filename: Some(&self.thumb),
+                            set_filename: self.thumb.clone(),
                             set_can_shrink: true,
                             set_height_request: 50,
                         },

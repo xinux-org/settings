@@ -40,7 +40,7 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
             let file_path = entry.path();
 
             let x = file_path.to_string_lossy().to_string();
-            let thumb = Thumbnail::thumb(&file_path, ThumbSize::Large);
+            let thumb = Thumbnail::make(file_path, ThumbSize::Large);
 
             if is_local {
                 model.recent_wallpapers.guard().push_back(Background {

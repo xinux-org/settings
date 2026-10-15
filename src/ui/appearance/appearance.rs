@@ -251,7 +251,7 @@ impl AsyncComponent for AppearanceModel {
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(Thumbnail::thumb(&PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large))
+                                                set_filename: Some(Thumbnail::make(PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large))
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -274,7 +274,7 @@ impl AsyncComponent for AppearanceModel {
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(Thumbnail::thumb(&PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large))
+                                                set_filename: Some(Thumbnail::make(PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large))
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
@@ -537,7 +537,9 @@ impl AsyncComponent for AppearanceModel {
                             path: file_path.clone(),
                             group: self.background_group.clone(),
                             active: false,
-                            thumb: Thumbnail::thumb(&dest, ThumbSize::Large),
+                            thumb: Thumbnail::make(dest, ThumbSize::Large)
+                                .to_str()
+                                .map(String::from),
                         });
                     }
                     Err(e) => eprintln!("{e:?}"),

@@ -7,9 +7,8 @@ mod tests {
     fn generate_thumbnail() {
         let path = PathBuf::from("tests/reze.jxl");
 
-        let thumbnail = Thumbnail::new(&path, ThumbSize::Normal);
-        let thumb = thumbnail.thumbnail();
+        let thumbnail = Thumbnail::make(path, ThumbSize::Normal);
 
-        assert!(thumb.is_ok(), "Thumbnbail couldn't be created")
+        assert!(thumbnail.is_ok(), "Thumbnbail couldn't be created")
     }
 }

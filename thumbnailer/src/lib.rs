@@ -110,25 +110,15 @@ pub struct Thumbnail {
 }
 
 impl Thumbnail {
-    pub fn new(src: &PathBuf, thumb_size: ThumbSize) -> Self {
-        Self {
-            src: src.to_owned(),
+    pub fn make(src: PathBuf, thumb_size: ThumbSize) -> PathBuf {
+        let record = Thumbnail {
+            src,
             size: thumb_size,
-        }
-    }
-
-    pub fn thumb(src: &PathBuf, thumb_size: ThumbSize) -> String {
-        let record = Thumbnail::new(src, thumb_size);
+        };
 
         record
-            .thumbnail_or_original()
-            .to_str()
-            .map(String::from)
-            .unwrap_or(record.src.to_string_lossy().to_string())
-    }
-
-    pub fn thumbnail_or_original(&self) -> PathBuf {
-        self.thumbnail().unwrap_or_else(|_| self.src.to_path_buf())
+            .thumbnail()
+            .unwrap_or_else(|_| record.src.to_path_buf())
     }
 
     pub fn gen_thumb_path(&self) -> Result<PathBuf> {
