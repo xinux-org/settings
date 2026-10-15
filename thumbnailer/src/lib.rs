@@ -148,7 +148,9 @@ impl Thumbnail {
     }
 
     pub fn thumbnail(&self) -> Result<PathBuf, ThumbError> {
+        // if thumbnail already exists, return that
         let thumb_path = self.gen_thumb_path().map_err(|_| ThumbError::NoCachePath)?;
+        dbg!(&thumb_path);
         if thumb_path.is_file() {
             return Ok(thumb_path);
         }
@@ -216,7 +218,7 @@ impl Thumbnail {
     }
 
     pub fn gen_filename(&self, path: &str) -> String {
-        let digest = md5::compute(path);
+        let digest = md5::compute(format!("file://{path}"));
         format!("{digest:?}.{}", THUMB_IMAGE_FORMAT.as_str())
     }
 
