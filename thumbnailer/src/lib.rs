@@ -129,9 +129,12 @@ impl Thumbnail {
 
     // try to generate thumbnail and store it to right path. If that fails,
     // then it tries to create failed empty thumbnail in failed thumbnails cache.
-    fn generate(&self) -> Result<PathBuf, ThumbError> {
+    fn generate(&mut self) -> Result<Thumbnail, ThumbError> {
         // if thumbnail already exists, return that
-        let thumb_path = self.gen_thumb_path().map_err(|_| ThumbError::NoCachePath)?;
+        self.path = self
+            .gen_thumb_path()
+            .map_err(|_| ThumbError::NoCachePath)?
+            .into();
         if thumb_path.is_file() {
             return Ok(thumb_path);
         }
@@ -143,8 +146,7 @@ impl Thumbnail {
             return Err(ThumbError::KnownFailure);
         }
 
-        // self.path = thumb_path.into();
-
+        self.path = thumb_path.clone().into();
         self.compress_save().map(|_| thumb_path).map_err(|e| {
             // #[allow(unused)]
             let _ = std::fs::File::create(&fail_marker)
