@@ -104,26 +104,14 @@ impl ThumbSize {
 
 #[derive(Debug)]
 pub struct Thumbnail {
-    uri: PathBuf, // original file path
+    origin: PathBuf, // original file path
     // path is wrapped in Option, because thumbnail generation might fail
     path: Option<PathBuf>,
     size: ThumbSize,
 }
 
 impl Thumbnail {
-    // returns generated thumbnail path stored in system cache. If it fails returns original file path
-    pub fn make(uri: PathBuf, thumb_size: ThumbSize) -> PathBuf {
-        let record = Thumbnail {
-            uri,
-            path: None,
-            size: thumb_size,
-        };
-        record
-            .thumbnail()
-            .unwrap_or_else(|_| record.src.to_path_buf())
-    }
-
-    pub fn gen_thumb_path(&self) -> Result<PathBuf> {
+    fn gen_thumb_path(&self) -> Result<PathBuf> {
         // generates path to thumnbnails cache
         let mut cache = self.get_cache_path()?;
         cache.push(self.size.path());
@@ -132,44 +120,45 @@ impl Thumbnail {
         fs::create_dir_all(&cache)?;
 
         // adds filename to the end of cache path
-        let path = self.src.to_string_lossy().to_string();
-        let filename = self.gen_filename(&path);
+        let origin = self.origin.to_string_lossy().to_string();
+        let filename = self.gen_filename(&origin);
         cache.push(filename);
 
         Ok(cache)
     }
 
-    pub fn thumbnail(&self) -> Result<PathBuf, ThumbError> {
+    // try to generate thumbnail and store it to right path. If that fails,
+    // then it tries to create failed empty thumbnail in failed thumbnails cache.
+    fn generate(&self) -> Result<PathBuf, ThumbError> {
         // if thumbnail already exists, return that
         let thumb_path = self.gen_thumb_path().map_err(|_| ThumbError::NoCachePath)?;
         if thumb_path.is_file() {
             return Ok(thumb_path);
         }
 
-        let path = self.src.to_string_lossy().to_string();
+        let path = self.origin.to_string_lossy().to_string();
         let cache = self.get_cache_fail_path()?;
         let fail_marker = cache.join(self.gen_filename(&path));
         if fail_marker.is_file() {
             return Err(ThumbError::KnownFailure);
         }
 
-        self.gen_thumbnail(&thumb_path)
-            .map(|_| thumb_path)
-            .map_err(|e| {
-                // #[allow(unused)]
-                let a = std::fs::File::create(&fail_marker).inspect_err(|io| {
-                    log::warn!("couldn't write fail marker {fail_marker:?}: {io}")
-                });
+        // self.path = thumb_path.into();
 
-                ThumbError::Generate(e)
-            })
+        self.compress_save().map(|_| thumb_path).map_err(|e| {
+            // #[allow(unused)]
+            let _ = std::fs::File::create(&fail_marker)
+                .inspect_err(|io| log::warn!("couldn't write fail marker {fail_marker:?}: {io}"));
+
+            ThumbError::Generate(e)
+        })
     }
 
-    pub fn gen_thumbnail(&self, dest: &Path) -> anyhow::Result<()> {
+    fn compress_save(&self) -> anyhow::Result<()> {
         let src = self
-            .src
+            .origin
             .canonicalize()
-            .with_context(|| format!("canonicalizing {}", self.src.display()))?;
+            .with_context(|| format!("canonicalizing {}", self.origin.display()))?;
         let src_str = src
             .to_str()
             .with_context(|| format!("non-UTF-8 path: {}", src.display()))?;
@@ -198,7 +187,7 @@ impl Thumbnail {
         Ok(())
     }
 
-    pub fn get_cache_path(&self) -> Result<PathBuf> {
+    fn get_cache_path(&self) -> Result<PathBuf> {
         let cache: ExpandedPathBuf = THUMB_CACHE.parse().or(THUMB_CACHE_FALLBACK.parse())?;
         let exists = fs::exists(&cache)?;
         if !exists {
@@ -208,12 +197,12 @@ impl Thumbnail {
         Ok(cache.into())
     }
 
-    pub fn gen_filename(&self, path: &str) -> String {
+    fn gen_filename(&self, path: &str) -> String {
         let digest = md5::compute(format!("file://{path}"));
         format!("{digest:?}.{}", THUMB_IMAGE_FORMAT.as_str())
     }
 
-    pub fn get_cache_fail_path(&self) -> Result<PathBuf> {
+    fn get_cache_fail_path(&self) -> Result<PathBuf> {
         let mut cache = self
             .get_cache_path()
             .with_context(|| format!("Couldn't get cache path"))?;
@@ -224,4 +213,14 @@ impl Thumbnail {
 
         Ok(cache)
     }
+}
+
+// returns generated thumbnail path stored in system cache. If it fails returns original file path
+pub fn thumbnail(origin: PathBuf, thumb_size: ThumbSize) -> PathBuf {
+    let record = Thumbnail {
+        origin,
+        path: None,
+        size: thumb_size,
+    };
+    record.generate().unwrap_or_else(|_| record.origin)
 }
