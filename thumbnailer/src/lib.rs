@@ -19,6 +19,8 @@ static MAGICK_INIT: Once = Once::new();
 // Prior to using the ImageMagick system,
 // the application should invoke `magick_wand_genesis()`, which maps directly to `MagickWandGenesis`
 fn new_wand() -> MagickWand {
+    // Used to make sure MagickWand is initialized exactly once. Note that we do not
+    // bother shutting down, we simply exit when we're done.
     MAGICK_INIT.call_once(magick_wand_genesis);
     MagickWand::new()
 }
