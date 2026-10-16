@@ -251,7 +251,7 @@ impl AsyncComponent for AppearanceModel {
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(Thumbnail::make(PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large))
+                                                set_filename: Some(Thumbnail::new(PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large).make())
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -274,7 +274,7 @@ impl AsyncComponent for AppearanceModel {
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(Thumbnail::make(PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large))
+                                                set_filename: Some(Thumbnail::new(PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large).make())
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
@@ -533,13 +533,15 @@ impl AsyncComponent for AppearanceModel {
                 let file_path = dest.to_string_lossy().to_string();
                 match std::fs::copy(&path, &dest) {
                     Ok(_) => {
+                        let thumbnail = Thumbnail::new(dest, ThumbSize::Large)
+                            .make()
+                            .to_str()
+                            .map(String::from);
                         self.recent_wallpapers.guard().push_back(Background {
                             path: file_path.clone(),
                             group: self.background_group.clone(),
                             active: false,
-                            thumb: Thumbnail::make(dest, ThumbSize::Large)
-                                .to_str()
-                                .map(String::from),
+                            thumbnail,
                         });
                     }
                     Err(e) => eprintln!("{e:?}"),

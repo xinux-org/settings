@@ -104,18 +104,20 @@ impl ThumbSize {
 
 #[derive(Debug)]
 pub struct Thumbnail {
-    src: PathBuf,
-    // dest: PathBuf,
+    uri: PathBuf, // original file path
+    // path is wrapped in Option, because thumbnail generation might fail
+    path: Option<PathBuf>,
     size: ThumbSize,
 }
 
 impl Thumbnail {
-    pub fn make(src: PathBuf, thumb_size: ThumbSize) -> PathBuf {
+    // returns generated thumbnail path stored in system cache. If it fails returns original file path
+    pub fn make(uri: PathBuf, thumb_size: ThumbSize) -> PathBuf {
         let record = Thumbnail {
-            src,
+            uri,
+            path: None,
             size: thumb_size,
         };
-
         record
             .thumbnail()
             .unwrap_or_else(|_| record.src.to_path_buf())
@@ -126,7 +128,7 @@ impl Thumbnail {
         let mut cache = self.get_cache_path()?;
         cache.push(self.size.path());
 
-        // create folders if doesn't exist
+        // create cache folders if doesn't exist
         fs::create_dir_all(&cache)?;
 
         // adds filename to the end of cache path
@@ -140,7 +142,6 @@ impl Thumbnail {
     pub fn thumbnail(&self) -> Result<PathBuf, ThumbError> {
         // if thumbnail already exists, return that
         let thumb_path = self.gen_thumb_path().map_err(|_| ThumbError::NoCachePath)?;
-        dbg!(&thumb_path);
         if thumb_path.is_file() {
             return Ok(thumb_path);
         }

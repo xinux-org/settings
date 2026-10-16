@@ -40,7 +40,10 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
             let file_path = entry.path();
 
             let x = file_path.to_string_lossy().to_string();
-            let thumb = Thumbnail::make(file_path, ThumbSize::Large);
+            let thumbnail = Thumbnail::new(file_path, ThumbSize::Large)
+                .make()
+                .to_str()
+                .map(String::from);
 
             if is_local {
                 model.recent_wallpapers.guard().push_back(Background {
@@ -50,7 +53,7 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
                         AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
                     },
-                    thumb,
+                    thumbnail,
                 });
             } else {
                 model.wallpapers.guard().push_back(Background {
@@ -60,7 +63,7 @@ pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool)
                         AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
                         AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
                     },
-                    thumb,
+                    thumbnail,
                 });
             }
         }

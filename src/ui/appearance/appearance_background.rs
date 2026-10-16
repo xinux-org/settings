@@ -5,7 +5,7 @@ pub struct Background {
     pub path: String,
     pub group: gtk::ToggleButton,
     pub active: bool,
-    pub thumb: Option<String>,
+    pub thumbnail: Option<String>,
 }
 
 #[derive(Debug)]
@@ -113,7 +113,7 @@ impl AsyncFactoryComponent for Background {
             path: init.path,
             group: init.group,
             active: init.active,
-            thumb: init.thumb,
+            thumbnail: init.thumb,
         }
     }
 }
