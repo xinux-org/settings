@@ -49,7 +49,7 @@ impl AsyncFactoryComponent for Background {
                         gtk::Picture {
                             set_content_fit: gtk::ContentFit::Cover,
                             set_isolate_contents: true,
-                            set_filename: self.thumb.clone(),
+                            set_filename: self.thumbnail.clone(),
                             set_can_shrink: true,
                             set_height_request: 50,
                         },
@@ -109,11 +109,6 @@ impl AsyncFactoryComponent for Background {
         _index: &DynamicIndex,
         _sender: AsyncFactorySender<Self>,
     ) -> Self {
-        Self {
-            path: init.path,
-            group: init.group,
-            active: init.active,
-            thumbnail: init.thumb,
-        }
+        init
     }
 }

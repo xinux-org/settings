@@ -1,14 +1,15 @@
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    use thumbnailer::{Thumbnail, ThumbSize};
+    use thumbnailer::{ThumbSize, Thumbnail};
 
     #[test]
     fn generate_thumbnail() {
-        let path = PathBuf::from("tests/reze.jxl");
-
-        let thumbnail = Thumbnail::make(path, ThumbSize::Normal);
-
+        let thumbnail = Thumbnail {
+            origin: PathBuf::from("tests/reze.jxl"),
+            size: ThumbSize::Large,
+        }
+        .generate();
         assert!(thumbnail.is_ok(), "Thumbnbail couldn't be created")
     }
 }
