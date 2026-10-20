@@ -198,11 +198,10 @@ impl Thumbnail {
     }
 
     fn get_cache_fail_path() -> Result<PathBuf> {
-        let mut cache = Self::get_cache_path().context(format!("Couldn't get cache path"))?;
+        let mut cache = Self::get_cache_path().context("Couldn't get thumbnail cache path")?;
         cache.push("fail");
-        fs::create_dir_all(&cache).context(format!(
-            "Couldn't create cache directory for failed thumbnails path"
-        ))?;
+        fs::create_dir_all(&cache)
+            .context("Couldn't create cache directory for failed thumbnails path")?;
 
         Ok(cache)
     }
