@@ -73,6 +73,9 @@ pkgs.mkShell {
     export XDG_DATA_DIRS="${pkgs.gtk4}/share:${pkgs.libadwaita}/share:${pkgs.gsettings-desktop-schemas}/share:${pkgs.glib}/share:$XDG_DATA_DIRS"
     export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold"
     export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+
+    # source for imagmagick libraries should be added:
+    # github.com/monadimi/icons/blob/129ffcce2a5b8024ab4a7756a0bf715fc140e1bd/flake.nix#L40
     export BINDGEN_EXTRA_CLANG_ARGS="$BINDGEN_EXTRA_CLANG_ARGS -DMAGICKCORE_HDRI_ENABLE=1 -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_CHANNEL_MASK_DEPTH=32 -I${pkgs.imagemagick.dev}/include/ImageMagick-7";
   '';
 

@@ -88,12 +88,11 @@ pub enum ThumbSize {
 }
 impl ThumbSize {
     fn path(&self) -> &str {
-        use ThumbSize::*;
         match self {
-            Normal => "normal",
-            Large => "large",
-            XLarge => "x-large",
-            XXLarge => "xx-large",
+            ThumbSize::Normal => "normal",
+            ThumbSize::Large => "large",
+            ThumbSize::XLarge => "x-large",
+            ThumbSize::XXLarge => "xx-large",
         }
     }
 }
