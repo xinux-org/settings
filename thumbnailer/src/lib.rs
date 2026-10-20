@@ -108,19 +108,22 @@ pub struct Thumbnail {
 impl Thumbnail {
     fn compress_save(&self, des: PathBuf) -> Result<PathBuf> {
         let Self { origin, size } = self;
-        let src = origin
+        let original_file_path = origin
             .canonicalize()
-            .context(format!("canonicalizing {:?}", origin))?;
-        let src_str = src.to_str().context(format!("non-UTF-8 path: {:?}", src))?;
+            .context(format!("canonicalizing {origin:?}"))?;
+        let original_file_path_str = self
+            .origin
+            .to_str()
+            .context(format!("non-UTF-8 path: {original_file_path:?}"))?;
 
         let wand = new_wand();
 
         let px: usize = *size as usize;
-        wand.read_image(src_str)
-            .context(format!("reading image {:?}", src))?;
+        wand.read_image(original_file_path_str)
+            .context(format!("reading image {original_file_path_str:?}"))?;
         wand.fit(px, px);
 
-        let meta = Meta::read(&src, &wand).context("fetching metadata")?;
+        let meta = Meta::read(&original_file_path, &wand).context("fetching metadata")?;
         for (k, v) in meta.to_hashmap() {
             wand.set_image_property(k, &v)?;
         }
@@ -130,9 +133,9 @@ impl Thumbnail {
             .context("encoding thumbnail")?;
 
         let mut file =
-            fs::File::create(&des).context(format!("creating thumbnail file in {:?}", &des))?;
+            fs::File::create(&des).context(format!("creating thumbnail file in {des:?}"))?;
         file.write(&bytes)
-            .context(format!("saving thumbnail to {:?}", &des))?;
+            .context(format!("saving thumbnail to {des:?}"))?;
 
         Ok(des)
     }
