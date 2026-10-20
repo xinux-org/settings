@@ -6,7 +6,9 @@ use crate::ui::{
     window::AppMsg,
 };
 
-use crate::utils::{add_wallpaper, parse_dconf, thumb, wallpaper_filters};
+use crate::utils::{add_wallpapers, parse_dconf, wallpaper_filters};
+use thumbnailer::Thumbnail;
+
 use rand::{self, prelude::*};
 use relm4::{
     adw::prelude::*, gtk, gtk::gio::Settings, loading_widgets::LoadingWidgets, prelude::*, view,
@@ -249,7 +251,7 @@ impl AsyncComponent for AppearanceModel {
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(thumb(&PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large).unwrap_or_default())
+                                                set_filename: Thumbnail::make(PathBuf::from(model.wallpaper_default.clone()), ThumbSize::Large)
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Default),
@@ -272,7 +274,7 @@ impl AsyncComponent for AppearanceModel {
                                                 set_content_fit: gtk::ContentFit::Cover,
                                                 set_isolate_contents: true,
                                                 #[watch]
-                                                set_filename: Some(thumb(&PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large).unwrap_or_default())
+                                                set_filename: Thumbnail::make(PathBuf::from(model.wallpaper_dark.clone()), ThumbSize::Large)
                                             },
 
                                             connect_clicked => AppearanceMsg::SetStyle(AppearanceStyle::Dark),
@@ -488,13 +490,13 @@ impl AsyncComponent for AppearanceModel {
                 "/home/{}/.local/share/backgrounds",
                 user.name().to_string_lossy()
             );
-            add_wallpaper(Path::new(&local_path).to_path_buf(), &mut model, true);
+            add_wallpapers(Path::new(&local_path).to_path_buf(), &mut model, true);
         }
 
         // default paths for system wallpapers
         for folder in vec!["gnome", "nixos"] {
             let path: PathBuf = Path::new(BG_BASE_DIR).join(folder);
-            add_wallpaper(path, &mut model, false);
+            add_wallpapers(path, &mut model, false);
         }
 
         let wallpaper_box = model.wallpapers.widget();
@@ -531,11 +533,12 @@ impl AsyncComponent for AppearanceModel {
                 let file_path = dest.to_string_lossy().to_string();
                 match std::fs::copy(&path, &dest) {
                     Ok(_) => {
+                        let thumbnail = Thumbnail::make(dest, ThumbSize::Large);
                         self.recent_wallpapers.guard().push_back(Background {
                             path: file_path.clone(),
                             group: self.background_group.clone(),
                             active: false,
-                            thumb: thumb(&dest, ThumbSize::Large).unwrap_or(file_path),
+                            thumbnail,
                         });
                     }
                     Err(e) => eprintln!("{e:?}"),

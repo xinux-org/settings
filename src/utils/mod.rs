@@ -6,7 +6,7 @@ pub mod power;
 pub mod state;
 
 use relm4::gtk;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::ui::appearance::{
     appearance::{AppearanceModel, AppearanceStyle},
@@ -34,41 +34,28 @@ pub fn parse_dconf(mut str: String) -> String {
     str
 }
 
-pub fn add_wallpaper(path: PathBuf, model: &mut AppearanceModel, is_local: bool) {
-    if let Ok(rd) = std::fs::read_dir(&path) {
+// add all wallpapers from directory provided
+pub fn add_wallpapers(wallpapers_dir: PathBuf, model: &mut AppearanceModel, is_local: bool) {
+    if let Ok(rd) = std::fs::read_dir(&wallpapers_dir) {
         for entry in rd.flatten() {
-            let file_path = entry.path();
-
-            let x = file_path.to_string_lossy().to_string();
+            let wallpaper = entry.path().to_string_lossy().to_string();
+            let thumbnail = Thumbnail::make(PathBuf::from(&wallpaper), ThumbSize::Large);
+            let background = Background {
+                path: wallpaper.clone(),
+                group: model.background_group.clone(),
+                active: match model.style {
+                    AppearanceStyle::Default => model.wallpaper_default.ends_with(&wallpaper),
+                    AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&wallpaper),
+                },
+                thumbnail,
+            };
             if is_local {
-                model.recent_wallpapers.guard().push_back(Background {
-                    path: x.clone(),
-                    group: model.background_group.clone(),
-                    active: match model.style {
-                        AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
-                        AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
-                    },
-                    thumb: thumb(&PathBuf::from(&x), ThumbSize::Large).unwrap_or(x),
-                });
+                model.recent_wallpapers.guard().push_back(background);
             } else {
-                model.wallpapers.guard().push_back(Background {
-                    path: x.clone(),
-                    group: model.background_group.clone(),
-                    active: match model.style {
-                        AppearanceStyle::Default => model.wallpaper_default.ends_with(&x),
-                        AppearanceStyle::Dark => model.wallpaper_dark.ends_with(&x),
-                    },
-                    thumb: thumb(&PathBuf::from(&x), ThumbSize::Large).unwrap_or(x),
-                });
+                model.wallpapers.guard().push_back(background);
             }
         }
     }
-}
-
-pub fn thumb(src: &Path, thumb_size: ThumbSize) -> Option<String> {
-    thumbnail_or_original(src, thumb_size)
-        .to_str()
-        .map(String::from)
 }
 
 pub fn wallpaper_filters() -> Vec<gtk::FileFilter> {
