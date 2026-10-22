@@ -100,7 +100,6 @@ impl ThumbSize {
 pub struct Thumbnail {
     // original file path
     pub origin: PathBuf,
-    // generated thumbnail path, file is stored in cache
     pub size: ThumbSize,
 }
 
@@ -110,8 +109,7 @@ impl Thumbnail {
         let original_file_path = origin
             .canonicalize()
             .context(format!("canonicalizing {origin:?}"))?;
-        let original_file_path_str = self
-            .origin
+        let original_file_path_str = original_file_path
             .to_str()
             .context(format!("non-UTF-8 path: {original_file_path:?}"))?;
 
@@ -211,9 +209,8 @@ impl Thumbnail {
             .and_then(|name| name.to_string_lossy().to_string().parse::<Mime>().ok())
     }
 
-    pub fn gen_filename(path: &Path) -> String {
-        let path = path.to_str().unwrap_or_default();
-        let digest = md5::compute(format!("file://{path}"));
+    fn gen_filename(path: &Path) -> String {
+        let digest = md5::compute(format!("file://{path:?}"));
         format!("{digest:?}.{}", THUMB_IMAGE_FORMAT.as_str())
     }
 }
