@@ -46,6 +46,7 @@ pkgs.stdenv.mkDerivation {
     bubblewrap
     libglycin
     glycin-loaders
+    sqlite
 
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
